@@ -1,0 +1,46 @@
+# vxTradeJournal
+
+Locally runnable trade journal prototype. Application uses browser JavaScript modules, Vite, Firebase Auth/Firestore emulators, and decimal.js for financial arithmetic.
+
+## Local tooling
+
+Requirements: Node.js 22.13+ and Java 21+ (Firestore emulator runtime). Install dependencies with `npm install`.
+
+- `npm run dev` starts Vite on `http://127.0.0.1:5173` with Auth on `9099`, Firestore on `8080`, Emulator UI on `4000`, project `demo-vxjournal-dev`.
+- `npm run dev:test` starts interactive test profile on Vite `5174`, Auth `9199`, Firestore `8180`, UI `4100`, project `demo-vxjournal-test`.
+- `npm run emulators` starts dev Auth and Firestore emulators without Vite.
+- Dev and interactive test emulator state persists in `.local-emulators/dev` and `.local-emulators/test` when processes stop cleanly. The automated profile is disposable.
+- `npm run test` starts isolated automated profile on Auth `9299`, Firestore `8280`, UI `4200`, runs unit, integration, and browser tests, then stops services. It does not reuse dev emulator data.
+- `npm run test:unit`, `npm run test:integration`, and `npm run test:e2e` run each test group. Integration and browser commands start and stop their own isolated emulator profile; E2E also manages Vite on port `5175`.
+- `npm run test:watch` watches unit tests; `npm run lint` checks JavaScript; `npm run build` creates `dist/`; `npm run preview` serves the bundle on Vite's selected profile port.
+- `npm run data:seed` idempotently writes synthetic dev data; `npm run data:reset` clears dev Auth and Firestore data, then restores sample records. Both require the dev emulators running. Seed login: `demo@example.test` / `Demo-journal-123`.
+- `npm run check` runs lint, full tests, then build.
+
+The `dev` and `emulators` scripts accept `-- --profile dev|test|auto`; for example, `npm run dev -- --profile auto`. `VXJ_PROFILE` is also supported. Firebase demo project IDs prevent accidental access to hosted projects. Profile configuration lives in `firebase.dev.json`, `firebase.test.json`, and `firebase.auto.json`.
+
+Build embeds package version and current Git commit in `__APP_VERSION__` and `__BUILD_COMMIT__`. Runtime Firebase metadata is exposed as `import.meta.env.VITE_PROFILE`, `VITE_FIREBASE_PROJECT_ID`, `VITE_AUTH_EMULATOR_PORT`, and `VITE_FIRESTORE_EMULATOR_PORT`.
+
+## Application workflow
+
+Sign in with the synthetic login above, or register and verify a new user using the link printed by the Auth emulator. Create an account, configure instruments, optionally define a strategy, then create a trade. Each leg records entries, exits or settlements; realized results replay the execution history using weighted averages. Missing manual results or FX rates remain visible as incomplete. Catalogue and strategy edits preserve historical trade snapshots.
+
+Settings control display timezone/theme and export all owned journal source data as versioned JSON. Rates always mean reporting-currency units per one source-currency unit. Sizing excludes fees and slippage; multi-leg risk is entered manually.
+
+Implementation decisions: [docs/DECISIONS.md](docs/DECISIONS.md). Executed checks and acceptance coverage: [docs/VALIDATION.md](docs/VALIDATION.md). Initial delivery is a local prototype; hosting and release publication follow prototype review.
+
+## Production Firebase
+
+Production project ID is `vionixtradejournal`, display name `vionix-trade-journal`, project number `389058969816`. The default Firestore database is in `asia-east1`. The project uses Spark, email/password Auth, and static Hosting. `.firebaserc` records the `prod` alias; deployment commands also name the project explicitly.
+
+The Firebase CLI is installed locally by `npm install`. Use `npx firebase login`, then `npx firebase projects:list` to confirm access. The registered `vxTradeJournal` web app configuration is in `firebase.web.json`; it is public browser configuration, not an Admin SDK credential. Never add service-account keys or login tokens to this repository.
+
+- `npm run build:prod` creates `dist-prod/` using hosted Auth and Firestore.
+- `npm run preview:prod` serves that build locally on port `4173` and uses real production accounts and data.
+- `npm run deploy:prod` builds production and deploys Hosting and `firestore.rules` to `vionixtradejournal` using `firebase.json`.
+- `npm run deploy:rules` deploys only Firestore rules.
+
+Local `npm run build` still creates an emulator-backed `dist/`; production Hosting serves only `dist-prod/`. Development/test commands and seed/reset keep their separate demo projects. No composite indexes are currently required because repository reads query per-user collections without compound Firestore filters.
+
+Before publication, complete the repository's release checks and review Authentication's authorized domains and email templates in the Firebase console. After publication, verify registration, email delivery, verification, reset, saved-record reload and user isolation on `https://vionixtradejournal.web.app`. Use the app's JSON export for user-controlled copies of journal data; Spark does not include managed Firestore backups or PITR.
+
+Monitor Hosting and Firestore usage in the console. Spark limits include 10 GB Hosting storage, 10 GB/month Hosting transfer; Firestore includes 1 GiB storage, 50,000 reads/day, 20,000 writes/day, 20,000 deletes/day and 10 GiB/month outbound transfer. Daily Firestore quotas reset daily; Hosting transfer resets monthly. Storage capacity does not reset. Quota exhaustion can interrupt service. Keep large exports and repeated full-journal reads in mind as data grows. Cloud Functions, Cloud Run and other billing-required services require an explicit Blaze decision. See [Hosting quotas](https://firebase.google.com/docs/hosting/usage-quotas-pricing) and [Firestore quotas](https://firebase.google.com/docs/firestore/quotas).

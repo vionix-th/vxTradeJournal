@@ -56,11 +56,13 @@ Each user maintains private, reusable instrument definitions.
 | Point value | Monetary value of one full price-point move per selected quantity unit |
 | P&L currency | Currency of instrument’s calculated or reported result |
 | Price increment | Price validation and display precision |
+| Optional quotation unit (`priceUnit`) | Trimmed text, up to 80 characters, for price labels (e.g. `USD/share`, `points`, `JPY/EUR`); display metadata only |
 | Applicable contract details | Underlying, expiry, strike and option type |
 
 Presets cover equities, forex, futures, options, spot crypto, crypto derivatives, CFDs and custom instruments. Presets supply editable defaults, not inferred authoritative specifications.
 
 - Catalogue form reveals fields relevant to selected preset and calculation model.
+- Quotation units are editable and optional. Presets leave them blank; missing metadata displays “Quote unit not configured.” and does not block use. Existing records need no backfill. Quantity units and account currencies remain explicit on relevant controls.
 - Linear configuration requires valid point value, quantity increment, price increment and P&L currency.
 - Manual configuration enables execution recording and reported results; automatic sizing/P&L unavailable.
 - Incomplete definitions may be saved as drafts but cannot start new trades.
@@ -91,6 +93,8 @@ Trade represents one journalled trading idea. It contains one or more instrument
 
 - Single-leg trade is default. Additional legs added explicitly.
 - Each leg has instrument snapshot and long/short direction.
+- New/Edit trade groups each leg in an accessible fieldset with concise Instrument and Direction labels. Optional prices and quantity appear under native Trade plan disclosure with one explanation: “Intended prices and size. Record actual fills separately.”
+- Empty plans start collapsed; saved plans containing values start open. Adding/removing legs and inline instrument creation preserve disclosure state and draft values. Catalogue edits do not rewrite historical quotation or quantity units.
 - Executions record quantity, price, timestamp, fees, fee currency and optional order reference.
 - Multiple executions may share order reference; order-management subsystem excluded.
 - Entries increase position. Exits decrease position.
@@ -122,7 +126,10 @@ Recommended quantity =
     rounded down to quantity increment
 ```
 
-- Automatic sizing applies to single-leg trades.
+- Automatic sizing applies to single-leg linear trades. Risk budget and foreign conversion appear inside nested Position sizing disclosure. Until required inputs exist, show neutral guidance; validate supplied values independently. Manual models and multi-leg trades keep quantities and combined risk budget manual.
+- Price inputs display snapshot quotation units, quantities display snapshot quantity units, and budgets/results display account currency. Units have accessible descriptions while accessible labels stay concise.
+- Foreign sizing conversion displays “1 EUR = [rate] USD” using instrument/account currencies. Same-currency conversion is automatic 1; changing currency pair clears foreign rates.
+- Quotation metadata is optional in normalization, persistence and exports. Missing fields remain absent; schema and calculation versions stay unchanged.
 - Planned entry, adverse stop and positive risk budget required for sizing.
 - Target optional; show planned reward/risk when provided.
 - Sizing excludes fees and slippage; label result as planned risk at entered stop.
@@ -179,6 +186,7 @@ Journal is home screen.
 - Mobile cards and full-page editors; desktop tables and wider detail views.
 - Core workflows usable from 320 CSS pixels upward without horizontal page scrolling.
 - Explicit labels, keyboard navigation, visible focus, accessible contrast and touch targets.
+- Instrument and trade editor labels offer concise explanatory tooltips on hover, keyboard focus and tap. Help remains visible while hovered, supports Escape dismissal and fits the viewport. Short accessible field labels and unit descriptions remain unchanged.
 - Profit/loss communicated through text and symbols alongside colour.
 - Optional fields progressively disclosed.
 - Explicit Save action; unsaved-navigation warning.
@@ -224,7 +232,7 @@ Install tooling as project dependencies and expose routine tasks through `packag
 | `npm run data:reset` | Reset development emulator data and restore sample records |
 | `npm run check` | Execute source checks, test suite and build verification |
 
-Test commands follow the worker-m execution policy in AGENTS.md. Local profiles connect explicitly to emulated services. Hosted profile configuration and deployment commands are introduced when hosted environments become part of the development scope.
+Test commands follow the worker-m execution policy in AGENTS.md. Local profiles connect explicitly to emulated services. Production uses project `vionixtradejournal` (display name `vionix-trade-journal`, number `389058969816`) on Spark with email/password Auth, default Firestore in `asia-east1`, and static Firebase Hosting. `npm run build:prod` produces a separate `dist-prod/` artifact with hosted Firebase configuration and no emulator connections. `npm run preview:prod` previews that artifact using online services; `npm run deploy:prod` builds and publishes Hosting and Firestore rules to the explicit production project. Production preparation and publication are separate operations. Local seed/reset scripts never target production. No server-side or billing-required services are added by this setup.
 
 ### Minimum domain interfaces
 

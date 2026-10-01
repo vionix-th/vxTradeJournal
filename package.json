@@ -1,0 +1,49 @@
+{
+  "name": "vx-trade-journal",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "dev:test": "node scripts/dev.js --profile test",
+    "emulators": "node scripts/emulators.js",
+    "build": "vite build",
+    "build:prod": "vite build --mode hosted",
+    "preview:prod": "vite preview --mode hosted --host 127.0.0.1",
+    "deploy:prod": "npm run build:prod && firebase deploy --config firebase.json --project vionixtradejournal --only firestore:rules,hosting",
+    "deploy:rules": "firebase deploy --config firebase.json --project vionixtradejournal --only firestore:rules",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node scripts/test.js all",
+    "test:unit": "vitest run --config vitest.config.js --project unit",
+    "test:integration": "node scripts/test.js integration",
+    "test:e2e": "node scripts/test.js e2e",
+    "test:watch": "vitest --config vitest.config.js --project unit",
+    "lint": "eslint .",
+    "data:seed": "node scripts/data.js seed",
+    "data:reset": "node scripts/data.js reset",
+    "check": "npm run lint && npm test && npm run build"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "decimal.js": "^10.6.0",
+    "firebase": "^12.4.0"
+  },
+  "overrides": {
+    "@firebase/firestore": {
+      "@grpc/grpc-js": "1.13.6"
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.35.0",
+    "@firebase/rules-unit-testing": "^5.0.0",
+    "@playwright/test": "^1.55.0",
+    "eslint": "^10.11.0",
+    "firebase-tools": "^15.32.1",
+    "globals": "^16.5.0",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.3"
+  }
+}

@@ -1,0 +1,178 @@
+import { readFileSync } from "node:fs";
+import { beforeAll, afterAll, beforeEach, describe, it, expect } from "vitest";
+import { initializeTestEnvironment } from "@firebase/rules-unit-testing";
+import { Repository } from "../../src/persistence/repository.js";
+import { createTrade } from "../../src/domain/journal.js";
+let env, repo;
+beforeAll(async () => {
+  env = await initializeTestEnvironment({
+    projectId: process.env.GCLOUD_PROJECT || "demo-vxjournal-auto",
+    firestore: {
+      host: "127.0.0.1",
+      port: Number(process.env.FIRESTORE_EMULATOR_HOST?.split(":")[1] || 8280),
+      rules: readFileSync("firestore.rules", "utf8"),
+    },
+  });
+});
+afterAll(async () => {
+  await env?.cleanup();
+});
+beforeEach(async () => {
+  await env.clearFirestore();
+  repo = new Repository(
+    env.authenticatedContext("alice", { email_verified: true }).firestore(),
+    "alice",
+    () => true,
+  );
+});
+async function fixtures() {
+  const account = await repo.saveEntity("accounts", {
+    id: "a",
+    name: "Main",
+    currency: "USD",
+  });
+  const instrument = await repo.saveEntity("instruments", {
+    id: "i",
+    name: "Acme",
+    symbol: "ACME",
+    market: "Equities",
+    preset: "equity",
+    model: "linear",
+    quantityUnit: "shares",
+    quantityIncrement: "1",
+    priceIncrement: "0.01",
+    pointValue: "1",
+    currency: "USD",
+  });
+  const strategy = await repo.saveEntity("strategies", {
+    id: "s",
+    name: "Breakout",
+    entryRules: "Original",
+  });
+  return { account, instrument, strategy };
+}
+describe("transactional repository", () => {
+  it("persists source records, snapshots, historical edits and export-ready reload", async () => {
+    const { account, instrument, strategy } = await fixtures();
+    let t = createTrade({
+      id: "t",
+      account,
+      instruments: [{ instrument, direction: "long" }],
+      strategy,
+    });
+    t.executions = [
+      {
+        id: "e",
+        legId: t.legs[0].id,
+        kind: "entry",
+        quantity: "2",
+        price: "10",
+        fees: "1",
+        feeCurrency: "USD",
+        timestamp: "2026-01-01T00:00:00Z",
+        orderReference: "shared",
+      },
+    ];
+    t = await repo.saveTrade(t, "op1");
+    await repo.saveEntity("instruments", { ...instrument, pointValue: "10" });
+    await repo.saveEntity("strategies", { ...strategy, entryRules: "Changed" });
+    const data = await repo.load();
+    expect(data.trades[0].legs[0].snapshot.pointValue).toBe("1");
+    expect(data.trades[0].strategySnapshot.entryRules).toBe("Original");
+    expect(data.trades[0].executions[0].orderReference).toBe("shared");
+    expect(data.accounts[0].hasTrades).toBe(true);
+    expect(t.summary.accountNet).toBe("-1");
+  });
+  it("retains quotation units and absent metadata in historical snapshots", async () => {
+    const { account, instrument } = await fixtures();
+    const legacy = await repo.saveTrade(createTrade({ id: "legacy", account, instruments: [{ instrument, direction: "long" }] }), "legacy-create");
+    const configured = await repo.saveEntity("instruments", { ...instrument, priceUnit: "USD/share" });
+    const saved = await repo.saveTrade(createTrade({ id: "units", account, instruments: [{ instrument: configured, direction: "long" }] }), "units-create");
+    await repo.saveEntity("instruments", { ...configured, priceUnit: "points" });
+    const edited = await repo.saveTrade({ ...saved, review: "Historical unit retained" }, "units-edit");
+    expect(edited.legs[0].snapshot.priceUnit).toBe("USD/share");
+    const loaded = await repo.load();
+    expect(loaded.trades.find((t) => t.id === "units").legs[0].snapshot.priceUnit).toBe("USD/share");
+    const legacyEdit = await repo.saveTrade({ ...legacy, review: "No backfill" }, "legacy-edit");
+    expect(legacyEdit.legs[0].snapshot).not.toHaveProperty("priceUnit");
+    // The first save used a catalogue definition without quotation metadata.
+    expect(instrument).not.toHaveProperty("priceUnit");
+    expect(edited.calculationVersion).toBe(saved.calculationVersion);
+  });
+  it("retries create/edit idempotently and rejects stale revisions", async () => {
+    const { account, instrument } = await fixtures();
+    const t = createTrade({
+      id: "t",
+      account,
+      instruments: [{ instrument, direction: "long" }],
+    });
+    const saved = await repo.saveTrade(t, "same-op");
+    const retried = await repo.saveTrade(t, "same-op");
+    expect(retried.revision).toBe(saved.revision);
+    const edited = await repo.saveTrade({ ...saved, review: "New" }, "edit");
+    await expect(
+      repo.saveTrade({ ...saved, review: "Old" }, "stale"),
+    ).rejects.toThrow(/conflict/i);
+    expect((await repo.saveTrade(t, "same-op")).revision).toBe(edited.revision);
+    expect((await repo.load()).trades).toHaveLength(1);
+  });
+  it("rejects currency changes for used accounts and invalid earlier corrections", async () => {
+    const { account, instrument } = await fixtures();
+    let t = createTrade({
+      id: "t",
+      account,
+      instruments: [{ instrument, direction: "long" }],
+    });
+    t.executions = [
+      {
+        id: "e1",
+        legId: t.legs[0].id,
+        kind: "entry",
+        quantity: "2",
+        price: "10",
+        fees: "0",
+        feeCurrency: "USD",
+        timestamp: "2026-01-01T00:00:00Z",
+      },
+      {
+        id: "e2",
+        legId: t.legs[0].id,
+        kind: "exit",
+        quantity: "2",
+        price: "12",
+        fees: "0",
+        feeCurrency: "USD",
+        timestamp: "2026-01-02T00:00:00Z",
+      },
+    ];
+    t = await repo.saveTrade(t, "op");
+    const latest = (await repo.load()).accounts[0];
+    await expect(
+      repo.saveEntity("accounts", { ...latest, currency: "EUR" }),
+    ).rejects.toThrow(/currency/i);
+    t.executions[0].quantity = "1";
+    await expect(repo.saveTrade(t, "bad")).rejects.toThrow(/remaining/);
+    expect((await repo.getTrade("t")).summary.accountNet).toBe("4");
+  });
+  it("cascades trade deletion including child records and supports archived existing trades", async () => {
+    const { account, instrument } = await fixtures();
+    let t = await repo.saveTrade(
+      createTrade({
+        id: "t",
+        account,
+        instruments: [{ instrument, direction: "long" }],
+      }),
+      "op",
+    );
+    await repo.saveEntity("accounts", {
+      ...(await repo.load()).accounts[0],
+      archived: true,
+    });
+    await repo.saveEntity("instruments", { ...instrument, archived: true });
+    t = await repo.saveTrade({ ...t, review: "Still editable" }, "review");
+    await repo.deleteTrade(t);
+    expect(await repo.getTrade("t")).toBeNull();
+    expect(await repo.listChildren("t", "legs")).toEqual([]);
+    expect(await repo.listChildren("t", "operations")).toEqual([]);
+  });
+});

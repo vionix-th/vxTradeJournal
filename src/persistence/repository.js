@@ -1,0 +1,248 @@
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  runTransaction,
+} from "firebase/firestore";
+import {
+  normalizeAccount,
+  normalizeInstrument,
+  normalizeStrategy,
+  validateSettings,
+  requireValue,
+  SCHEMA_VERSION,
+} from "../domain/journal.js";
+import { prepareTrade } from "../application/journal.js";
+export class ConflictError extends Error {
+  constructor() {
+    super("Save conflict. Reload current records, then reconcile changes.");
+    this.name = "ConflictError";
+  }
+}
+const normalize = {
+  accounts: normalizeAccount,
+  instruments: normalizeInstrument,
+  strategies: normalizeStrategy,
+  settings: validateSettings,
+};
+const clean = (value) => JSON.parse(JSON.stringify(value));
+/** User-scoped adapter. All writes validate domain inputs, references and optimistic revisions. */
+export class Repository {
+  constructor(db, uid, verified = () => true) {
+    this.db = db;
+    this.uid = uid;
+    this.verified = verified;
+  }
+  ref(type, id) {
+    return doc(this.db, "users", this.uid, type, id);
+  }
+  child(tid, type, id) {
+    return doc(this.db, "users", this.uid, "trades", tid, type, id);
+  }
+  async list(type) {
+    return (
+      await getDocs(collection(this.db, "users", this.uid, type))
+    ).docs.map((d) => d.data());
+  }
+  async listChildren(tid, type) {
+    return (
+      await getDocs(collection(this.db, "users", this.uid, "trades", tid, type))
+    ).docs.map((d) => d.data());
+  }
+  async getTrade(id) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const before = await getDoc(this.ref("trades", id));
+      if (!before.exists()) return null;
+      const [legs, executions, adjustments] = await Promise.all(
+        ["legs", "executions", "adjustments"].map((type) =>
+          this.listChildren(id, type),
+        ),
+      );
+      const after = await getDoc(this.ref("trades", id));
+      if (!after.exists()) return null;
+      if (before.data().revision === after.data().revision) {
+        return { ...after.data(), legs, executions, adjustments };
+      }
+    }
+    throw new ConflictError();
+  }
+
+  async load() {
+    const [accounts, instruments, strategies, parents, settings] =
+      await Promise.all(
+        ["accounts", "instruments", "strategies", "trades", "settings"].map(
+          (type) => this.list(type),
+        ),
+      );
+    const trades = await Promise.all(parents.map((t) => this.getTrade(t.id)));
+    return {
+      accounts,
+      instruments,
+      strategies,
+      trades: trades.filter(Boolean),
+      settings: settings.find((s) => s.id === "preferences") || {
+        theme: "system",
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        defaultAccount: null,
+        revision: 0,
+      },
+    };
+  }
+  metadata(input, old = null) {
+    const now = new Date().toISOString();
+    return {
+      ...clean(input),
+      uid: this.uid,
+      id: input.id,
+      schemaVersion: SCHEMA_VERSION,
+      revision: (old?.revision || 0) + 1,
+      createdAt: old?.createdAt || now,
+      updatedAt: now,
+    };
+  }
+  async saveEntity(type, input) {
+    requireValue(this.verified(), "Verify email before saving");
+    requireValue(normalize[type], "Unknown entity type");
+    const value = normalize[type](clean(input));
+    value.id = value.id || crypto.randomUUID();
+    const ref = this.ref(type, value.id);
+    return runTransaction(this.db, async (tx) => {
+      const s = await tx.get(ref);
+      const old = s.exists() ? s.data() : null;
+      if ((old?.revision || 0) !== (input.revision || 0))
+        throw new ConflictError();
+      if (type === "accounts" && old?.hasTrades) {
+        requireValue(
+          value.currency === old.currency,
+          "Reporting currency is fixed after first trade",
+        );
+        value.hasTrades = true;
+      }
+      if (type === "settings" && value.defaultAccount) {
+        requireValue(
+          (await tx.get(this.ref("accounts", value.defaultAccount))).exists(),
+          "Default account does not belong to user",
+        );
+      }
+      const saved = this.metadata(value, old);
+      tx.set(ref, saved);
+      return saved;
+    });
+  }
+  async saveTrade(input, operationId = crypto.randomUUID()) {
+    requireValue(this.verified(), "Verify email before saving");
+    const previous = await this.getTrade(input.id);
+    const receipt = this.child(input.id, "operations", operationId);
+    const ref = this.ref("trades", input.id);
+    const result = await runTransaction(this.db, async (tx) => {
+      const [receiptDoc, current, accountDoc] = await Promise.all([
+        tx.get(receipt),
+        tx.get(ref),
+        tx.get(this.ref("accounts", input.accountId)),
+      ]);
+      if (receiptDoc.exists()) return null;
+      const old = current.exists() ? current.data() : null;
+      if (
+        (old?.revision || 0) !== (input.revision || 0) ||
+        (previous?.revision || 0) !== (old?.revision || 0)
+      )
+        throw new ConflictError();
+      const instruments = await Promise.all(
+        [...new Set(input.legs.map((l) => l.instrumentId))].map(async (id) => {
+          const d = await tx.get(this.ref("instruments", id));
+          return d.exists() ? d.data() : null;
+        }),
+      );
+      const strategyDoc = input.strategyId
+        ? await tx.get(this.ref("strategies", input.strategyId))
+        : null;
+      const data = {
+        accounts: accountDoc.exists() ? [accountDoc.data()] : [],
+        instruments: instruments.filter(Boolean),
+        strategies: strategyDoc?.exists() ? [strategyDoc.data()] : [],
+      };
+      const prepared = prepareTrade(clean(input), data, previous);
+      const { legs, executions, adjustments, ...parent } = prepared;
+      const saved = this.metadata(
+        { ...parent, lastOperation: operationId },
+        old,
+      );
+      for (const [type, records] of Object.entries({
+        legs,
+        executions,
+        adjustments,
+      })) {
+        const oldRecords = previous?.[type] || [];
+        for (const record of records) {
+          const before = oldRecords.find((r) => r.id === record.id);
+          const content = clean(record);
+          for (const key of [
+            "revision",
+            "createdAt",
+            "updatedAt",
+            "uid",
+            "schemaVersion",
+          ])
+            delete content[key];
+          const prior = before ? clean(before) : null;
+          if (prior)
+            for (const key of [
+              "revision",
+              "createdAt",
+              "updatedAt",
+              "uid",
+              "schemaVersion",
+            ])
+              delete prior[key];
+          if (JSON.stringify(content) !== JSON.stringify(prior))
+            tx.set(
+              this.child(input.id, type, record.id),
+              this.metadata(content, before),
+            );
+        }
+        for (const record of oldRecords.filter(
+          (r) => !records.some((n) => n.id === r.id),
+        ))
+          tx.delete(this.child(input.id, type, record.id));
+      }
+      tx.set(ref, saved);
+      tx.set(receipt, {
+        id: operationId,
+        uid: this.uid,
+        revision: saved.revision,
+        createdAt: saved.updatedAt,
+      });
+      const a = accountDoc.data();
+      if (!a.hasTrades)
+        tx.set(
+          this.ref("accounts", a.id),
+          this.metadata({ ...a, hasTrades: true }, a),
+        );
+      return saved;
+    });
+    // Reading after either commit or a durable receipt returns current state; retries never recreate records.
+    return (await this.getTrade(input.id)) || result;
+  }
+  async deleteTrade(input) {
+    requireValue(this.verified(), "Verify email before deleting");
+    const previous = await this.getTrade(input.id);
+    if (!previous) return;
+    const operations = await this.listChildren(input.id, "operations");
+    await runTransaction(this.db, async (tx) => {
+      const s = await tx.get(this.ref("trades", input.id));
+      if (!s.exists()) return;
+      if (
+        s.data().revision !== input.revision ||
+        previous.revision !== input.revision
+      )
+        throw new ConflictError();
+      for (const type of ["legs", "executions", "adjustments"])
+        for (const r of previous[type])
+          tx.delete(this.child(input.id, type, r.id));
+      for (const r of operations)
+        tx.delete(this.child(input.id, "operations", r.id));
+      tx.delete(this.ref("trades", input.id));
+    });
+  }
+}
