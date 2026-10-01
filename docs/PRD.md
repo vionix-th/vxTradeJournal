@@ -1,6 +1,6 @@
 # vxTradeJournal — Product Requirements Document
 
-Version: 1.1 · Status: Proposed · Date: 1 October 2026
+Version: 1.2 · Status: Proposed · Date: 1 October 2026
 
 ## 1. Product purpose and scope
 
@@ -199,6 +199,33 @@ Journal is home screen.
 - Centralized design tokens and reusable form primitives.
 - Version stored data and calculation outputs.
 
+### Local environments and routine commands
+
+Initial development runs entirely locally: Vite serves the application, and Firebase Authentication and Firestore use the Local Emulator Suite with demo project IDs. A registered Firebase project is unnecessary for this phase. See [Firebase emulator project guidance](https://firebase.google.com/docs/emulator-suite/connect_firestore#choose_a_firebase_project).
+
+Provide local development and test profiles with separate emulator project IDs and ports. Npm scripts select the profile directly; switching profiles preserves configuration files. Automated tests manage their own service lifecycle so the development environment can remain running.
+
+Install tooling as project dependencies and expose routine tasks through `package.json`:
+
+| Command | Behavior |
+|---|---|
+| `npm run dev` | Start application and development emulators together using local defaults |
+| `npm run dev:test` | Start application and test-profile emulators for interactive debugging |
+| `npm run emulators` | Start development Auth/Firestore emulators and Emulator UI separately |
+| `npm run test` | Execute complete test suite once; manage required test services |
+| `npm run test:unit` | Execute domain/application unit tests |
+| `npm run test:integration` | Execute persistence and security tests with isolated emulators |
+| `npm run test:e2e` | Execute browser workflows with local application and isolated emulators |
+| `npm run test:watch` | Watch unit tests during development |
+| `npm run lint` | Check source quality using selected project's lint tooling |
+| `npm run build` | Produce optimized local application bundle; building is separate from deployment |
+| `npm run preview` | Serve built bundle locally against development emulators |
+| `npm run data:seed` | Load representative synthetic records into development emulators |
+| `npm run data:reset` | Reset development emulator data and restore sample records |
+| `npm run check` | Execute source checks, test suite and build verification |
+
+Test commands follow the worker-m execution policy in AGENTS.md. Local profiles connect explicitly to emulated services. Hosted profile configuration and deployment commands are introduced when hosted environments become part of the development scope.
+
 ### Minimum domain interfaces
 
 | Entity | Responsibility |
@@ -261,11 +288,9 @@ Implement incrementally:
 2. Authentication, account setup, ownership rules and catalogue.
 3. Trade legs, execution recording, sizing and P&L.
 4. Strategies, journal filters, responsive polish and export.
-5. Emulator-backed end-to-end validation and staging release.
+5. Complete local end-to-end validation and prototype review.
 
-Use separate development, staging and production Firebase projects. Production release requires passing domain, security and critical browser tests.
-
-No existing application or data migrations: workspace currently empty. Keep future migrations explicit through schema versions.
+Initial work delivers a locally runnable prototype. Hosted environment setup and release publication follow local prototype review as separate work. Release procedures follow [project governance](../AGENTS.md).
 
 First release succeeds when independent users can configure instruments, record realistic execution sequences, link strategies, understand calculation sources and recover saved records reliably on mobile and desktop.
 
