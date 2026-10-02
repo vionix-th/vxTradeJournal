@@ -6,9 +6,10 @@ const selected = process.argv[2] ?? 'all';
 const commands = {
   all: [['vitest', 'run', '--config', 'vitest.config.js', '--project', 'integration'], ['playwright', 'test', '--config', 'playwright.config.js']],
   integration: [['vitest', 'run', '--config', 'vitest.config.js', '--project', 'integration']],
+  cli: [['vitest', 'run', '--config', 'vitest.config.js', '--project', 'integration', 'tests/integration/cli.test.js']],
   e2e: [['playwright', 'test', '--config', 'playwright.config.js']],
 };
-if (!commands[selected]) throw new Error('Usage: node scripts/test.js all|integration|e2e');
+if (!commands[selected]) throw new Error('Usage: node scripts/test.js all|integration|cli|e2e');
 const emulator = spawn('node', ['scripts/emulators.js', '--profile', 'auto'], { stdio: 'inherit', env: { ...process.env, VXJ_PROFILE: 'auto' } });
 let stopping = false;
 function stop(signal = 'SIGTERM') {

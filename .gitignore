@@ -1,6 +1,7 @@
 node_modules/
 dist/
 dist-prod/
+dist-skill/
 coverage/
 playwright-report/
 test-results/

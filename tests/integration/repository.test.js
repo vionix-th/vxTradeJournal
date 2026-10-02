@@ -109,6 +109,7 @@ describe("transactional repository", () => {
     const saved = await repo.saveTrade(t, "same-op");
     const retried = await repo.saveTrade(t, "same-op");
     expect(retried.revision).toBe(saved.revision);
+    await expect(repo.saveTrade({ ...t, review: "Different intent" }, "same-op")).rejects.toMatchObject({ name: "ConflictError" });
     const edited = await repo.saveTrade({ ...saved, review: "New" }, "edit");
     await expect(
       repo.saveTrade({ ...saved, review: "Old" }, "stale"),

@@ -1,6 +1,7 @@
 import { icon } from "./icons.js";
 import { calculateTrade, money } from "../domain/journal.js";
 import { filterJournal, aggregateAccount, journalOverview } from "../application/journal.js";
+import { removeChild } from "../application/operations.js";
 import {
   accountEditor,
   instrumentEditor,
@@ -513,10 +514,8 @@ export function tradeView(ui, id) {
                   !confirm("Delete execution and recompute subsequent history?")
                 )
                   return;
-                const next = structuredClone(t);
-                next.executions = next.executions.filter((r) => r.id !== e.id);
                 await ui.action(
-                  () => ui.repo.saveTrade(next),
+                  () => ui.repo.saveTrade(removeChild(t, "executions", e.id)),
                   () => ui.go("trade", id, true),
                 );
               },
@@ -554,10 +553,8 @@ export function tradeView(ui, id) {
             "Delete adjustment",
             async () => {
               if (!confirm("Delete cash adjustment?")) return;
-              const next = structuredClone(t);
-              next.adjustments = next.adjustments.filter((r) => r.id !== a.id);
               await ui.action(
-                () => ui.repo.saveTrade(next),
+                () => ui.repo.saveTrade(removeChild(t, "adjustments", a.id)),
                 () => ui.go("trade", id, true),
               );
             },

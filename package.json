@@ -10,6 +10,8 @@
     "dev": "node scripts/dev.js",
     "dev:test": "node scripts/dev.js --profile test",
     "emulators": "node scripts/emulators.js",
+    "cli": "node src/cli/index.js",
+    "skill:build": "node scripts/build-skill.js",
     "build": "vite build",
     "build:prod": "vite build --mode hosted",
     "preview:prod": "vite preview --mode hosted --host 127.0.0.1",
@@ -20,6 +22,8 @@
     "test:unit": "vitest run --config vitest.config.js --project unit",
     "test:integration": "node scripts/test.js integration",
     "test:e2e": "node scripts/test.js e2e",
+    "test:cli": "node scripts/test.js cli",
+    "test:skill": "node scripts/test-skill.js",
     "test:watch": "vitest --config vitest.config.js --project unit",
     "lint": "eslint .",
     "data:seed": "node scripts/data.js seed",
@@ -43,6 +47,7 @@
     "eslint": "^10.11.0",
     "firebase-tools": "^15.32.1",
     "globals": "^16.5.0",
+    "esbuild": "^0.28.2",
     "vite": "^8.3.1",
     "vitest": "^5.0.3"
   }

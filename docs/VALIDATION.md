@@ -2,6 +2,25 @@
 
 Validated on 1 October 2026. Application version: `0.1.0`. Hosted deployment and release publication remain separate work after prototype review, as specified in [PRD delivery defaults](PRD.md#5-delivery-and-release-defaults).
 
+## Agent CLI and portable skill — 1 October 2026
+
+`worker-m` executed failing, passing and regression stages for shared operations, command contracts, private sessions, authentication and CLI integration. The orchestrator owned test design, core implementation, integration and result evaluation. Supporting session-store, packaging and skill-documentation work was delegated with explicit file ownership.
+
+Final commands passed:
+
+- `npm run check`: lint, 55 unit tests, 19 emulator integration tests, 15 Chromium browser tests, and the local application build.
+- `npm run build:prod`: successful hosted build. Vite retains its advisory for a roughly 645 kB minified main JavaScript chunk.
+- `npm run test:skill`: generated the portable distribution, installed its locked runtime dependencies into an isolated temporary skill directory, verified commands and references from an unrelated working directory, and passed all four CLI emulator workflow scenarios through that installed executable.
+- The official `quick_validate.py` passed for authored and generated skills. Its PyYAML dependency was installed only in a temporary environment, which was removed afterward. An independent read-only skill evaluation checked command contracts, missing FX, historical correction, retry handling and hosted export instructions.
+
+CLI coverage includes registration and refreshed sessions across processes, verified-email writes, separate users/profiles, secret exclusion, private files and symlink rejection, serialized session updates, stable create IDs, parent revision conflicts, matching retry receipts, rejection of changed retry input, calculation previews, snapshot correction fingerprints, historical snapshots, archives, settings, multi-leg short/manual outcomes, incomplete FX, currency-pair rate clearing, cash adjustments, output-file overwrite handling and cascading trade deletion.
+
+Independently derived fixtures include linear gross `2 × (12 − 10) = 4 USD`, less a `1 USD` fee for net `3 USD`; correcting point value to `2` produces `7 USD` net. A separate multi-leg fixture realizes short gross `2 × (20 − 18) = 4 USD`, converted at `0.8` to `3.2 EUR`, plus `3.25 EUR` manual gross and a `0.05 EUR` adjustment, for final net `6.5 EUR`. Missing foreign/manual results remain incomplete until explicitly corrected.
+
+Rendered trade forms were reviewed at 375, 996 and 1280 CSS pixels, plus the journal at 320 pixels. Labels, units, disclosure content and save actions remain readable without page overflow. Existing tooltip keyboard/touch, layout, draft-preservation and complete browser workflow regressions passed; this run supersedes the earlier production-preparation report's tooltip failures.
+
+No hosted records, credentials, deployment, release tag or release version were changed. Live production authentication/email delivery and hosted persistence remain unverified. The application/export schema and calculation versions remain `1`. Saved sessions require macOS/Linux private file semantics; crashed-process locks fail with an explicit recovery instruction. The generated distribution is under `dist-skill/vx-trade-journal`; install dependencies with `npm ci --omit=dev` after copying it to an agent skill directory.
+
 ## Executed checks
 
 A `worker-m` executed failing, passing and regression stages. The orchestrator designed tests, implemented behavior and evaluated results.

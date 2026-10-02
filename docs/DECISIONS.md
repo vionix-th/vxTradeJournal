@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-01 — Agent CLI and portable skill
+
+Expose website-equivalent journal operations through a Node.js CLI that reuses application operations, calculations and Firebase persistence. Maintain authored skill guidance under `skills/vx-trade-journal`; generate the portable installable distribution at `dist-skill/vx-trade-journal`. Bundle project-owned JavaScript and install runtime dependencies with npm so the installed skill works outside the source repository. Use Firebase user refresh tokens in profile-separated private files; do not persist passwords or ID tokens. CLI mutations require stable IDs/revisions and trade operation IDs, with explicit dry-run and snapshot preview flows. Do not create a server API, admin capability, import workflow or billing-dependent service for this interface. Recover stale locks through an explicit safe error rather than racy automatic deletion.
+
 ## 2026-10-01 — Local prototype implementation
 
 Use native JavaScript ES modules and semantic HTML with reusable form builders. The first-release editors and journal do not require framework lifecycle or routing abstractions; Vite supplies development and static build tooling. Keep domain calculations and application validation independent of Firebase and the DOM. Financial values use decimal.js with 40 significant digits, persisted decimal strings, and display-only monetary rounding.

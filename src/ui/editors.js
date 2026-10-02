@@ -9,6 +9,7 @@ import {
   money,
 } from "../domain/journal.js";
 import { exportJournal } from "../application/journal.js";
+import { newTrade, editTrade, replaceLegs, putExecution, putAdjustment, correctSnapshot } from "../application/operations.js";
 import {
   el,
   button,
@@ -131,8 +132,7 @@ export function instrumentEditor(
       const i = normalizeInstrument({ ...instrument, ...values(f), id });
       if (correction) {
         requireValue(previewed, "Preview correction before saving");
-        const next = structuredClone(correction.trade);
-        next.legs.find((l) => l.id === correction.legId).snapshot = i;
+        const next = correctSnapshot(correction.trade, correction.legId, i);
         await ui.commit(
           () => ui.repo.saveTrade(next, form.operationId),
           () => ui.go("trade", next.id, true),
@@ -241,9 +241,8 @@ export function instrumentEditor(
         "Preview correction",
         () => {
           try {
-            const next = structuredClone(correction.trade);
-            next.legs.find((l) => l.id === correction.legId).snapshot =
-              normalizeInstrument({ ...instrument, ...values(f), id });
+            const next = correctSnapshot(correction.trade, correction.legId,
+              normalizeInstrument({ ...instrument, ...values(f), id }));
             const calc = calculateTrade(next);
             out.replaceChildren(
               notice(
@@ -356,7 +355,10 @@ export function tradeEditor(ui, original = null, disclosureState = new Map()) {
     "Choose an instrument and direction. Add a trade plan when needed.",
     "Save trade",
     async () => {
-      const t = collect();
+      const collected = collect();
+      const t = isExisting
+        ? replaceLegs(editTrade(draft, collected, ui.data), collected.legs, ui.data)
+        : newTrade(collected, ui.data);
       await ui.commit(
         () => ui.repo.saveTrade(t, form.operationId),
         () => ui.go("trade", t.id, true),
@@ -576,10 +578,7 @@ export function executionEditor(ui, trade, legId, existing = null) {
         manualGross: nullable(v.manualGross),
         sequence: record.sequence,
       };
-      const next = structuredClone(trade);
-      const at = next.executions.findIndex((r) => r.id === id);
-      if (at >= 0) next.executions[at] = e;
-      else next.executions.push(e);
+      const next = putExecution(trade, e, !!existing);
       await ui.commit(
         () => ui.repo.saveTrade(next, form.operationId),
         () => ui.go("trade", trade.id, true),
@@ -680,10 +679,7 @@ export function adjustmentEditor(ui, trade, existing = null) {
         rate: nullable(v.rate),
         timestamp: new Date(`${v.timestamp}Z`).toISOString(),
       };
-      const next = structuredClone(trade);
-      const at = next.adjustments.findIndex((r) => r.id === id);
-      if (at >= 0) next.adjustments[at] = a;
-      else next.adjustments.push(a);
+      const next = putAdjustment(trade, a, !!existing);
       await ui.commit(
         () => ui.repo.saveTrade(next, form.operationId),
         () => ui.go("trade", trade.id, true),

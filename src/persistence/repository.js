@@ -14,9 +14,10 @@ import {
   SCHEMA_VERSION,
 } from "../domain/journal.js";
 import { prepareTrade } from "../application/journal.js";
+import { fingerprint } from "../application/fingerprint.js";
 export class ConflictError extends Error {
-  constructor() {
-    super("Save conflict. Reload current records, then reconcile changes.");
+  constructor(message = "Save conflict. Reload current records, then reconcile changes.") {
+    super(message);
     this.name = "ConflictError";
   }
 }
@@ -49,6 +50,20 @@ export class Repository {
     return (
       await getDocs(collection(this.db, "users", this.uid, "trades", tid, type))
     ).docs.map((d) => d.data());
+  }
+  async getEntity(type, id) {
+    const result = await getDoc(this.ref(type, id));
+    return result.exists() ? result.data() : null;
+  }
+  async getOperation(tid, operationId) {
+    const result = await getDoc(this.child(tid, "operations", operationId));
+    return result.exists() ? result.data() : null;
+  }
+  async getSettings() {
+    return (await this.getEntity("settings", "preferences")) || {
+      id: "preferences", theme: "system", timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      defaultAccount: null, revision: 0,
+    };
   }
   async getTrade(id) {
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -130,8 +145,9 @@ export class Repository {
       return saved;
     });
   }
-  async saveTrade(input, operationId = crypto.randomUUID()) {
+  async saveTrade(input, operationId = crypto.randomUUID(), requestFingerprint = null) {
     requireValue(this.verified(), "Verify email before saving");
+    const requestHash = requestFingerprint || await fingerprint(input);
     const previous = await this.getTrade(input.id);
     const receipt = this.child(input.id, "operations", operationId);
     const ref = this.ref("trades", input.id);
@@ -141,7 +157,11 @@ export class Repository {
         tx.get(ref),
         tx.get(this.ref("accounts", input.accountId)),
       ]);
-      if (receiptDoc.exists()) return null;
+      if (receiptDoc.exists()) {
+        if (receiptDoc.data().requestFingerprint && receiptDoc.data().requestFingerprint !== requestHash)
+          throw new ConflictError("Operation ID already used with different input");
+        return null;
+      }
       const old = current.exists() ? current.data() : null;
       if (
         (old?.revision || 0) !== (input.revision || 0) ||
@@ -210,6 +230,7 @@ export class Repository {
       tx.set(receipt, {
         id: operationId,
         uid: this.uid,
+        requestFingerprint: requestHash,
         revision: saved.revision,
         createdAt: saved.updatedAt,
       });

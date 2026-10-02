@@ -28,6 +28,14 @@ Settings control display timezone/theme and export all owned journal source data
 
 Implementation decisions: [docs/DECISIONS.md](docs/DECISIONS.md). Executed checks and acceptance coverage: [docs/VALIDATION.md](docs/VALIDATION.md). Initial delivery is a local prototype; hosting and release publication follow prototype review.
 
+## Agent CLI and skill
+
+The CLI exposes the same owned journal workflows as the website through the shared domain and Firebase repository. Run it from the source checkout with `npm run cli -- help`; network commands require an explicit `--profile dev|test|auto|prod`. Use emulator profiles for synthetic work. Production commands use the authenticated user's hosted Firebase account and records.
+
+Build the distributable skill with `npm run skill:build`. The authored skill lives in [`skills/vx-trade-journal`](skills/vx-trade-journal); copy the generated `dist-skill/vx-trade-journal` directory into the agent's skill directory, then run `npm ci --omit=dev` inside the copied directory. The installed CLI runs from any working directory with Node.js 22.13+ on macOS or Linux.
+
+Authentication setup reads credentials through stdin or a hidden terminal prompt. Sessions are stored per profile under `VXJ_CONFIG_DIR`, `XDG_CONFIG_HOME`, or `~/.config/vx-trade-journal`, with private file permissions. The CLI never stores passwords or ID tokens. See the installed skill's `SKILL.md` and references for command schemas, mutation safeguards and workflow examples.
+
 ## Production Firebase
 
 Production project ID is `vionixtradejournal`, display name `vionix-trade-journal`, project number `389058969816`. The default Firestore database is in `asia-east1`. The project uses Spark, email/password Auth, and static Hosting. `.firebaserc` records the `prod` alias; deployment commands also name the project explicitly.
