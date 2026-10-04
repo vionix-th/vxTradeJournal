@@ -1,3 +1,4 @@
+import { MAX_NEW_TRADE_LEGS } from "../domain/leg-capacity.js";
 const string = (extra = {}) => ({ type: "string", ...extra });
 const identifier = string({ pattern: "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$" });
 const decimal = string({ pattern: "^-?\\d+(\\.\\d+)?$", maxLength: 100 });
@@ -52,9 +53,9 @@ add("strategies trades", "linkedTrades", "List trade summaries linked to a strat
 add("journal list", "journal", "Filter journal summaries, ordered by newest activity", { options: ["search", "account", "market", "status", "strategy", "tag", "from", "to", "page", "page-size", "timezone"] });
 add("journal overview", "overview", "Counts and one-account realized results", { options: ["account"] });
 add("trades get", "tradeRead", "Read complete source records and current calculations", { options: ["id"], requiredOptions: ["id"] });
-add("trades create", "tradeWrite", "Create a single- or multi-leg trade", {
+add("trades create", "tradeWrite", "Create a trade with up to six legs", {
   action: "create", options: ["operation-id", ...mutationOptions], requiredOptions: ["operation-id"], requiresInput: true,
-  input: object({ id: identifier, accountId: identifier, legs: { type: "array", items: object(leg, ["instrumentId", "direction"]), minItems: 1, maxItems: 20 }, ...context }, ["id", "accountId", "legs"]),
+  input: object({ id: identifier, accountId: identifier, legs: { type: "array", items: object(leg, ["instrumentId", "direction"]), minItems: 1, maxItems: MAX_NEW_TRADE_LEGS }, ...context }, ["id", "accountId", "legs"]),
 });
 add("trades update", "tradeWrite", "Edit context or link/unlink a strategy", { action: "update", options: ["id", ...tradeOptions], requiredOptions: ["id", "revision", "operation-id"], input: object(context), requiresInput: true });
 add("trades delete", "tradeDelete", "Delete a trade and all children", { options: ["id", "revision", "yes", "dry-run"], requiredOptions: ["id", "revision", "yes"] });

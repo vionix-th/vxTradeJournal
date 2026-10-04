@@ -2,6 +2,8 @@
 
 These examples use the dev emulator profile and synthetic records. Resolve current field contracts with `schema` before use; keep generated IDs and returned revisions from the CLI response.
 
+New trades support up to six legs; adding a leg cannot exceed that limit. Earlier larger records can be read, corrected or reduced, but cannot expand above six. This conservative capacity preserves atomic persistence and ownership checks.
+
 Planned quantities and fills must match the leg snapshot's quantity increment. An optional plan may omit quantity; a supplied off-increment quantity is rejected, including when correcting a snapshot's increment. Read the historical snapshot rather than assuming the current catalogue definition applies.
 
 ## Record a trade

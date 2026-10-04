@@ -1,0 +1,22 @@
+import { test, expect } from "@playwright/test";
+import { setup } from "./fixtures.js";
+test("new trade leg controls enforce the same atomic capacity as the CLI", async ({ page, request }) => {
+  await setup(page, request);
+  await page.getByRole("button", { name: "Instruments", exact: true }).click();
+  await page.getByRole("button", { name: "New instrument", exact: true }).click();
+  await page.getByLabel("Instrument name", { exact: true }).fill("Capacity instrument");
+  await page.getByLabel("Symbol", { exact: true }).fill("CAP");
+  await page.getByRole("button", { name: "Save instrument", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Capacity instrument", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Journal", exact: true }).click();
+  await page.getByRole("button", { name: "New trade", exact: true }).click();
+  const add = page.getByRole("button", { name: "Add leg", exact: true });
+  for (let index = 1; index < 6; index++) await add.click();
+  await expect(add).toBeDisabled();
+  await expect(page.getByText("Maximum 6 legs per new trade.", { exact: true })).toBeVisible();
+  await page.getByRole("group", { name: "Leg 6", exact: true }).getByRole("button", { name: "Remove leg", exact: true }).click();
+  await expect(add).toBeEnabled();
+  await add.click();
+  await page.getByRole("button", { name: "Save trade", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Add execution", exact: true })).toHaveCount(6);
+});

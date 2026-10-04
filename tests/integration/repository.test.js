@@ -52,6 +52,25 @@ async function fixtures() {
   return { account, instrument, strategy };
 }
 describe("transactional repository", () => {
+  it("saves six distinct legs atomically with first-account lock, strategy and complete history", async () => {
+    const { account, instrument, strategy } = await fixtures();
+    const instruments = await Promise.all(Array.from({ length: 6 }, (_, index) =>
+      repo.saveEntity("instruments", { ...instrument, id: `capacity-${index}`, revision: 0 })));
+    const source = createTrade({ id: "capacity", account, strategy, instruments: instruments.map((item) => ({ instrument: item, direction: "long" })) });
+    source.executions = source.legs.flatMap((leg, index) => ["entry", "exit"].map((kind, offset) => ({
+      id: `${leg.id}-${kind}`, legId: leg.id, kind, quantity: "1", price: offset ? "12" : "10",
+      fees: "0", feeCurrency: "USD", timestamp: `2026-01-0${offset + 1}T00:00:00Z`, sequence: index * 2 + offset,
+    })));
+    let saved = await repo.saveTrade(source, "capacity-create");
+    expect(saved.summary.accountNet).toBe("12");
+    expect((await repo.getEntity("accounts", account.id)).hasTrades).toBe(true);
+    saved = await repo.saveTrade({ ...saved, legs: saved.legs.map((leg, index) => index ? leg : { ...leg, snapshot: { ...leg.snapshot, pointValue: "2" } }) }, "capacity-correct");
+    expect(saved.summary.accountNet).toBe("14");
+    await repo.deleteTrade(saved);
+    expect(await repo.getTrade(saved.id)).toBeNull();
+    for (const type of ["legs", "executions", "adjustments", "operations"])
+      expect(await repo.listChildren(saved.id, type)).toEqual([]);
+  });
   it("rejects rebinding persisted leg while retaining explicit snapshot corrections", async () => {
     const { account, instrument } = await fixtures();
     const replacement = await repo.saveEntity("instruments", { ...instrument, id: "other", revision: 0, pointValue: "10" });

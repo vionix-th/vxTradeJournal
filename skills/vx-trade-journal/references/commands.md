@@ -44,7 +44,7 @@ This inventory is generated from the executable catalogue. Required options are 
 | `journal list` | Filter journal summaries, ordered by newest activity | `--profile` |
 | `journal overview` | Counts and one-account realized results | `--profile` |
 | `trades get` | Read complete source records and current calculations | `--profile`, `--id` |
-| `trades create` | Create a single- or multi-leg trade | `--profile`, `--operation-id`, `--input` |
+| `trades create` | Create a trade with up to six legs | `--profile`, `--operation-id`, `--input` |
 | `trades update` | Edit context or link/unlink a strategy | `--profile`, `--id`, `--revision`, `--operation-id`, `--input` |
 | `trades delete` | Delete a trade and all children | `--profile`, `--id`, `--revision`, `--yes` |
 | `legs list` | List legs of a trade | `--profile`, `--trade` |

@@ -1,3 +1,4 @@
+import { assertLegCapacity } from "../domain/leg-capacity.js";
 import {
   normalizeStrategy,
   D,
@@ -14,6 +15,7 @@ import {
  */
 export function prepareTradeResult(input, data, previous = null) {
   let trade = structuredClone(input);
+  assertLegCapacity(trade.legs, previous?.legs);
   const account = data.accounts.find((a) => a.id === trade.accountId);
   requireValue(account, "Trading account does not belong to user");
   requireValue(

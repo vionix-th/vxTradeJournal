@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { parseArguments, validateInput, catalogue } from "../../src/cli/catalogue.js";
 describe("agent command contract", () => {
+  it("rejects new trade payloads above atomic six-leg capacity", () => {
+    const input = { id: "t", accountId: "a", legs: Array.from({ length: 7 }, () => ({ instrumentId: "i", direction: "long" })) };
+    expect(() => validateInput("trades create", input)).toThrow(/item count/i);
+    expect(validateInput("trades create", { ...input, legs: input.legs.slice(0, 6) }).legs).toHaveLength(6);
+  });
   it("requires explicit environments and rejects unexpected options", () => {
     expect(() => parseArguments(["accounts", "list"])).toThrow(/profile/i);
     expect(() => parseArguments(["accounts", "list", "--profile", "prod", "--uid", "someone-else"])).toThrow(/option/i);

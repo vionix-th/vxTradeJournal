@@ -1,3 +1,4 @@
+import { assertLegCapacity } from "../domain/leg-capacity.js";
 import { createTrade, createLeg, normalizeInstrument, validateTrade, timestamp, requireValue } from "../domain/journal.js";
 
 const copy = (value) => structuredClone(value);
@@ -40,6 +41,7 @@ export function editTrade(trade, patch, data) {
 }
 
 export function replaceLegs(trade, legs, data) {
+  assertLegCapacity(legs, trade.legs);
   const next = copy(trade);
   next.legs = legs.map((leg) => {
     const old = trade.legs.find((item) => item.id === leg.id);

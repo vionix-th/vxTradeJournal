@@ -1,3 +1,4 @@
+import { assertLegCapacity } from "./leg-capacity.js";
 import Decimal from "decimal.js";
 /** All monetary/quantity inputs and outputs remain decimal strings. */
 export const D = Decimal.clone({ precision: 40, toExpNeg: -40, toExpPos: 40 });
@@ -256,6 +257,7 @@ export function createTrade({ id, account, instruments, strategy = null }) {
   const a = normalizeAccount(account);
   requireValue(!a.archived, "Archived account cannot start trades");
   requireValue(instruments?.length > 0, "At least one leg required");
+  assertLegCapacity(instruments);
   const legs = instruments.map(
     ({ id: legId, instrument, direction, planning }, index) => createLeg({
       id: legId || `${id}-leg-${index + 1}`,

@@ -1,3 +1,4 @@
+import { MAX_NEW_TRADE_LEGS } from "../domain/leg-capacity.js";
 import {
   PRESETS,
   normalizeInstrument,
@@ -293,7 +294,7 @@ export function tradeEditor(ui, original = null, disclosureState = new Map()) {
       planning: {},
     });
   const blocks = [];
-  let form;
+  let form, addLegAction;
   const collect = () => {
     const v = values(form.node);
     const account = ui.data.accounts.find(
@@ -458,6 +459,7 @@ export function tradeEditor(ui, original = null, disclosureState = new Map()) {
   }
   function updatePlanning() {
     updatePlanExplanation();
+    if (addLegAction) addLegAction.disabled = blocks.length >= MAX_NEW_TRADE_LEGS;
     combined.setVisible(blocks.length >= 2);
     const t = collect();
     combined.setUnit(t.accountCurrency);
@@ -489,9 +491,7 @@ export function tradeEditor(ui, original = null, disclosureState = new Map()) {
     }
   }
   for (const l of draft.legs) addLeg(l);
-  append(form.body,
-    el("div", { class: "actions full leg-actions" },
-    button(
+  addLegAction = button(
       "Add leg",
       () => {
         addLeg({
@@ -507,7 +507,11 @@ export function tradeEditor(ui, original = null, disclosureState = new Map()) {
         updatePlanning();
       },
       "button secondary",
-    ),
+    );
+  append(form.body,
+    el("p", { class: "help full" }, `Maximum ${MAX_NEW_TRADE_LEGS} legs per new trade.`),
+    el("div", { class: "actions full leg-actions" },
+    addLegAction,
     button(
       "Create instrument",
       () => {

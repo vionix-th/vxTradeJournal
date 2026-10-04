@@ -14,7 +14,7 @@ First release prioritizes accurate execution records, straightforward journaling
 
 - Private user accounts and multiple trading accounts.
 - Editable instrument catalogue per user.
-- Single-instrument and multi-leg trades.
+- Single-instrument and multi-leg trades. New trades and leg additions have a shared website/CLI maximum of six legs, verified with atomic first-account locking, a strategy link and entry/exit history for every distinct instrument. Earlier larger records retain calculation, correction and removal access without expansion above this capacity. Do not weaken ownership rules or split creation into partial writes to increase capacity.
 - Partial fills, scaled entries and partial exits.
 - Long and short positions.
 - Linear risk sizing and weighted-average realized P&L.

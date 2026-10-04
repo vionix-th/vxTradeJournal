@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-04 — Bound atomic trade creation to verified capacity
+
+Limit new trades and additions to six legs in shared operations, persistence preparation, CLI contracts and the editor. Emulator probes cover distinct instruments, a strategy, first-account locking, entry/exit history, snapshot correction and cascading deletion: six passes; eight and higher fail rules service-call limits. Six is a conservative verified capacity, not an asserted exact platform ceiling. Preserve earlier larger records for calculation, corrections and reductions without expansion. Keep atomic writes and ownership checks; no schema conversion or reset is required.
+
 ## 2026-10-04 — Share currency-pair editing transitions
 
 One pure UI transition determines the pair, retained rate and automatic/manual state for planning, fee and adjustment controls and fixed result-currency controls. An unchanged foreign pair retains its rate, a changed foreign pair clears it, and matching currencies use one. Domain conversion and save validation remain authoritative and independent of the DOM.
