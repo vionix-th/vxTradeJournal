@@ -47,7 +47,7 @@ describe("journal route policy", () => {
     expect(policy.complete({ id: "trade-1" }, retained)).toEqual(destination("trade", "trade-1"));
   });
 
-  it("owns trade-child transitions while retaining the current snapshot cancellation contract", () => {
+  it("owns trade-child transitions and reopens cancelled snapshot context", () => {
     const arg = { tradeId: "trade-1", legId: "leg-1", executionId: "execution-1", adjustmentId: "adjustment-1" };
     for (const route of ["executionEditor", "adjustmentEditor", "snapshotEditor"]) {
       expect(routePolicies[route].refresh(arg)).toEqual(destination("trade", "trade-1"));
@@ -55,7 +55,7 @@ describe("journal route policy", () => {
     }
     expect(routePolicies.executionEditor.cancel(arg)).toEqual(destination("trade", "trade-1"));
     expect(routePolicies.adjustmentEditor.cancel(arg)).toEqual(destination("trade", "trade-1"));
-    expect(routePolicies.snapshotEditor.cancel(arg)).toEqual(destination("trade", "trade-1"));
+    expect(routePolicies.snapshotEditor.cancel(arg)).toEqual(destination("trade", { id: "trade-1", reopenLegId: "leg-1" }));
   });
 
   it("owns settings destinations and identities used to retire completed editors", () => {

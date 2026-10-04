@@ -6,7 +6,6 @@ import "./styles.css";
 import { icon, brand, authFrame } from "./icons.js";
 import { skillDownloadPanel } from "./skill-download.js";
 import { EditorLifecycle } from "./editor-lifecycle.js";
-import { TradeEditorSession } from "./trade-editor-session.js";
 import { routePolicies } from "./route-policy.js";
 import { recentInstruments } from "../application/instruments.js";
 import {
@@ -22,69 +21,15 @@ import {
 import { auth, db, useEmulators } from "../persistence/firebase.js";
 import { Repository } from "../persistence/repository.js";
 import { el, button, field, values, header, notice } from "./components.js";
-import {
-  accountEditor,
-  instrumentEditor,
-  strategyEditor,
-  tradeEditor,
-  executionEditor,
-  adjustmentEditor,
-  settingsEditor,
-} from "./editors.js";
-import {
-  journalView,
-  accountsView,
-  instrumentsView,
-  strategiesView,
-  tradeView,
-} from "./views.js";
 const root = document.getElementById("app");
-const currentEntity = (ui, type, record) => record?.id
-  ? ui.data[type].find((item) => item.id === record.id) || record
-  : record;
-const withTrade = (ui, arg, render) => {
-  const trade = ui.data.trades.find((item) => item.id === arg.tradeId);
-  if (trade) render(trade);
-  else tradeView(ui, arg.tradeId);
-};
-const routes = {
-  journal: journalView,
-  accounts: accountsView,
-  instruments: instrumentsView,
-  strategies: strategiesView,
-  trade: tradeView,
-  accountEditor: (ui, arg) => accountEditor(ui, currentEntity(ui, "accounts", arg?.first ? null : arg), !!arg?.first && !ui.data.accounts.length),
-  instrumentEditor: (ui, arg) => instrumentEditor(ui, currentEntity(ui, "instruments", arg),
-    ui.lifecycle.current.parent ? (saved) => ui.lifecycle.returnParent(saved) : null),
-  strategyEditor: (ui, arg) => strategyEditor(ui, currentEntity(ui, "strategies", arg)),
-  tradeEditor: (ui, arg) => {
-    const session = arg?.session || new TradeEditorSession({
-      baseRecord: currentEntity(ui, "trades", arg), data: ui.data,
-      defaultInstrumentId: ui.recentInstruments().find((instrument) => !instrument.archived && !instrument.draft)?.id,
-    });
-    session.setContext(ui.data);
-    ui.arg = { session };
-    ui.lifecycle.current.arg = ui.arg;
-    tradeEditor(ui, session);
-  },
-  executionEditor: (ui, arg) => withTrade(ui, arg, (trade) => executionEditor(ui, trade, arg.legId, trade.executions.find((item) => item.id === arg.executionId))),
-  adjustmentEditor: (ui, arg) => withTrade(ui, arg, (trade) => adjustmentEditor(ui, trade, trade.adjustments.find((item) => item.id === arg.adjustmentId))),
-  snapshotEditor: (ui, arg) => withTrade(ui, arg, (trade) => instrumentEditor(ui,
-    trade.legs.find((leg) => leg.id === arg.legId).snapshot,
-    () => ui.go("trade", { id: arg.tradeId, reopenLegId: arg.legId }, true),
-    { trade, legId: arg.legId })),
-  settings: settingsEditor,
-};
 class JournalUI {
   constructor() {
-    this.lifecycle = new EditorLifecycle(root, (route, arg) => this.renderRoute(route, arg));
+    this.lifecycle = new EditorLifecycle(root, (route, arg) => this.renderRoute(route, arg), routePolicies);
     this.dirty = false;
     this.filters = {};
     this.page = 1;
     this.data = null;
     this.repo = null;
-    this.route = "journal";
-    this.arg = null;
     this.loadGeneration = 0;
     this.desktopMedia = window.matchMedia("(min-width: 701px)");
     this.desktopMedia.addEventListener("change", (event) => {
@@ -103,8 +48,6 @@ class JournalUI {
   async loadUser(user) {
     const generation = ++this.loadGeneration;
     this.lifecycle.reset();
-    this.route = "journal";
-    this.arg = null;
     this.data = null;
     this.repo = null;
     this.filters = {};
@@ -233,16 +176,17 @@ class JournalUI {
   go(route, arg = null, force = false, options = {}) {
     return this.lifecycle.go(route, arg, { ...options, force });
   }
+  retainArg(arg) {
+    this.lifecycle.retainArg(arg);
+  }
   renderRoute(route, arg) {
-    this.route = route;
-    this.arg = arg;
     const navRoute = routePolicies[route]?.navigationSection || route;
     for (const n of root.querySelectorAll("[data-route]")) {
       if (n.dataset.route === navRoute) n.setAttribute("aria-current", "page");
       else n.removeAttribute("aria-current");
     }
     try {
-      routes[route](this, arg);
+      routePolicies[route].render(this, arg);
     } catch (e) {
       this.show(notice(e.message, "error"));
     }
@@ -253,7 +197,7 @@ class JournalUI {
     this.main.querySelector("h1")?.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   }
-  form(title, description, saveLabel, handler, onCancel, { operationId = crypto.randomUUID() } = {}) {
+  form(title, description, saveLabel, handler, { operationId = crypto.randomUUID() } = {}) {
     const errors = el("div", { class: "full form-errors" });
     const body = el("div", { class: "panel form-grid editor-fields" });
     const submit = el("button", { type: "submit", class: "button" }, saveLabel);
@@ -268,7 +212,7 @@ class JournalUI {
         { class: "actions editor-actions" },
         button(
           "Cancel",
-          () => this.lifecycle.cancel(onCancel),
+          () => this.lifecycle.cancelEditor(),
           "button secondary",
         ),
         submit,
@@ -309,7 +253,7 @@ class JournalUI {
     });
     return state;
   }
-  async commit(action, after) {
+  async commit(action, after = null) {
     const generation = this.loadGeneration;
     return this.lifecycle.run(action, async (saved) => {
       if (generation !== this.loadGeneration) return;
@@ -318,7 +262,8 @@ class JournalUI {
       this.dirty = false;
       this.data = data;
       this.theme();
-      await after(saved);
+      if (after) await after(saved);
+      else this.lifecycle.completeEditor(saved);
     });
   }
   async action(action, after) {
@@ -332,8 +277,7 @@ class JournalUI {
     if (!this.canLeave()) return;
     const generation = this.loadGeneration;
     const repo = this.repo;
-    const policy = routePolicies[this.route];
-    const refreshed = policy?.refresh(this.arg) || { route: this.route, arg: this.arg };
+    const refreshed = this.lifecycle.refreshDestination();
     try {
       await this.lifecycle.run(() => repo.load(), async (data) => {
         if (generation !== this.loadGeneration) return;

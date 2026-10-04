@@ -47,3 +47,23 @@ test("confirmed retained-trade reload returns to the unchanged saved trade", asy
   await page.getByRole("button", { name: "Edit trade", exact: true }).click();
   await expect(page.getByLabel("Entry rationale", { exact: true })).toHaveValue("Persisted rationale");
 });
+
+test("catalogue completion retires earlier editor entries for that record", async ({ page, request }) => {
+  await openDraft(page, request);
+  await page.getByRole("button", { name: "Instruments", exact: true }).click();
+  await page.getByRole("button", { name: "Edit instrument", exact: true }).click();
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await page.getByRole("button", { name: "Edit instrument", exact: true }).click();
+  await page.getByLabel("Instrument name", { exact: true }).fill("Completed catalogue record");
+  await page.getByRole("button", { name: "Save instrument", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Instruments", exact: true })).toBeVisible();
+  for (let step = 0; step < 2; step++) {
+    await page.evaluate(() => new Promise((resolve) => {
+      window.addEventListener("popstate", () => resolve(), { once: true });
+      history.back();
+    }));
+  }
+  await expect(page.getByRole("heading", { name: "Instruments", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Edit instrument", exact: true })).not.toBeVisible();
+  await expect(page.getByRole("heading", { name: "Completed catalogue record", exact: true })).toBeVisible();
+});

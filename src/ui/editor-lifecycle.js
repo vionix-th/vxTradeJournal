@@ -22,9 +22,10 @@ function restoreFocus(root, target) {
 
 /** Owns editor departure, suspended drafts, history and pending operation locks. */
 export class EditorLifecycle {
-  constructor(root, render) {
+  constructor(root, render, policies) {
     this.root = root;
     this.render = render;
+    this.policies = policies;
     this.position = history.state?.journalNavigation?.index ?? 0;
     this.entries = new Map();
     this.reset();
@@ -43,6 +44,7 @@ export class EditorLifecycle {
   }
 
   get busy() { return !!this.operation; }
+  get hasParent() { return !!this.current?.parent; }
   get dirty() { return this.editorDirty || !!this.current?.parent?.dirty; }
   set dirty(value) { this.editorDirty = value; }
 
@@ -52,7 +54,7 @@ export class EditorLifecycle {
       confirm("Unsaved changes will be discarded. Continue?");
   }
 
-  go(route, arg = null, { force = false, replace = this.busy, parent = null, dirty = false, focus = null } = {}) {
+  go(route, arg = null, { force = false, replace = false, parent = null, dirty = false, focus = null } = {}) {
     if (!force && !this.canLeave()) return false;
     const entry = {
       key: crypto.randomUUID(),
@@ -99,12 +101,19 @@ export class EditorLifecycle {
     this.restoreCurrentUrl();
   }
 
-  openChild(route, arg, { arg: parentArg, onSaved }) {
+  retainArg(arg) {
+    this.current.arg = arg;
+  }
+
+  refreshDestination() {
+    return this.policies[this.current.route].refresh(this.current.arg);
+  }
+
+  openChild(route, arg, { onSaved }) {
     const entry = this.current;
-    entry.arg = parentArg;
     entry.dirty = this.dirty;
     this.go(route, arg, { force: true, parent: {
-      entry, route: entry.route, arg: parentArg, dirty: entry.dirty, onSaved,
+      entry, route: entry.route, arg: entry.arg, dirty: entry.dirty, onSaved,
     } });
   }
 
@@ -112,28 +121,43 @@ export class EditorLifecycle {
     const parent = this.current.parent;
     const focus = this.current.returnFocus;
     if (saved) parent.onSaved?.(saved);
-    this.go(parent.route, parent.arg, { force: true, dirty: parent.dirty || !!saved, focus });
+    this.go(parent.route, parent.arg, { force: true, replace: true, dirty: parent.dirty || !!saved, focus });
   }
 
-  retireEditors(route, matches, destination, arg) {
-    const retired = new Set([...this.entries.values()]
-      .filter((entry) => entry.route === route && matches(entry.arg)));
-    for (const entry of this.entries.values()) {
-      if (!retired.has(entry) && !retired.has(entry.parent?.entry)) continue;
-      entry.route = destination;
-      entry.arg = arg;
+  completeEditor(saved) {
+    if (this.hasParent) return this.returnParent(saved);
+    const current = this.current;
+    const policy = this.policies[current.route];
+    const destination = policy.complete(saved, current.arg);
+    const identity = policy.identity(current.arg);
+    const retired = new Set([current]);
+    if (identity != null) {
+      for (const entry of this.entries.values()) {
+        if (entry.route === current.route && policy.identity(entry.arg) === identity) retired.add(entry);
+      }
+    }
+    const affected = [...this.entries.values()].filter((entry) => {
+      let ancestor = entry;
+      while (ancestor && !retired.has(ancestor)) ancestor = ancestor.parent?.entry;
+      return !!ancestor;
+    });
+    for (const entry of affected) {
+      entry.route = destination.route;
+      entry.arg = destination.arg;
       entry.dirty = false;
       entry.parent = null;
       entry.returnFocus = null;
     }
+    return this.go(destination.route, destination.arg, { force: true, replace: true });
   }
 
-  cancel(onCancel) {
-    if (!this.canLeave(!!this.current?.parent)) return;
+  cancelEditor() {
+    if (!this.canLeave(this.hasParent)) return;
     const focus = this.current?.returnFocus;
     this.editorDirty = false;
-    onCancel();
-    restoreFocus(this.root, focus);
+    if (this.hasParent) return this.returnParent();
+    const destination = this.policies[this.current.route].cancel(this.current.arg);
+    return this.go(destination.route, destination.arg, { force: true, focus });
   }
 
   pop(state) {

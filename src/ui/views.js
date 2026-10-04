@@ -304,7 +304,7 @@ export function tradeView(ui, idOrArg) {
             return;
           await ui.action(
             () => ui.repo.deleteTrade(t),
-            () => ui.go("journal", null, true),
+            () => ui.go("journal", null, true, { replace: true }),
           );
         },
         "button danger",
@@ -496,7 +496,7 @@ export function tradeView(ui, idOrArg) {
                   return;
                 await ui.action(
                   () => ui.repo.saveTrade(removeChild(t, "executions", e.id)),
-                  () => ui.go("trade", id, true),
+                  () => ui.go("trade", id, true, { replace: true }),
                 );
               },
               "button danger small",
@@ -536,7 +536,7 @@ export function tradeView(ui, idOrArg) {
               if (!confirm("Delete cash adjustment?")) return;
               await ui.action(
                 () => ui.repo.saveTrade(removeChild(t, "adjustments", a.id)),
-                () => ui.go("trade", id, true),
+                () => ui.go("trade", id, true, { replace: true }),
               );
             },
             "button danger small",

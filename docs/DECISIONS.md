@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-05 — Connect route policies to the editor lifecycle
+
+Complete the 2026-10-04 route-policy decision: descriptors now invoke actual renderers and own save, cancel, refresh and completed-editor identity. The application delegates transitions to the lifecycle; editors supply persistence actions without destination callbacks. Completion retires matching cached editors and their suspended descendants while preserving unrelated drafts. Replacement is explicit for saves, parent returns and mutation refreshes, rather than inferred from an operation lock. Browser regressions exercise real catalogue retirement and nested trade workflows.
+
 ## 2026-10-04 — Reconcile unknown fragments without guessing history direction
 
 Dirty editors reject foreign hash navigation while preserving live controls and draft state. The lifecycle replaces the transient fragment with the active application route and restores its managed navigation state; it does not infer Back versus Forward, push duplicate entries or leave a restoration lock set. This fallback preserves the editor and subsequent managed history on browsers exposing only the classic History API.

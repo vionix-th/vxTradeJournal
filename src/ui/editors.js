@@ -49,10 +49,8 @@ export function accountEditor(ui, account = null, first = false) {
               currency: account?.hasTrades ? account.currency : v.currency,
             }),
           ),
-        () => ui.go(first ? "journal" : "accounts", null, true),
       );
     },
-    () => ui.go("accounts"),
   );
   append(form.body,
     field("Account name", "name", account?.name, {
@@ -79,10 +77,8 @@ export function strategyEditor(ui, strategy = null) {
             "strategies",
             normalizeStrategy({ ...strategy, ...values(f), id }),
           ),
-        () => ui.go("strategies", null, true),
       );
     },
-    () => ui.go("strategies"),
   );
   append(form.body,
     field("Strategy name", "name", strategy?.name, {
@@ -102,7 +98,6 @@ export function strategyEditor(ui, strategy = null) {
 export function instrumentEditor(
   ui,
   instrument = null,
-  onReturn = null,
   correction = null,
 ) {
   const fields = {};
@@ -117,7 +112,6 @@ export function instrumentEditor(
   };
   let previewed = false;
   let form;
-  const back = () => (onReturn ? onReturn(null) : ui.go("instruments"));
   form = ui.form(
     correction
       ? "Correct instrument snapshot"
@@ -135,18 +129,12 @@ export function instrumentEditor(
         const next = correctSnapshot(correction.trade, correction.legId, i);
         await ui.commit(
           () => ui.repo.saveTrade(next, form.operationId),
-          () => ui.go("trade", next.id, true),
         );
       } else
         await ui.commit(
           () => ui.repo.saveEntity("instruments", i),
-          async (saved) => {
-            if (onReturn) onReturn(saved);
-            else ui.go("instruments", null, true);
-          },
         );
     },
-    back,
   );
   const f = form.node;
   append(form.body,
@@ -276,13 +264,8 @@ export function tradeEditor(ui, session) {
         : newTrade(input, ui.data);
       await ui.commit(
         () => ui.repo.saveTrade(trade, session.operationId),
-        () => {
-          ui.lifecycle.retireEditors("tradeEditor", (arg) => arg?.session?.id === trade.id, "trade", trade.id);
-          ui.go("trade", trade.id, true);
-        },
       );
     },
-    () => ui.go(session.isExisting ? "trade" : "journal", session.isExisting ? session.id : null),
     { operationId: session.operationId },
   );
   const bind = (input, update) => {
@@ -429,7 +412,6 @@ export function tradeEditor(ui, session) {
     el("div", { class: "actions full leg-actions" }, addLegAction,
       button("Create instrument", () => {
         ui.lifecycle.openChild("instrumentEditor", null, {
-          arg: { session },
           onSaved: (instrument) => {
             session.setContext(ui.data);
             const last = draft.legs.at(-1);
@@ -487,10 +469,8 @@ export function executionEditor(ui, trade, legId, existing = null) {
       const next = putExecution(trade, e, !!existing);
       await ui.commit(
         () => ui.repo.saveTrade(next, form.operationId),
-        () => ui.go("trade", trade.id, true),
       );
     },
-    () => ui.go("trade", trade.id),
   );
   append(form.body,
     inputField("Record type", "kind", record.kind, {
@@ -588,10 +568,8 @@ export function adjustmentEditor(ui, trade, existing = null) {
       const next = putAdjustment(trade, a, !!existing);
       await ui.commit(
         () => ui.repo.saveTrade(next, form.operationId),
-        () => ui.go("trade", trade.id, true),
       );
     },
-    () => ui.go("trade", trade.id),
   );
   append(form.body,
     decimalField("Signed amount", "amount", existing?.amount, {
@@ -632,10 +610,8 @@ export function settingsEditor(ui) {
             "settings",
             validateSettings({ ...s, ...values(f), id: "preferences" }),
           ),
-        () => ui.go("settings", null, true),
       );
     },
-    () => ui.go("journal"),
   );
   append(form.body,
     field("Display timezone", "timezone", s.timezone, {
