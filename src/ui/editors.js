@@ -394,7 +394,7 @@ export function tradeEditor(ui, session) {
       block.quantity.setUnit(instrument?.quantityUnit || "Quantity unit not configured.");
       block.budget.setUnit(input.accountCurrency);
       const feedback = planningFeedback(leg, input.accountCurrency, blocks.length);
-      for (const planningField of Object.values({ ...block.planning || {}, ...block.fields || {} })) planningField?.setError?.(null);
+      for (const planningField of Object.values(block.planning)) planningField.setError(null);
       const errorKey = feedback.path?.[3];
       const errorField = errorKey && block.planning?.[errorKey];
       errorField?.setError(feedback.kind === "error" ? feedback.message : null);

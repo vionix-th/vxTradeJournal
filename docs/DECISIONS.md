@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-05 — Use the current planning component contract
+
+Remove the unused alternate field collection and optional-method fallback. Every leg block owns its planning fields, and shared field components provide setError. Existing planning-validation and component-contract tests verify unchanged behavior; no compatibility layer or implementation-mirroring test is added.
+
 ## 2026-10-05 — Keep invalid execution rates reachable
 
 Use the existing domain decimal rule for live result-rate feedback. Foreign invalid input remains visible with the shared field's error association after switching a closing record to Entry. Preserve supplied values; matching-currency rates remain automatic one. Website/CLI still reject invalid source input, with browser keyboard correction and CLI no-write/corrected-value regressions.
