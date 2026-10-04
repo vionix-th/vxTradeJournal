@@ -64,8 +64,7 @@ export const routePolicies = {
   snapshotEditor: {
     navigationSection: "journal", render: () => {},
     refresh: (arg) => destination("trade", arg?.tradeId),
-    // Preserved for the dedicated snapshot-cancel fix.
-    cancel: () => destination("instruments"),
+    cancel: (arg) => destination("trade", arg?.tradeId),
     complete: (_saved, arg) => destination("trade", arg?.tradeId),
     identity: (arg) => arg?.tradeId && arg?.legId ? `${arg.tradeId}:${arg.legId}` : null,
   },

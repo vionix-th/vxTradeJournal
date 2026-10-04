@@ -271,7 +271,9 @@ export function strategiesView(ui) {
   }
   ui.show(node);
 }
-export function tradeView(ui, id) {
+export function tradeView(ui, idOrArg) {
+  const id = typeof idOrArg === "string" ? idOrArg : idOrArg?.id;
+  const reopenLegId = typeof idOrArg === "string" ? null : idOrArg?.reopenLegId;
   const t = ui.data.trades.find((t) => t.id === id);
   if (!t) {
     ui.show(
@@ -391,6 +393,18 @@ export function tradeView(ui, id) {
   for (const l of t.legs) {
     const i = l.snapshot,
       r = summary.legs.find((r) => r.id === l.id);
+    const snapshotDetails = details(
+      "Instrument snapshot and planning",
+      el(
+        "div",
+        { class: "full" },
+        el("p", {}, `Point value ${i.pointValue ?? "manual"} · quantity increment ${i.quantityIncrement} · price increment ${i.priceIncrement} · P&L ${i.currency}`),
+        el("p", {}, `Underlying ${i.underlying || "—"} · expiry ${i.expiry || "—"} · strike ${i.strike || "—"} · ${i.optionType || ""}`),
+        el("p", {}, `Planned entry ${l.planning?.entry || "—"} · stop ${l.planning?.stop || "—"} · target ${l.planning?.target || "—"} · planned quantity ${l.planning?.quantity || "—"} · sizing rate ${l.planning?.rate || "—"}`),
+        button("Correct snapshot", () => ui.go("snapshotEditor", { tradeId: t.id, legId: l.id }), "button secondary"),
+      ),
+    );
+    snapshotDetails.setOpen(l.id === reopenLegId);
     const panel = section(
       `${i.name} · ${l.direction}`,
       el(
@@ -418,33 +432,7 @@ export function tradeView(ui, id) {
         { class: "help" },
         "Remaining risk at recorded stop shown separately from realized gain/loss.",
       ),
-      details(
-        "Instrument snapshot and planning",
-        el(
-          "div",
-          { class: "full" },
-          el(
-            "p",
-            {},
-            `Point value ${i.pointValue ?? "manual"} · quantity increment ${i.quantityIncrement} · price increment ${i.priceIncrement} · P&L ${i.currency}`,
-          ),
-          el(
-            "p",
-            {},
-            `Underlying ${i.underlying || "—"} · expiry ${i.expiry || "—"} · strike ${i.strike || "—"} · ${i.optionType || ""}`,
-          ),
-          el(
-            "p",
-            {},
-            `Planned entry ${l.planning?.entry || "—"} · stop ${l.planning?.stop || "—"} · target ${l.planning?.target || "—"} · planned quantity ${l.planning?.quantity || "—"} · sizing rate ${l.planning?.rate || "—"}`,
-          ),
-          button(
-            "Correct snapshot",
-            () => ui.go("snapshotEditor", { tradeId: t.id, legId: l.id }),
-            "button secondary",
-          ),
-        ),
-      ),
+      snapshotDetails,
       button("Add execution", () => ui.go("executionEditor", { tradeId: t.id, legId: l.id })),
     );
     const executions = t.executions

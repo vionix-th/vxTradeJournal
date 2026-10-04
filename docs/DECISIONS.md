@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-04 — Snapshot cancellation returns to the invoking trade
+
+Snapshot correction is a child workflow of the trade view. Cancel returns to that trade, reopens the corrected leg's snapshot disclosure and restores the invoking correction control. The correction editor remains reusable for ordinary catalogue editing; only its explicit parent context changes the destination.
+
 ## 2026-10-04 — Keep invalid planning controls reachable
 
 Planning validation exposes stable field paths while retaining existing error names and messages. Editors keep supplied combined and per-leg values visible when applicability changes, attach errors to their controls and preserve raw input until correction. This avoids hidden invalid state blocking a save and keeps website feedback aligned with CLI/domain validation.

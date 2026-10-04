@@ -55,7 +55,7 @@ describe("journal route policy", () => {
     }
     expect(routePolicies.executionEditor.cancel(arg)).toEqual(destination("trade", "trade-1"));
     expect(routePolicies.adjustmentEditor.cancel(arg)).toEqual(destination("trade", "trade-1"));
-    expect(routePolicies.snapshotEditor.cancel(arg)).toEqual(destination("instruments"));
+    expect(routePolicies.snapshotEditor.cancel(arg)).toEqual(destination("trade", "trade-1"));
   });
 
   it("owns settings destinations and identities used to retire completed editors", () => {

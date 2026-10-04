@@ -70,7 +70,9 @@ const routes = {
   executionEditor: (ui, arg) => withTrade(ui, arg, (trade) => executionEditor(ui, trade, arg.legId, trade.executions.find((item) => item.id === arg.executionId))),
   adjustmentEditor: (ui, arg) => withTrade(ui, arg, (trade) => adjustmentEditor(ui, trade, trade.adjustments.find((item) => item.id === arg.adjustmentId))),
   snapshotEditor: (ui, arg) => withTrade(ui, arg, (trade) => instrumentEditor(ui,
-    trade.legs.find((leg) => leg.id === arg.legId).snapshot, null, { trade, legId: arg.legId })),
+    trade.legs.find((leg) => leg.id === arg.legId).snapshot,
+    () => ui.go("trade", { id: arg.tradeId, reopenLegId: arg.legId }, true),
+    { trade, legId: arg.legId })),
   settings: settingsEditor,
 };
 class JournalUI {
