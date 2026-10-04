@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-04 — Own composite trade drafts in retained edit sessions
+
+A detached trade editor session owns immutable source history, raw editable values, leg identities, disclosure state and the save operation ID. Controls send explicit updates; rendering and inline catalogue creation reuse the session rather than reconstructing submitted state from markup. Keep absent historical planning keys absent during context-only edits, and emit null when an existing value is cleared. Shared application operations still construct and validate domain records. This preserves idempotent retries after a committed write followed by a failed refresh without expanding simple catalogue editors into a general state framework.
+
 ## 2026-10-04 — Bound atomic trade creation to verified capacity
 
 Limit new trades and additions to six legs in shared operations, persistence preparation, CLI contracts and the editor. Emulator probes cover distinct instruments, a strategy, first-account locking, entry/exit history, snapshot correction and cascading deletion: six passes; eight and higher fail rules service-call limits. Six is a conservative verified capacity, not an asserted exact platform ceiling. Preserve earlier larger records for calculation, corrections and reductions without expansion. Keep atomic writes and ownership checks; no schema conversion or reset is required.

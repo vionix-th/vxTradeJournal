@@ -6,6 +6,7 @@ import "./styles.css";
 import { icon, brand, authFrame } from "./icons.js";
 import { skillDownloadPanel } from "./skill-download.js";
 import { EditorLifecycle } from "./editor-lifecycle.js";
+import { TradeEditorSession } from "./trade-editor-session.js";
 import { recentInstruments } from "../application/instruments.js";
 import {
   onAuthStateChanged,
@@ -55,7 +56,16 @@ const routes = {
   instrumentEditor: (ui, arg) => instrumentEditor(ui, currentEntity(ui, "instruments", arg),
     ui.lifecycle.current.parent ? (saved) => ui.lifecycle.returnParent(saved) : null),
   strategyEditor: (ui, arg) => strategyEditor(ui, currentEntity(ui, "strategies", arg)),
-  tradeEditor: (ui, arg) => tradeEditor(ui, arg?.draft || currentEntity(ui, "trades", arg), new Map(arg?.disclosures || [])),
+  tradeEditor: (ui, arg) => {
+    const session = arg?.session || new TradeEditorSession({
+      baseRecord: currentEntity(ui, "trades", arg), data: ui.data,
+      defaultInstrumentId: ui.recentInstruments().find((instrument) => !instrument.archived && !instrument.draft)?.id,
+    });
+    session.setContext(ui.data);
+    ui.arg = { session };
+    ui.lifecycle.current.arg = ui.arg;
+    tradeEditor(ui, session);
+  },
   executionEditor: (ui, arg) => withTrade(ui, arg, (trade) => executionEditor(ui, trade, arg.legId, trade.executions.find((item) => item.id === arg.executionId))),
   adjustmentEditor: (ui, arg) => withTrade(ui, arg, (trade) => adjustmentEditor(ui, trade, trade.adjustments.find((item) => item.id === arg.adjustmentId))),
   snapshotEditor: (ui, arg) => withTrade(ui, arg, (trade) => instrumentEditor(ui,
@@ -240,7 +250,7 @@ class JournalUI {
     this.main.querySelector("h1")?.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   }
-  form(title, description, saveLabel, handler, onCancel) {
+  form(title, description, saveLabel, handler, onCancel, { operationId = crypto.randomUUID() } = {}) {
     const errors = el("div", { class: "full form-errors" });
     const body = el("div", { class: "panel form-grid editor-fields" });
     const submit = el("button", { type: "submit", class: "button" }, saveLabel);
@@ -261,7 +271,7 @@ class JournalUI {
         submit,
       ),
     );
-    const state = { node, body, errors, operationId: crypto.randomUUID() };
+    const state = { node, body, errors, operationId };
     let busy = false;
     node.addEventListener("input", () => {
       this.dirty = true;
@@ -321,9 +331,9 @@ class JournalUI {
     const repo = this.repo;
     let route = this.route,
       arg = this.arg;
-    if (route === "tradeEditor" && (arg?.draft || arg)?.revision) {
+    if (route === "tradeEditor" && arg?.session?.isExisting) {
       route = "trade";
-      arg = (arg?.draft || arg).id;
+      arg = arg.session.id;
     } else if (["executionEditor", "adjustmentEditor", "snapshotEditor"].includes(route)) {
       route = "trade";
       arg = arg.tradeId;

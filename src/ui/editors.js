@@ -24,7 +24,7 @@ import {
   details,
   bindConversionRate,
 } from "./components.js";
-import { hasPlanValues, planningFeedback } from "./planning.js";
+import { planningFeedback } from "./planning.js";
 import { conversionState } from "./conversion-state.js";
 import { instrumentHelp, tradeHelp } from "./field-help.js";
 const choices = (items) => items.map((i) => ({ value: i.id, label: i.name }));
@@ -257,173 +257,87 @@ export function instrumentEditor(
   }
   ui.show(f);
 }
-export function tradeEditor(ui, original = null, disclosureState = new Map()) {
+export function tradeEditor(ui, session) {
   const inputField = (label, name, value, options = {}) => field(label, name, value, { ...options, tooltip: tradeHelp[name] });
   const inputDecimal = (label, name, value, options = {}) => decimalField(label, name, value, { ...options, tooltip: tradeHelp[name] });
-  const isExisting = !!original?.revision;
-  const draft = original
-    ? structuredClone(original)
-    : {
-        id: crypto.randomUUID(),
-        revision: 0,
-        schemaVersion: 1,
-        accountId:
-          ui.data.settings.defaultAccount ||
-          ui.data.accounts.find((a) => !a.archived)?.id,
-        strategyId: null,
-        strategySnapshot: null,
-        rationale: "",
-        review: "",
-        tags: [],
-        riskBudget: null,
-        legs: [],
-        executions: [],
-        adjustments: [],
-      };
-  const activeInstruments = ui
-    .recentInstruments()
-    .filter((i) => !i.draft && !i.archived);
-  if (!draft.legs.length)
-    draft.legs.push({
-      id: crypto.randomUUID(),
-      instrumentId: activeInstruments[0]?.id || "",
-      snapshot: activeInstruments[0]
-        ? structuredClone(activeInstruments[0])
-        : null,
-      direction: "long",
-      planning: {},
-    });
+  const draft = session.editableValues;
+  const activeInstruments = ui.recentInstruments().filter((instrument) => !instrument.draft && !instrument.archived);
   const blocks = [];
-  let form, addLegAction;
-  const collect = () => {
-    const v = values(form.node);
-    const account = ui.data.accounts.find(
-      (a) => a.id === (isExisting ? draft.accountId : v.accountId),
-    );
-    requireValue(account, "Trading account required");
-    const sid = v.strategyId || null;
-    const strategy = ui.data.strategies.find((s) => s.id === sid);
-    const legs = blocks.map(({ leg, instrument, direction, planning }) => {
-      const instrumentId = instrument.control.value;
-      const selected = ui.data.instruments.find((i) => i.id === instrumentId);
-      return {
-        ...leg,
-        instrumentId,
-        snapshot:
-          leg.instrumentId === instrumentId && leg.snapshot
-            ? leg.snapshot
-            : structuredClone(selected),
-        direction: direction.control.value,
-        planning: Object.fromEntries(Object.entries(planning).map(([key, input]) => [key, nullable(input.control.value)])),
-      };
-    });
-    return {
-      ...draft,
-      accountId: account.id,
-      accountCurrency: account.currency,
-      strategyId: sid,
-      strategySnapshot:
-        sid === draft.strategyId
-          ? draft.strategySnapshot
-          : strategy
-            ? structuredClone(strategy)
-            : null,
-      rationale: v.rationale,
-      review: v.review,
-      tags: [
-        ...new Set(
-          v.tags
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean),
-        ),
-      ],
-      riskBudget: nullable(v.combinedRiskBudget),
-      legs,
-    };
-  };
-  form = ui.form(
-    isExisting ? "Edit trade" : "New trade",
+  let addLegAction;
+  const form = ui.form(
+    session.isExisting ? "Edit trade" : "New trade",
     "Choose an instrument and direction. Add a trade plan when needed.",
     "Save trade",
     async () => {
-      const collected = collect();
-      const t = isExisting
-        ? replaceLegs(editTrade(draft, collected, ui.data), collected.legs, ui.data)
-        : newTrade(collected, ui.data);
+      const input = session.toInput();
+      const trade = session.isExisting
+        ? replaceLegs(editTrade(session.baseRecord, input, ui.data), input.legs, ui.data)
+        : newTrade(input, ui.data);
       await ui.commit(
-        () => ui.repo.saveTrade(t, form.operationId),
+        () => ui.repo.saveTrade(trade, session.operationId),
         () => {
-          ui.lifecycle.retireEditors("tradeEditor", (arg) => (arg?.draft || arg)?.id === t.id, "trade", t.id);
-          ui.go("trade", t.id, true);
+          ui.lifecycle.retireEditors("tradeEditor", (arg) => arg?.session?.id === trade.id, "trade", trade.id);
+          ui.go("trade", trade.id, true);
         },
       );
     },
-    () => ui.go(isExisting ? "trade" : "journal", isExisting ? draft.id : null),
+    () => ui.go(session.isExisting ? "trade" : "journal", session.isExisting ? session.id : null),
+    { operationId: session.operationId },
   );
-  const tags = inputField("Tags", "tags", (draft.tags || []).join(", "), {
-    help: "Comma-separated free-text tags.",
+  const bind = (input, update) => {
+    const change = () => { update(input.control.value); updatePlanning(); };
+    input.control.addEventListener("input", change);
+    input.control.addEventListener("change", change);
+  };
+  const account = inputField("Account", "accountId", draft.accountId, {
+    choices: choices(ui.data.accounts.filter((record) => !record.archived || record.id === draft.accountId)),
+    controlAttrs: { disabled: session.isExisting },
   });
-  tags.node.classList.add("full");
-  append(form.body,
-    inputField("Account", "accountId", draft.accountId, {
-      choices: choices(
-        ui.data.accounts.filter((a) => !a.archived || a.id === draft.accountId),
-      ),
-      controlAttrs: { disabled: isExisting },
-    }),
-    inputField("Strategy", "strategyId", draft.strategyId, {
-      choices: [
-        { value: "", label: "No strategy" },
-        ...choices(
-          ui.data.strategies.filter(
-            (s) => !s.archived || s.id === draft.strategyId,
-          ),
-        ),
-      ],
-    }),
-    inputField("Entry rationale", "rationale", draft.rationale, {
-      type: "textarea",
-    }),
-    inputField("Review notes", "review", draft.review, { type: "textarea" }),
-    tags,
-  );
+  const strategy = inputField("Strategy", "strategyId", draft.strategyId, {
+    choices: [{ value: "", label: "No strategy" }, ...choices(ui.data.strategies.filter((record) => !record.archived || record.id === draft.strategyId))],
+  });
+  const rationale = inputField("Entry rationale", "rationale", draft.rationale, { type: "textarea" });
+  const review = inputField("Review notes", "review", draft.review, { type: "textarea" });
+  const tags = inputField("Tags", "tags", draft.tagsText, {
+    help: "Comma-separated free-text tags.", containerAttrs: { class: "full" },
+  });
+  bind(account, (value) => session.setAccount(value));
+  for (const [input, key] of [[strategy, "strategyId"], [rationale, "rationale"], [review, "review"], [tags, "tagsText"]])
+    bind(input, (value) => session.setField(key, value));
+  append(form.body, account, strategy, rationale, review, tags);
   const legArea = el("div", { class: "full" });
-  const initialCurrency = draft.accountCurrency || ui.data.accounts.find((a) => a.id === draft.accountId)?.currency;
-  const combined = inputDecimal(
-    "Combined risk budget",
-    "combinedRiskBudget",
-    draft.riskBudget,
-    {
-      unit: initialCurrency,
-      help: "Multi-leg risk and quantities entered manually. No portfolio maximum-loss estimate.",
-    },
-  );
+  const combined = inputDecimal("Combined risk budget", "combinedRiskBudget", draft.combinedRiskBudget, {
+    unit: session.accountCurrency,
+    help: "Multi-leg risk and quantities entered manually. No portfolio maximum-loss estimate.",
+  });
+  bind(combined, (value) => session.setField("combinedRiskBudget", value));
   append(form.body, combined, legArea);
-  function addLeg(leg) {
-    const index = blocks.length + 1;
-    const existingLeg = isExisting && draft.legs.some((l) => l.id === leg.id);
-    const legend = el("legend", {}, `Leg ${index}`);
+  function renderLeg(leg) {
+    const existingLeg = session.baseRecord?.legs.some((record) => record.id === leg.id);
+    const legend = el("legend", {}, `Leg ${blocks.length + 1}`);
     const node = el("fieldset", { class: "leg-card" }, legend);
     const instrument = inputField("Instrument", "instrumentId", leg.instrumentId, {
       choices: [{ value: "", label: "Choose instrument" }, ...choices(ui.data.instruments.filter(
-        (i) => (!i.archived && !i.draft) || i.id === leg.instrumentId))],
+        (record) => (!record.archived && !record.draft) || record.id === leg.instrumentId))],
       controlAttrs: { disabled: existingLeg },
     });
     const direction = inputField("Direction", "direction", leg.direction, {
       choices: [{ value: "long", label: "Long" }, { value: "short", label: "Short" }],
     });
+    bind(instrument, (value) => session.setInstrument(leg.id, value));
+    bind(direction, (value) => session.setDirection(leg.id, value));
     const grid = el("div", { class: "form-grid" }, instrument, direction);
     const priceFields = ["entry", "stop", "target"].map((key) =>
-      inputDecimal({ entry: "Entry price", stop: "Stop price", target: "Target price" }[key], key, leg.planning?.[key], { unit: "" }));
-    const quantity = inputDecimal("Quantity", "quantity", leg.planning?.quantity, { unit: "" });
-    const budget = inputDecimal("Risk budget", "riskBudget", leg.planning?.riskBudget, { unit: "" });
-    const rate = inputDecimal("Conversion rate", "rate", leg.planning?.rate, { unit: "" });
+      inputDecimal({ entry: "Entry price", stop: "Stop price", target: "Target price" }[key], key, leg.planning[key], { unit: "" }));
+    const quantity = inputDecimal("Quantity", "quantity", leg.planning.quantity, { unit: "" });
+    const budget = inputDecimal("Risk budget", "riskBudget", leg.planning.riskBudget, { unit: "" });
+    const rate = inputDecimal("Conversion rate", "rate", leg.planning.rate, { unit: "" });
+    const planning = { entry: priceFields[0], stop: priceFields[1], target: priceFields[2], quantity, riskBudget: budget, rate };
+    for (const [key, input] of Object.entries(planning)) bind(input, (value) => session.setPlanning(leg.id, key, value));
     rate.unit.classList.add("visually-hidden");
-    const rateInput = rate.control;
     const source = el("span");
     const destination = el("span");
-    rate.node.append(el("div", { class: "conversion-equation" }, source, rateInput, destination));
+    rate.node.append(el("div", { class: "conversion-equation" }, source, rate.control, destination));
     const sizing = el("div", { class: "planning-feedback full", role: "status" });
     const sizingDetails = details("Position sizing", budget, rate);
     sizingDetails.node.classList.add("full", "sizing-disclosure");
@@ -431,109 +345,87 @@ export function tradeEditor(ui, original = null, disclosureState = new Map()) {
     plan.node.classList.add("trade-plan");
     const explanation = el("p", { class: "help full" }, "Intended prices and size. Record actual fills separately.");
     plan.content.prepend(explanation);
-    const savedState = disclosureState.get(leg.id);
-    plan.setOpen(savedState?.planOpen ?? hasPlanValues(leg, initialCurrency));
-    sizingDetails.setOpen(savedState?.sizingOpen ?? ["riskBudget", "rate"].some((key) =>
-      leg.planning?.[key] != null && leg.planning[key] !== "" && (key !== "rate" || leg.snapshot?.currency !== initialCurrency)));
+    const disclosure = session.disclosureFor(leg.id);
+    plan.setOpen(disclosure.planOpen);
+    sizingDetails.setOpen(disclosure.sizingOpen);
+    const retainDisclosure = () => {
+      if (!node.isConnected) return;
+      session.setDisclosure(leg.id, { planOpen: plan.isOpen(), sizingOpen: sizingDetails.isOpen() });
+      updatePlanExplanation();
+    };
+    plan.node.addEventListener("toggle", retainDisclosure);
+    sizingDetails.node.addEventListener("toggle", retainDisclosure);
     append(node, grid, plan);
     let remove;
     if (!existingLeg) {
       remove = button("Remove leg", () => {
         if (blocks.length === 1) return;
-        blocks.splice(blocks.findIndex((b) => b.node === node), 1);
+        session.removeLeg(leg.id);
+        blocks.splice(blocks.findIndex((block) => block.legId === leg.id), 1);
         node.remove();
         ui.dirty = true;
         updatePlanning();
       }, "button secondary small");
       node.append(remove);
     }
-    const planning = { entry: priceFields[0], stop: priceFields[1], target: priceFields[2], quantity, riskBudget: budget, rate };
-    blocks.push({ leg, node, legend, instrument, direction, planning, plan, explanation, sizingDetails, sizing, priceFields, quantity, budget, rate, source, destination, remove,
-      pair: `${leg.snapshot?.currency || ""}/${initialCurrency}` });
-    plan.node.addEventListener("toggle", updatePlanExplanation);
+    blocks.push({ legId: leg.id, node, legend, plan, explanation, sizingDetails, sizing, priceFields, quantity, budget, rate, source, destination, remove });
     legArea.append(node);
   }
   function updatePlanExplanation() {
-    const firstOpen = blocks.find((b) => b.plan.isOpen());
-    for (const b of blocks) b.explanation.hidden = b !== firstOpen;
+    const firstOpen = blocks.find((block) => block.plan.isOpen());
+    for (const block of blocks) block.explanation.hidden = block !== firstOpen;
   }
   function updatePlanning() {
     updatePlanExplanation();
-    if (addLegAction) addLegAction.disabled = blocks.length >= MAX_NEW_TRADE_LEGS;
-    combined.setVisible(blocks.length >= 2);
-    const t = collect();
-    combined.setUnit(t.accountCurrency);
-    for (const [index, b] of blocks.entries()) {
-      b.legend.textContent = `Leg ${index + 1}`;
-      if (b.remove) b.remove.disabled = blocks.length === 1;
-      const l = t.legs[index];
-      const instrument = l.snapshot;
-      const input = b.rate.control;
-      const conversion = conversionState(b.pair, instrument?.currency || "", t.accountCurrency, input.value);
-      input.value = conversion.rate;
-      b.pair = conversion.pair;
-      input.readOnly = conversion.automatic;
-      l.planning.rate = nullable(input.value);
-      b.rate.setVisible(!!instrument && !input.readOnly);
-      b.source.textContent = `1 ${instrument?.currency || ""} =`;
-      b.destination.textContent = t.accountCurrency;
-      b.rate.setUnit(`1 ${instrument?.currency || ""} = rate ${t.accountCurrency}`);
-      for (const price of b.priceFields) price.setUnit(instrument?.priceUnit || "Quote unit not configured.");
-      b.quantity.setUnit(instrument?.quantityUnit || "Quantity unit not configured.");
-      b.budget.setUnit(t.accountCurrency);
-      b.sizingDetails.setVisible(blocks.length === 1 && instrument?.model === "linear");
-      const feedback = planningFeedback(l, t.accountCurrency, blocks.length);
-      b.sizing.classList.toggle("error", feedback.kind === "error");
+    if (addLegAction) addLegAction.disabled = !session.canAddLeg;
+    combined.setVisible(draft.legs.length >= 2);
+    const input = session.toInput();
+    combined.setUnit(input.accountCurrency);
+    for (const [index, block] of blocks.entries()) {
+      block.legend.textContent = `Leg ${index + 1}`;
+      if (block.remove) block.remove.disabled = blocks.length === 1;
+      const leg = input.legs.find((record) => record.id === block.legId);
+      const instrument = leg.snapshot;
+      const conversion = conversionState(`${instrument?.currency || ""}/${input.accountCurrency}`, instrument?.currency || "", input.accountCurrency, leg.planning.rate ?? "");
+      block.rate.control.value = conversion.rate;
+      block.rate.control.readOnly = conversion.automatic;
+      block.rate.setVisible(!!instrument && !conversion.automatic);
+      block.source.textContent = `1 ${instrument?.currency || ""} =`;
+      block.destination.textContent = input.accountCurrency;
+      block.rate.setUnit(`1 ${instrument?.currency || ""} = rate ${input.accountCurrency}`);
+      for (const price of block.priceFields) price.setUnit(instrument?.priceUnit || "Quote unit not configured.");
+      block.quantity.setUnit(instrument?.quantityUnit || "Quantity unit not configured.");
+      block.budget.setUnit(input.accountCurrency);
+      block.sizingDetails.setVisible(blocks.length === 1 && instrument?.model === "linear");
+      const feedback = planningFeedback(leg, input.accountCurrency, blocks.length);
+      block.sizing.classList.toggle("error", feedback.kind === "error");
       if (feedback.kind === "ready") {
         const result = feedback.result;
-        b.sizing.textContent = `Recommended quantity ${result.quantity} ${instrument.quantityUnit}. Risk at stop ${money(result.plannedRisk, t.accountCurrency).replace(/^\+/, "")}; excludes fees and slippage.${result.rewardRisk ? ` Reward/risk ${result.rewardRisk}.` : ""}`;
-      } else b.sizing.textContent = feedback.message;
+        block.sizing.textContent = `Recommended quantity ${result.quantity} ${instrument.quantityUnit}. Risk at stop ${money(result.plannedRisk, input.accountCurrency).replace(/^\+/, "")}; excludes fees and slippage.${result.rewardRisk ? ` Reward/risk ${result.rewardRisk}.` : ""}`;
+      } else block.sizing.textContent = feedback.message;
     }
   }
-  for (const l of draft.legs) addLeg(l);
-  addLegAction = button(
-      "Add leg",
-      () => {
-        addLeg({
-          id: crypto.randomUUID(),
-          instrumentId: activeInstruments[0]?.id || "",
-          snapshot: activeInstruments[0]
-            ? structuredClone(activeInstruments[0])
-            : null,
-          direction: "long",
-          planning: {},
-        });
-        ui.dirty = true;
-        updatePlanning();
-      },
-      "button secondary",
-    );
+  for (const leg of draft.legs) renderLeg(leg);
+  addLegAction = button("Add leg", () => {
+    renderLeg(session.addLeg(activeInstruments[0]?.id || ""));
+    ui.dirty = true;
+    updatePlanning();
+  }, "button secondary");
   append(form.body,
     el("p", { class: "help full" }, `Maximum ${MAX_NEW_TRADE_LEGS} legs per new trade.`),
-    el("div", { class: "actions full leg-actions" },
-    addLegAction,
-    button(
-      "Create instrument",
-      () => {
-        const next = collect();
-        const state = new Map(blocks.map((b) => [b.leg.id, { planOpen: b.plan.isOpen(), sizingOpen: b.sizingDetails.isOpen() }]));
+    el("div", { class: "actions full leg-actions" }, addLegAction,
+      button("Create instrument", () => {
         ui.lifecycle.openChild("instrumentEditor", null, {
-          arg: { draft: next, disclosures: [...state] },
-          onSaved: (i) => {
-            const last = next.legs.at(-1);
-            if (!last.instrumentId) {
-              last.instrumentId = i.id;
-              last.snapshot = i;
-            }
+          arg: { session },
+          onSaved: (instrument) => {
+            session.setContext(ui.data);
+            const last = draft.legs.at(-1);
+            if (!last.instrumentId) session.setInstrument(last.id, instrument.id);
           },
         });
-      },
-      "button secondary",
-    ),
+      }, "button secondary"),
     ),
   );
-  form.node.addEventListener("input", updatePlanning);
-  form.node.addEventListener("change", updatePlanning);
   updatePlanning();
   ui.show(form.node);
 }
