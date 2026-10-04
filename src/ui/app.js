@@ -365,18 +365,15 @@ class JournalUI {
     const errors = el("div");
     const email = field("Email", "email", "", {
       type: "email",
-      required: true,
-      autocomplete: "email",
+      controlAttrs: { required: true, autocomplete: "email" },
     });
     const password =
       mode === "reset"
         ? null
         : field("Password", "password", "", {
             type: "password",
-            required: true,
-            minlength: 6,
-            autocomplete:
-              mode === "register" ? "new-password" : "current-password",
+            controlAttrs: { required: true, minlength: 6,
+              autocomplete: mode === "register" ? "new-password" : "current-password" },
           });
     const submit = el(
       "button",

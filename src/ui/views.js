@@ -38,13 +38,13 @@ export function journalView(ui) {
     ui.show(box);
     return;
   }
-  const search = field("Search instruments", "search", filters.search, { type: "search", placeholder: "Search instruments…" });
-  search.classList.add("search-field");
-  search.append(icon("search", 18));
+  const search = field("Search instruments", "search", filters.search, { type: "search", controlAttrs: { placeholder: "Search instruments…" } });
+  search.node.classList.add("search-field");
+  search.node.append(icon("search", 18));
   const account = field("Filter account", "account", filters.account, {
     choices: [{ value: "", label: "All accounts" }, ...ui.data.accounts.map((a) => ({ value: a.id, label: a.name }))],
   });
-  account.classList.add("account-filter");
+  account.node.classList.add("account-filter");
   const more = details("More filters",
     field("Filter status", "status", filters.status, { choices: [{ value: "", label: "Any status" }, { value: "open", label: "Open" }, { value: "closed", label: "Closed" }] }),
     field("Filter market", "market", filters.market, { choices: [{ value: "", label: "All markets" }, ...[...new Set(ui.data.instruments.map((i) => i.market))].map((m) => ({ value: m, label: m }))] }),
@@ -52,7 +52,7 @@ export function journalView(ui) {
     field("Filter tag", "tag", filters.tag),
     field("Opening date from", "from", filters.from, { type: "date" }),
     field("Opening date to", "to", filters.to, { type: "date" }));
-  more.open = ["status", "market", "strategy", "tag", "from", "to"].some((key) => !!filters[key]);
+  more.setOpen(["status", "market", "strategy", "tag", "from", "to"].some((key) => !!filters[key]));
   const toolbar = el("form", { class: "journal-filters" }, search, account, more,
     el("div", { class: "filter-actions" },
       el("button", { type: "submit", class: "button secondary" }, "Apply filters"),
@@ -147,10 +147,10 @@ export function instrumentsView(ui) {
     help: "Name, symbol, venue, underlying, expiry, strike and option type.",
   });
   const list = el("div", { class: "grid two" });
-  node.append(search, list);
+  node.append(search.node, list);
   const render = () => {
     list.replaceChildren();
-    const q = search.querySelector("input").value.toLowerCase().trim();
+    const q = search.control.value.toLowerCase().trim();
     for (const i of ui
       .recentInstruments()
       .filter((i) =>
@@ -204,7 +204,7 @@ export function instrumentsView(ui) {
         empty("No instruments found", "Create instrument or change search."),
       );
   };
-  search.querySelector("input").addEventListener("input", render);
+  search.control.addEventListener("input", render);
   render();
   ui.show(node);
 }

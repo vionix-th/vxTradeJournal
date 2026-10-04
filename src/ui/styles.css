@@ -162,6 +162,7 @@ main#main { min-width: 0; }
 .card > * { margin-block: 0; }
 .card .split { align-items: flex-start; flex-wrap: wrap; }
 .field > .help { margin: 0; }
+.field-error { color: var(--negative); }
 .form-errors:empty { display: none; }
 .form-errors { display: flex; flex-direction: column; gap: var(--space-sm); }
 .form-errors > .notice { margin: 0; }

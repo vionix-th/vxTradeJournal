@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-04 — Expose field and disclosure interaction contracts
+
+Shared native form components expose explicit controls, content, visibility, unit and error handles. Control attributes and container attributes have separate owners. Errors update accessible associations without replacing help or units, and disclosure content no longer depends on child positions. Migrate callers together rather than retaining a flat-options compatibility layer. This keeps native form submission and keyboard behavior while isolating markup changes from editor logic.
+
 ## 2026-10-04 — Make mutation and preparation guarantees explicit
 
 All shared trade mutations return detached, fully replay-valid source records without derived caches. Complete validation includes execution ordering, position history and adjustments; keep structural prerequisites private. Preparation returns the persistence projection and full calculation together so CLI previews reuse the calculation. Repository saves still check fresh references and replay at the transaction boundary. This preserves financial and external JSON contracts while giving callers consistent guarantees.

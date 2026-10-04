@@ -12,6 +12,7 @@ import { exportJournal } from "../application/journal.js";
 import { newTrade, editTrade, replaceLegs, putExecution, putAdjustment, correctSnapshot } from "../application/operations.js";
 import {
   el,
+  append,
   button,
   field,
   decimalField,
@@ -21,7 +22,6 @@ import {
   notice,
   details,
   bindConversionRate,
-  setFieldUnit,
 } from "./components.js";
 import { hasPlanValues, nextConversionRate, planningFeedback } from "./planning.js";
 import { instrumentHelp, tradeHelp } from "./field-help.js";
@@ -51,16 +51,13 @@ export function accountEditor(ui, account = null, first = false) {
     },
     () => ui.go("accounts"),
   );
-  form.body.append(
+  append(form.body,
     field("Account name", "name", account?.name, {
-      required: true,
-      maxlength: 120,
+      controlAttrs: { required: true, maxlength: 120 },
     }),
     field("Reporting currency", "currency", account?.currency || "USD", {
-      required: true,
-      disabled: account?.hasTrades || false,
-      pattern: "[A-Z][A-Z0-9]{2,11}",
-      maxlength: 12,
+      controlAttrs: { required: true, disabled: account?.hasTrades || false,
+        pattern: "[A-Z][A-Z0-9]{2,11}", maxlength: 12 },
     }),
     checkbox("Archived", "archived", account?.archived),
   );
@@ -84,10 +81,9 @@ export function strategyEditor(ui, strategy = null) {
     },
     () => ui.go("strategies"),
   );
-  form.body.append(
+  append(form.body,
     field("Strategy name", "name", strategy?.name, {
-      required: true,
-      maxlength: 120,
+      controlAttrs: { required: true, maxlength: 120 },
     }),
     field("Purpose", "purpose", strategy?.purpose, { type: "textarea" }),
     field("Applicable markets", "markets", strategy?.markets),
@@ -106,9 +102,10 @@ export function instrumentEditor(
   onReturn = null,
   correction = null,
 ) {
-  const inputField = (label, name, value, options = {}) => field(label, name, value, { ...options, tooltip: instrumentHelp[name] });
-  const inputDecimal = (label, name, value, options = {}) => decimalField(label, name, value, { ...options, tooltip: instrumentHelp[name] });
-  const inputCheckbox = (label, name, checked) => checkbox(label, name, checked, { tooltip: instrumentHelp[name] });
+  const fields = {};
+  const inputField = (label, name, value, options = {}) => fields[name] = field(label, name, value, { ...options, tooltip: instrumentHelp[name] });
+  const inputDecimal = (label, name, value, options = {}) => fields[name] = decimalField(label, name, value, { ...options, tooltip: instrumentHelp[name] });
+  const inputCheckbox = (label, name, checked) => fields[name] = checkbox(label, name, checked, { tooltip: instrumentHelp[name] });
   const id = instrument?.id || crypto.randomUUID();
   const base = instrument || {
     preset: "equity",
@@ -149,12 +146,11 @@ export function instrumentEditor(
     back,
   );
   const f = form.node;
-  form.body.append(
+  append(form.body,
     inputField("Instrument name", "name", base.name, {
-      required: true,
-      maxlength: 120,
+      controlAttrs: { required: true, maxlength: 120 },
     }),
-    inputField("Symbol", "symbol", base.symbol, { maxlength: 80 }),
+    inputField("Symbol", "symbol", base.symbol, { controlAttrs: { maxlength: 80 } }),
     inputField("Preset", "preset", base.preset, {
       choices: Object.entries(PRESETS).map(([value, p]) => ({
         value,
@@ -170,7 +166,7 @@ export function instrumentEditor(
       ],
     }),
     inputField("Quantity unit", "quantityUnit", base.quantityUnit),
-    inputField("Price unit", "priceUnit", base.priceUnit, { maxlength: 80, placeholder: "USD/share, points, JPY/EUR" }),
+    inputField("Price unit", "priceUnit", base.priceUnit, { controlAttrs: { maxlength: 80, placeholder: "USD/share, points, JPY/EUR" } }),
     inputDecimal(
       "Quantity increment",
       "quantityIncrement",
@@ -178,7 +174,7 @@ export function instrumentEditor(
     ),
     inputDecimal("Price increment", "priceIncrement", base.priceIncrement),
     inputDecimal("Point value", "pointValue", base.pointValue),
-    inputField("P&L currency", "currency", base.currency, { maxlength: 12 }),
+    inputField("P&L currency", "currency", base.currency, { controlAttrs: { maxlength: 12 } }),
     inputCheckbox("Draft definition", "draft", base.draft),
     inputCheckbox("Archived", "archived", base.archived),
   );
@@ -195,16 +191,14 @@ export function instrumentEditor(
       ],
     }),
   );
-  form.body.append(contract);
+  append(form.body, contract);
   const preview = el("div", { class: "notice full", role: "status" });
-  form.body.append(preview);
+  append(form.body, preview);
   const update = () => {
     previewed = false;
     const v = values(f);
-    f.elements.pointValue.closest(".field").hidden = v.model !== "linear";
-    contract.hidden = !["futures", "options", "cryptoDerivative"].includes(
-      v.preset,
-    );
+    fields.pointValue.setVisible(v.model === "linear");
+    contract.setVisible(["futures", "options", "cryptoDerivative"].includes(v.preset));
     try {
       const i = normalizeInstrument({ ...base, ...v, id });
       preview.textContent = i.draft
@@ -216,9 +210,9 @@ export function instrumentEditor(
       preview.textContent = e.message;
     }
   };
-  f.elements.preset.addEventListener("change", () => {
+  fields.preset.control.addEventListener("change", () => {
     if (correction) return;
-    const p = PRESETS[f.elements.preset.value];
+    const p = PRESETS[fields.preset.control.value];
     for (const key of [
       "market",
       "model",
@@ -228,7 +222,7 @@ export function instrumentEditor(
       "priceIncrement",
       "pointValue",
     ])
-      f.elements[key].value = p[key] ?? "";
+      fields[key].control.value = p[key] ?? "";
     update();
   });
   f.addEventListener("input", update);
@@ -236,7 +230,7 @@ export function instrumentEditor(
   update();
   if (correction) {
     const out = el("div", { class: "full" });
-    form.body.append(
+    append(form.body,
       button(
         "Preview correction",
         () => {
@@ -307,8 +301,8 @@ export function tradeEditor(ui, original = null, disclosureState = new Map()) {
     requireValue(account, "Trading account required");
     const sid = v.strategyId || null;
     const strategy = ui.data.strategies.find((s) => s.id === sid);
-    const legs = blocks.map(({ leg, node }) => {
-      const instrumentId = node.querySelector("[name=instrumentId]").value;
+    const legs = blocks.map(({ leg, instrument, direction, planning }) => {
+      const instrumentId = instrument.control.value;
       const selected = ui.data.instruments.find((i) => i.id === instrumentId);
       return {
         ...leg,
@@ -317,12 +311,8 @@ export function tradeEditor(ui, original = null, disclosureState = new Map()) {
           leg.instrumentId === instrumentId && leg.snapshot
             ? leg.snapshot
             : structuredClone(selected),
-        direction: node.querySelector("[name=direction]").value,
-        planning: Object.fromEntries(
-          ["entry", "stop", "target", "riskBudget", "rate", "quantity"].map(
-            (k) => [k, nullable(node.querySelector(`[name=${k}]`).value)],
-          ),
-        ),
+        direction: direction.control.value,
+        planning: Object.fromEntries(Object.entries(planning).map(([key, input]) => [key, nullable(input.control.value)])),
       };
     });
     return {
@@ -372,13 +362,13 @@ export function tradeEditor(ui, original = null, disclosureState = new Map()) {
   const tags = inputField("Tags", "tags", (draft.tags || []).join(", "), {
     help: "Comma-separated free-text tags.",
   });
-  tags.classList.add("full");
-  form.body.append(
+  tags.node.classList.add("full");
+  append(form.body,
     inputField("Account", "accountId", draft.accountId, {
       choices: choices(
         ui.data.accounts.filter((a) => !a.archived || a.id === draft.accountId),
       ),
-      disabled: isExisting,
+      controlAttrs: { disabled: isExisting },
     }),
     inputField("Strategy", "strategyId", draft.strategyId, {
       choices: [
@@ -407,42 +397,43 @@ export function tradeEditor(ui, original = null, disclosureState = new Map()) {
       help: "Multi-leg risk and quantities entered manually. No portfolio maximum-loss estimate.",
     },
   );
-  form.body.append(combined, legArea);
+  append(form.body, combined, legArea);
   function addLeg(leg) {
     const index = blocks.length + 1;
     const existingLeg = isExisting && draft.legs.some((l) => l.id === leg.id);
-    const node = el("fieldset", { class: "leg-card" }, el("legend", {}, `Leg ${index}`));
-    const grid = el("div", { class: "form-grid" },
-      inputField("Instrument", "instrumentId", leg.instrumentId, {
-        choices: [{ value: "", label: "Choose instrument" }, ...choices(ui.data.instruments.filter(
-          (i) => (!i.archived && !i.draft) || i.id === leg.instrumentId))],
-        disabled: existingLeg,
-      }),
-      inputField("Direction", "direction", leg.direction, {
-        choices: [{ value: "long", label: "Long" }, { value: "short", label: "Short" }],
-      }));
+    const legend = el("legend", {}, `Leg ${index}`);
+    const node = el("fieldset", { class: "leg-card" }, legend);
+    const instrument = inputField("Instrument", "instrumentId", leg.instrumentId, {
+      choices: [{ value: "", label: "Choose instrument" }, ...choices(ui.data.instruments.filter(
+        (i) => (!i.archived && !i.draft) || i.id === leg.instrumentId))],
+      controlAttrs: { disabled: existingLeg },
+    });
+    const direction = inputField("Direction", "direction", leg.direction, {
+      choices: [{ value: "long", label: "Long" }, { value: "short", label: "Short" }],
+    });
+    const grid = el("div", { class: "form-grid" }, instrument, direction);
     const priceFields = ["entry", "stop", "target"].map((key) =>
       inputDecimal({ entry: "Entry price", stop: "Stop price", target: "Target price" }[key], key, leg.planning?.[key], { unit: "" }));
     const quantity = inputDecimal("Quantity", "quantity", leg.planning?.quantity, { unit: "" });
     const budget = inputDecimal("Risk budget", "riskBudget", leg.planning?.riskBudget, { unit: "" });
     const rate = inputDecimal("Conversion rate", "rate", leg.planning?.rate, { unit: "" });
-    rate.querySelector(".field-unit").classList.add("visually-hidden");
-    const rateInput = rate.querySelector("input");
+    rate.unit.classList.add("visually-hidden");
+    const rateInput = rate.control;
     const source = el("span");
     const destination = el("span");
-    rate.append(el("div", { class: "conversion-equation" }, source, rateInput, destination));
+    rate.node.append(el("div", { class: "conversion-equation" }, source, rateInput, destination));
     const sizing = el("div", { class: "planning-feedback full", role: "status" });
     const sizingDetails = details("Position sizing", budget, rate);
-    sizingDetails.classList.add("full", "sizing-disclosure");
+    sizingDetails.node.classList.add("full", "sizing-disclosure");
     const plan = details("Trade plan", ...priceFields, quantity, sizingDetails, sizing);
-    plan.classList.add("trade-plan");
+    plan.node.classList.add("trade-plan");
     const explanation = el("p", { class: "help full" }, "Intended prices and size. Record actual fills separately.");
-    plan.lastElementChild.prepend(explanation);
+    plan.content.prepend(explanation);
     const savedState = disclosureState.get(leg.id);
-    plan.open = savedState?.planOpen ?? hasPlanValues(leg, initialCurrency);
-    sizingDetails.open = savedState?.sizingOpen ?? ["riskBudget", "rate"].some((key) =>
-      leg.planning?.[key] != null && leg.planning[key] !== "" && (key !== "rate" || leg.snapshot?.currency !== initialCurrency));
-    node.append(grid, plan);
+    plan.setOpen(savedState?.planOpen ?? hasPlanValues(leg, initialCurrency));
+    sizingDetails.setOpen(savedState?.sizingOpen ?? ["riskBudget", "rate"].some((key) =>
+      leg.planning?.[key] != null && leg.planning[key] !== "" && (key !== "rate" || leg.snapshot?.currency !== initialCurrency)));
+    append(node, grid, plan);
     let remove;
     if (!existingLeg) {
       remove = button("Remove leg", () => {
@@ -454,39 +445,40 @@ export function tradeEditor(ui, original = null, disclosureState = new Map()) {
       }, "button secondary small");
       node.append(remove);
     }
-    blocks.push({ leg, node, plan, explanation, sizingDetails, sizing, priceFields, quantity, budget, rate, source, destination, remove,
+    const planning = { entry: priceFields[0], stop: priceFields[1], target: priceFields[2], quantity, riskBudget: budget, rate };
+    blocks.push({ leg, node, legend, instrument, direction, planning, plan, explanation, sizingDetails, sizing, priceFields, quantity, budget, rate, source, destination, remove,
       pair: `${leg.snapshot?.currency || ""}/${initialCurrency}` });
-    plan.addEventListener("toggle", updatePlanExplanation);
+    plan.node.addEventListener("toggle", updatePlanExplanation);
     legArea.append(node);
   }
   function updatePlanExplanation() {
-    const firstOpen = blocks.find((b) => b.plan.open);
+    const firstOpen = blocks.find((b) => b.plan.isOpen());
     for (const b of blocks) b.explanation.hidden = b !== firstOpen;
   }
   function updatePlanning() {
     updatePlanExplanation();
-    combined.hidden = blocks.length < 2;
+    combined.setVisible(blocks.length >= 2);
     const t = collect();
-    setFieldUnit(combined, t.accountCurrency);
+    combined.setUnit(t.accountCurrency);
     for (const [index, b] of blocks.entries()) {
-      b.node.querySelector("legend").textContent = `Leg ${index + 1}`;
+      b.legend.textContent = `Leg ${index + 1}`;
       if (b.remove) b.remove.disabled = blocks.length === 1;
       const l = t.legs[index];
       const instrument = l.snapshot;
       const pair = `${instrument?.currency || ""}/${t.accountCurrency}`;
-      const input = b.rate.querySelector("input");
+      const input = b.rate.control;
       input.value = nextConversionRate(b.pair, pair, input.value);
       b.pair = pair;
       input.readOnly = instrument?.currency === t.accountCurrency;
       l.planning.rate = nullable(input.value);
-      b.rate.hidden = !instrument || input.readOnly;
+      b.rate.setVisible(!!instrument && !input.readOnly);
       b.source.textContent = `1 ${instrument?.currency || ""} =`;
       b.destination.textContent = t.accountCurrency;
-      setFieldUnit(b.rate, `1 ${instrument?.currency || ""} = rate ${t.accountCurrency}`);
-      for (const price of b.priceFields) setFieldUnit(price, instrument?.priceUnit || "Quote unit not configured.");
-      setFieldUnit(b.quantity, instrument?.quantityUnit || "Quantity unit not configured.");
-      setFieldUnit(b.budget, t.accountCurrency);
-      b.sizingDetails.hidden = blocks.length !== 1 || instrument?.model !== "linear";
+      b.rate.setUnit(`1 ${instrument?.currency || ""} = rate ${t.accountCurrency}`);
+      for (const price of b.priceFields) price.setUnit(instrument?.priceUnit || "Quote unit not configured.");
+      b.quantity.setUnit(instrument?.quantityUnit || "Quantity unit not configured.");
+      b.budget.setUnit(t.accountCurrency);
+      b.sizingDetails.setVisible(blocks.length === 1 && instrument?.model === "linear");
       const feedback = planningFeedback(l, t.accountCurrency, blocks.length);
       b.sizing.classList.toggle("error", feedback.kind === "error");
       if (feedback.kind === "ready") {
@@ -496,7 +488,7 @@ export function tradeEditor(ui, original = null, disclosureState = new Map()) {
     }
   }
   for (const l of draft.legs) addLeg(l);
-  form.body.append(
+  append(form.body,
     el("div", { class: "actions full leg-actions" },
     button(
       "Add leg",
@@ -519,7 +511,7 @@ export function tradeEditor(ui, original = null, disclosureState = new Map()) {
       "Create instrument",
       () => {
         const next = collect();
-        const state = new Map(blocks.map((b) => [b.leg.id, { planOpen: b.plan.open, sizingOpen: b.sizingDetails.open }]));
+        const state = new Map(blocks.map((b) => [b.leg.id, { planOpen: b.plan.isOpen(), sizingOpen: b.sizingDetails.isOpen() }]));
         ui.lifecycle.openChild("instrumentEditor", null, {
           arg: { draft: next, disclosures: [...state] },
           onSaved: (i) => {
@@ -541,6 +533,9 @@ export function tradeEditor(ui, original = null, disclosureState = new Map()) {
   ui.show(form.node);
 }
 export function executionEditor(ui, trade, legId, existing = null) {
+  const fields = {};
+  const inputField = (label, name, value, options = {}) => fields[name] = field(label, name, value, options);
+  const inputDecimal = (label, name, value, options = {}) => fields[name] = decimalField(label, name, value, options);
   const leg = trade.legs.find((l) => l.id === legId),
     i = leg.snapshot;
   const id = existing?.id || crypto.randomUUID();
@@ -587,8 +582,8 @@ export function executionEditor(ui, trade, legId, existing = null) {
     },
     () => ui.go("trade", trade.id),
   );
-  form.body.append(
-    field("Record type", "kind", record.kind, {
+  append(form.body,
+    inputField("Record type", "kind", record.kind, {
       choices: [
         { value: "entry", label: "Entry — increase position" },
         { value: "exit", label: "Exit — reduce position" },
@@ -598,34 +593,34 @@ export function executionEditor(ui, trade, legId, existing = null) {
         },
       ],
     }),
-    decimalField("Quantity", "quantity", record.quantity, {
-      required: true,
+    inputDecimal("Quantity", "quantity", record.quantity, {
+      controlAttrs: { required: true },
       help: `Increment ${i.quantityIncrement} ${i.quantityUnit}`,
     }),
-    decimalField("Price", "price", record.price, {
+    inputDecimal("Price", "price", record.price, {
       unit: i.priceUnit || "Quote unit not configured.",
       help: `Price increment ${i.priceIncrement}. Settlement may omit price and report manual result.`,
     }),
-    field(
+    inputField(
       "Timestamp (UTC)",
       "timestamp",
       record.timestamp.replace("Z", "").slice(0, 23),
-      { type: "datetime-local", step: "0.001", required: true },
+      { type: "datetime-local", controlAttrs: { step: "0.001", required: true } },
     ),
-    decimalField("Fees", "fees", record.fees, { required: true }),
-    field("Fee currency", "feeCurrency", record.feeCurrency, {
-      required: true,
+    inputDecimal("Fees", "fees", record.fees, { controlAttrs: { required: true } }),
+    inputField("Fee currency", "feeCurrency", record.feeCurrency, {
+      controlAttrs: { required: true },
     }),
-    decimalField("Fee conversion rate", "feeRate", record.feeRate, {
+    inputDecimal("Fee conversion rate", "feeRate", record.feeRate, {
       help: `${trade.accountCurrency} per fee currency unit. Missing rate keeps conversion incomplete.`,
     }),
-    decimalField("Result conversion rate", "resultRate", record.resultRate, {
+    inputDecimal("Result conversion rate", "resultRate", record.resultRate, {
       help: `${trade.accountCurrency} per ${i.currency}. Each closing result keeps its own historical rate.`,
     }),
-    decimalField("Gross realized amount", "manualGross", record.manualGross, {
+    inputDecimal("Gross realized amount", "manualGross", record.manualGross, {
       help: "Manual result excludes fees. Empty means unknown.",
     }),
-    field(
+    inputField(
       "Manual result source",
       "manualSource",
       record.manualSource || "user-entered",
@@ -636,8 +631,8 @@ export function executionEditor(ui, trade, legId, existing = null) {
         ],
       },
     ),
-    field("Order reference", "orderReference", record.orderReference),
-    field("Settlement reason", "reason", record.reason, { type: "textarea" }),
+    inputField("Order reference", "orderReference", record.orderReference),
+    inputField("Settlement reason", "reason", record.reason, { type: "textarea" }),
   );
   const update = () => {
     const f = form.node,
@@ -646,13 +641,13 @@ export function executionEditor(ui, trade, legId, existing = null) {
       v.kind !== "entry" &&
       (i.model === "manual" || (v.kind === "settlement" && !v.price));
     for (const key of ["manualGross", "manualSource"])
-      f.elements[key].closest(".field").hidden = !manual;
-    f.elements.resultRate.closest(".field").hidden = v.kind === "entry";
-    f.elements.reason.closest(".field").hidden = v.kind !== "settlement";
-    f.elements.price.required = v.kind !== "settlement";
+      fields[key].setVisible(manual);
+    fields.resultRate.setVisible(v.kind !== "entry");
+    fields.reason.setVisible(v.kind === "settlement");
+    fields.price.control.required = v.kind !== "settlement";
     if (i.currency === trade.accountCurrency) {
-      f.elements.resultRate.value = "1";
-      f.elements.resultRate.readOnly = true;
+      fields.resultRate.control.value = "1";
+      fields.resultRate.control.readOnly = true;
     }
   };
   bindConversionRate(
@@ -689,12 +684,12 @@ export function adjustmentEditor(ui, trade, existing = null) {
     },
     () => ui.go("trade", trade.id),
   );
-  form.body.append(
+  append(form.body,
     decimalField("Signed amount", "amount", existing?.amount, {
-      required: true,
+      controlAttrs: { required: true },
     }),
     field("Currency", "currency", existing?.currency || trade.accountCurrency, {
-      required: true,
+      controlAttrs: { required: true },
     }),
     decimalField("Conversion rate", "rate", existing ? existing.rate : "1", {
       help: `${trade.accountCurrency} units per one source currency unit.`,
@@ -705,11 +700,11 @@ export function adjustmentEditor(ui, trade, existing = null) {
       (existing?.timestamp || new Date().toISOString())
         .replace("Z", "")
         .slice(0, 23),
-      { type: "datetime-local", step: "0.001", required: true },
+      { type: "datetime-local", controlAttrs: { step: "0.001", required: true } },
     ),
     field("Reason", "reason", existing?.reason, {
       type: "textarea",
-      required: true,
+      controlAttrs: { required: true },
     }),
   );
   bindConversionRate(form.node, "currency", "rate", trade.accountCurrency);
@@ -733,9 +728,9 @@ export function settingsEditor(ui) {
     },
     () => ui.go("journal"),
   );
-  form.body.append(
+  append(form.body,
     field("Display timezone", "timezone", s.timezone, {
-      required: true,
+      controlAttrs: { required: true },
       help: "IANA timezone, e.g. Asia/Bangkok or UTC.",
     }),
     field("Theme", "theme", s.theme, {

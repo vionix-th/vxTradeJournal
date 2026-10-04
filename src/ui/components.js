@@ -76,13 +76,16 @@ export function el(tag, attrs = {}, ...children) {
     else if (key === "checked") n.checked = value;
     else n.setAttribute(key, String(value));
   }
-  for (const child of children.flat(Infinity)) {
-    if (child != null)
-      n.append(
-        child instanceof Node ? child : document.createTextNode(String(child)),
-      );
-  }
+  append(n, ...children);
   return n;
+}
+/** Compose native nodes, component handles and plain text without parsing HTML. */
+export function append(parent, ...children) {
+  for (const child of children.flat(Infinity)) {
+    if (child == null) continue;
+    const node = child instanceof Node ? child : child.node;
+    parent.append(node instanceof Node ? node : document.createTextNode(String(child)));
+  }
 }
 export function button(label, onClick, cls = "button", attrs = {}) {
   return el("button", { type: "button", class: cls, onClick, ...attrs }, label);
@@ -90,44 +93,78 @@ export function button(label, onClick, cls = "button", attrs = {}) {
 export function option(value, label) {
   return el("option", { value }, label);
 }
+/**
+ * @typedef {object} FieldHandle
+ * @property {HTMLElement} node Field container, for layout and composition.
+ * @property {HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement} control Native form control.
+ * @property {HTMLElement|null} unit Current unit description.
+ * @property {(value: string) => void} setUnit Update the visible and accessible unit.
+ * @property {(visible: boolean) => void} setVisible Hide/reveal without changing the control value.
+ * @property {(message: string|null) => void} setError Own invalid state and its description.
+ */
+/** The field owns descriptions, visibility and errors; its control stays native. */
+function fieldHandle(control, labelNode, { help, unit, containerAttrs = {} }) {
+  const id = control.id;
+  const externalDescription = control.getAttribute("aria-describedby");
+  const label = el("div", { class: "field-label" }, labelNode);
+  let unitNode = unit === undefined ? null : el("span", { id: `${id}-unit`, class: "field-unit" }, unit);
+  if (unitNode) label.append(unitNode);
+  const helpNode = help ? el("p", { id: `${id}-help`, class: "help" }, help) : null;
+  const error = el("p", { id: `${id}-error`, class: "help field-error", hidden: true });
+  const node = el("div", { ...containerAttrs, class: `field ${containerAttrs.class || ""}`.trim() },
+    unitNode ? label : labelNode, control.type === "checkbox" ? null : control, helpNode, error);
+  const describe = () => {
+    const description = [externalDescription, unitNode?.id, helpNode?.id, error.hidden ? null : error.id].filter(Boolean).join(" ");
+    if (description) control.setAttribute("aria-describedby", description);
+    else control.removeAttribute("aria-describedby");
+  };
+  describe();
+  return {
+    node, control,
+    get unit() { return unitNode; },
+    setUnit(value) {
+      if (!unitNode) {
+        unitNode = el("span", { id: `${id}-unit`, class: "field-unit" });
+        label.prepend(labelNode);
+        label.append(unitNode);
+        node.prepend(label);
+      }
+      unitNode.textContent = value;
+      describe();
+    },
+    setVisible(visible) { node.hidden = !visible; },
+    setError(message) {
+      error.textContent = message || "";
+      error.hidden = !message;
+      if (message) control.setAttribute("aria-invalid", "true");
+      else control.removeAttribute("aria-invalid");
+      describe();
+    },
+  };
+}
+/**
+ * Semantic options are type/choices/help/unit/tooltip. Attribute bags target their
+ * named element: containerAttrs controls layout; controlAttrs controls the input.
+ * @returns {FieldHandle}
+ */
 export function field(label, name, value = "", options = {}) {
   const id = `field-${++nextId}`;
-  const { choices, type = "text", help, unit, tooltip, required = false, ...rest } = options;
-  const description = [rest["aria-describedby"], unit !== undefined ? `${id}-unit` : null, help ? `${id}-help` : null].filter(Boolean).join(" ");
-  if (description) rest["aria-describedby"] = description;
-  const input = choices
-    ? el(
-        "select",
-        { id, name, required, ...rest },
-        choices.map((c) => option(c.value, c.label)),
-      )
+  const { choices, type = "text", help, unit, tooltip, controlAttrs = {}, containerAttrs = {} } = options;
+  const control = choices
+    ? el("select", { ...controlAttrs, id, name }, choices.map((c) => option(c.value, c.label)))
     : type === "textarea"
-      ? el("textarea", { id, name, rows: 4, required, ...rest })
-      : el("input", { id, name, type, required, ...rest });
-  input.value = value ?? "";
+      ? el("textarea", { rows: 4, ...controlAttrs, id, name })
+      : el("input", { ...controlAttrs, id, name, type });
+  control.value = value ?? "";
   const plainLabel = el("label", { for: id }, label);
-  const labelNode = tooltip ? labelHelp(plainLabel, label, tooltip, id) : plainLabel;
-  return el(
-    "div",
-    { class: "field" },
-    unit === undefined ? labelNode : el("div", { class: "field-label" },
-      labelNode, el("span", { id: `${id}-unit`, class: "field-unit" }, unit)),
-    input,
-    help ? el("p", { id: `${id}-help`, class: "help" }, help) : null,
-  );
-}
-export function setFieldUnit(node, unit) {
-  node.querySelector(".field-unit").textContent = unit;
+  return fieldHandle(control, tooltip ? labelHelp(plainLabel, label, tooltip, id) : plainLabel,
+    { help, unit, containerAttrs });
 }
 export function checkbox(label, name, checked = false, options = {}) {
   const id = `field-${++nextId}`;
-  const labelNode = el("label", { for: id, class: "inline" },
-    el("input", { id, name, type: "checkbox", checked }), label);
-  return el(
-    "div",
-    { class: "field" },
-    options.tooltip ? labelHelp(labelNode, label, options.tooltip, id) : labelNode,
-  );
+  const control = el("input", { ...options.controlAttrs, id, name, type: "checkbox", checked });
+  const labelNode = el("label", { for: id, class: "inline" }, control, label);
+  return fieldHandle(control, options.tooltip ? labelHelp(labelNode, label, options.tooltip, id) : labelNode, options);
 }
 export function values(form) {
   const data = Object.fromEntries(new FormData(form));
@@ -209,15 +246,18 @@ export function empty(title, text, action) {
   );
 }
 export function details(title, ...children) {
-  return el(
-    "details",
-    { class: "details" },
-    el("summary", {}, title),
-    el("div", { class: "form-grid" }, children),
-  );
+  const summary = el("summary", {}, title);
+  const content = el("div", { class: "form-grid" }, children);
+  const node = el("details", { class: "details" }, summary, content);
+  return {
+    node, summary, content,
+    isOpen() { return node.open; },
+    setOpen(open) { node.open = open; },
+    setVisible(visible) { node.hidden = !visible; },
+  };
 }
 export function decimalField(label, name, value, options = {}) {
-  return field(label, name, value, { inputmode: "decimal", ...options });
+  return field(label, name, value, { ...options, controlAttrs: { inputmode: "decimal", ...options.controlAttrs } });
 }
 
 /** A rate belongs to its source currency. Never carry an automatic 1 into foreign currency. */
