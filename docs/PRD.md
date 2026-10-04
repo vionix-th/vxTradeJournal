@@ -228,9 +228,10 @@ Install tooling as project dependencies and expose routine tasks through `packag
 | `npm run dev` | Start application and development emulators together using local defaults |
 | `npm run dev:test` | Start application and test-profile emulators for interactive debugging |
 | `npm run emulators` | Start development Auth/Firestore emulators and Emulator UI separately |
-| `npm run test` | Execute complete test suite once; manage required test services |
-| `npm run test:unit` | Execute domain/application unit tests |
-| `npm run test:integration` | Execute persistence and security tests with isolated emulators |
+| `npm run test` | Execute complete test suite once; units precede service startup; reject extra selectors |
+| `npm run test:unit` | Execute domain/application unit tests without emulators; forward file/name filters and reject zero executed tests |
+| `npm run test:integration` | Execute persistence, security and source CLI tests with isolated emulators; forward file/name filters |
+| `npm run test:cli` | Execute only source CLI integration scenarios; forward native name filters |
 | `npm run test:e2e` | Execute browser workflows with local application and isolated emulators |
 | `npm run test:watch` | Watch unit tests during development |
 | `npm run lint` | Check source quality using selected project's lint tooling |
@@ -238,7 +239,7 @@ Install tooling as project dependencies and expose routine tasks through `packag
 | `npm run preview` | Serve built bundle locally against development emulators |
 | `npm run data:seed` | Load representative synthetic records into development emulators |
 | `npm run data:reset` | Reset development emulator data and restore sample records |
-| `npm run check` | Execute source/documentation checks, test suite, build and packaged-skill verification |
+| `npm run check` | Complete integration/release gate: source/documentation checks, test suite, build and packaged-skill verification |
 
 Test commands follow the worker-m execution policy in AGENTS.md. Local profiles connect explicitly to emulated services. Production uses project `vionixtradejournal` (display name `vionix-trade-journal`, number `389058969816`) on Spark with email/password Auth, default Firestore in `asia-east1`, and static Firebase Hosting. `npm run build:prod` produces a separate `dist-prod/` artifact with hosted Firebase configuration and no emulator connections. `npm run preview:prod` previews that artifact using online services; `npm run deploy:prod` builds and publishes Hosting and Firestore rules to the explicit production project. Production preparation and publication are separate operations. Local seed/reset scripts never target production. No server-side or billing-required services are added by this setup.
 
@@ -317,7 +318,37 @@ Use Vitest for domain/application tests, Firebase Emulator Suite for persistence
 
 CLI acceptance additionally requires isolated-emulator coverage of authentication/session refresh, profile isolation, user ownership, command input validation, stable IDs, revisions, idempotent trade retries, correction fingerprints, dry runs, and export. Build and install the generated skill in a temporary directory; invoke it from an unrelated working directory and verify its command schema, JSON/error contract and representative complete workflows. Do not use production records for automated tests.
 
-For each affected capability, verify website and CLI outcomes against the same independently specified domain expectations using synthetic records. Extend interface-specific coverage where necessary; shared domain tests alone do not establish that both interfaces expose the capability. `npm run check` includes documentation-contract checks and `npm run test:skill`. Packaged-skill verification is required for CLI/shared behavior, runtime dependency, skill guidance and packaging changes, and for each application release alongside a successful production build.
+For each affected capability, verify website and CLI outcomes against the same independently specified domain expectations using synthetic records. Extend focused interface-specific coverage where necessary; shared domain tests alone do not establish that both interfaces expose the capability. `npm run check` includes documentation-contract checks and `npm run test:skill`. Fresh packaged-skill verification is required for packaging, runtime dependency and installation-guidance changes, and at complete verification checkpoints. Ordinary CLI/shared behavior changes use source/interface tests and applicable documentation checks without repeating portable installation. Each application release still requires packaged-skill verification and a successful production build.
+
+### Verification selection and checkpoints
+
+Retain worker-m test execution at failing, passing and regression stages. The orchestrator selects explicit commands and explains their coverage; selection does not use an automatic Git-based algorithm or persistent result cache.
+
+| Change | Required routine verification |
+|---|---|
+| Documentation/copy | Content and reference checks; skill documentation checks when applicable |
+| Local styling | Affected rendered screens at relevant widths |
+| UI interaction | Focused regression and related interaction tests |
+| Shared UI primitives | Component contracts and affected responsive/keyboard interactions |
+| Calculations/shared operations | Related unit tests and focused website/CLI outcome coverage |
+| Persistence/security | Related repository/security tests and affected interface coverage |
+| CLI behavior/contracts | Related unit and source CLI integration tests; documentation-contract checks |
+| Packaging/runtime dependencies/install guidance | Complete packaged-skill verification |
+
+Execute the new regression at the failing stage and confirm failure for the intended reason. At the passing stage, execute that regression and directly related coverage. At completion, execute affected coverage against the final implementation and reuse passing results whose tested inputs remain unchanged. Subsequent edits invalidate only affected checks. Expand to the affected suite when impact cannot be bounded confidently; use complete verification for unresolved impact across suites. The acceptance ledger maps permanent evidence, not a requirement to execute every mapped test for every change.
+
+Run `npm run check` once before merging an accumulated batch into the main branch. Releases require complete verification and a production build against release inputs. Integration results may be reused only when source, tests, configuration, dependencies and packaged artifacts remain unchanged; regenerate commit-bearing build metadata when the release revision changes. This policy does not reduce financial precision, ownership, persistence, interface-parity or release acceptance requirements.
+
+Focused commands forward native runner options without changing the automated profile or suite boundary. CLI selection remains restricted to its integration file; conflicting config/project/root overrides and non-executing options are rejected. Zero executed tests are unsuccessful verification, even when a native runner reports a successful exit. Test processes and emulators stop on failure or interruption; integration files remain sequential because they clear shared Firestore data. CLI scenarios reset Firestore and restore a private authenticated session, and prepare their own prerequisite records without depending on earlier scenarios.
+
+Representative command plans:
+
+- UI-only correction: `npm run test:unit -- tests/unit/trade-editor-session.test.js -t "removable-leg"` and `npm run test:e2e -- final-removal.spec.js`, plus rendered/accessibility checks of the affected states; no CLI or packaged installation.
+- Shared calculation correction: `npm run test:unit -- tests/unit/planning.test.js`, `npm run test:cli -- -t "reproduces PRD sizing"` and `npm run test:e2e -- trade-plan.spec.js`; no fresh skill installation.
+- Packaging change: related archive/docs tests and `npm run test:skill`.
+- Persistence correction: `npm run test:integration -- tests/integration/repository.test.js -t "opening dates"`, plus affected unit/interface checks.
+
+These examples illustrate selection, not universal per-change commands. Do not repeat a passing command unless an intervening edit affects its tested inputs. Report commands, test counts, elapsed time and omitted required checks; retain full output in worker context. Wall-clock measurements do not establish an account-allowance reduction percentage.
 
 Skill distribution acceptance verifies archive contents and version, byte-for-byte inclusion of the generated ZIP in each local and hosted website artifact, downloads before and after sign-in at mobile/intermediate/desktop widths, keyboard operation and no page overflow. Extract the ZIP for portable-install acceptance rather than copying its unarchived source folder.
 

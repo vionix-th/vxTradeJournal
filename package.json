@@ -23,7 +23,7 @@
     "deploy:rules": "firebase deploy --config firebase.json --project vionixtradejournal --only firestore:rules",
     "preview": "vite preview --host 127.0.0.1",
     "test": "node scripts/test.js all",
-    "test:unit": "vitest run --config vitest.config.js --project unit",
+    "test:unit": "node scripts/test.js unit",
     "test:integration": "node scripts/test.js integration",
     "test:e2e": "node scripts/test.js e2e",
     "test:cli": "node scripts/test.js cli",

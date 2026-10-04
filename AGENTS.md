@@ -31,13 +31,16 @@ Engineering standards for consistent development across models and sessions.
 
 - Develop behavior through a failing test, the smallest correct implementation and refactoring. Bug fixes include regression coverage.
 - Delegate test execution at failing-test, passing-test and regression stages to a `worker-m` sub-agent. The main agent retains test design, implementation and result evaluation.
+- At the failing-test stage, execute the new regression and confirm the intended failure. At the passing-test stage, execute that regression and directly related coverage. At completion, execute affected coverage against the final implementation; reuse passing results when their tested inputs remain unchanged. Subsequent edits invalidate only affected checks.
+- Select explicit commands using the [PRD verification matrix](docs/PRD.md#verification-selection-and-checkpoints) and explain their coverage. Expand to the affected suite when impact cannot be bounded; run complete verification for unresolved impact across suites. Do not infer passing verification from zero executed tests.
+- Run `npm run check` once before merging an accumulated batch into the main branch. Complete checks are integration/release gates, not mandatory for every task. The acceptance ledger maps permanent evidence, not a per-change execution checklist.
 - Worker summaries provide commands, outcomes, expected-failure confirmation and actionable diagnostics. Full test output stays in worker context.
 - Verify observable outcomes against independently derived expectations, especially for financial calculations.
 - Evaluate applicable repository checks against acceptance criteria, with unverified behavior and remaining limitations identified explicitly.
 - Functional, visual and accessibility checks provide distinct acceptance evidence. Review rendered screens at representative mobile, intermediate and desktop widths, including dense forms, long content and relevant interaction states.
 - Changes to shared interface components receive targeted layout and interaction regressions. Test expectations verify component contracts and user-visible outcomes.
 - Documentation changes receive content and reference checks.
-- Generate the skill command inventory from the CLI catalogue with `npm run skill:docs`. `npm run skill:docs:check` rejects stale inventory and invalid documented command examples. Run `npm run test:skill` for changes to CLI behavior, shared operations/calculations/persistence, runtime dependencies, skill guidance or packaging; `npm run check` includes these gates.
+- Generate the skill command inventory from the CLI catalogue with `npm run skill:docs`. `npm run skill:docs:check` rejects stale inventory and invalid documented command examples. Run `npm run test:skill` for packaging, runtime dependency or installation-guidance changes and at complete verification checkpoints. Ordinary CLI/shared behavior changes require focused source/interface coverage and applicable documentation checks, without a fresh packaged installation.
 
 ## Releases
 
@@ -46,7 +49,7 @@ Engineering standards for consistent development across models and sessions.
 - Assess compatibility against supported website and CLI workflows, CLI command/JSON contracts and persisted/exported data contracts actually in use. Establish `1.0.0` for the first stable production release.
 - Update versions when preparing releases. Use numbered prerelease identifiers for release candidates. Document, schema and calculation versions remain independent.
 - Each release uses an immutable annotated Git tag `v<version>` matching the package version and tested commit. Tag notes describe changes, any required data-conversion steps and known limitations.
-- Release readiness requires applicable tests executed by `worker-m` and a successful production build. Deployment metadata identifies the released version and commit.
+- Release readiness requires complete verification executed by `worker-m` and a successful production build against release inputs. Reuse integration results only when source, tests, configuration, dependencies and packaged artifacts remain unchanged; regenerate commit-bearing build metadata when the release revision changes. Deployment metadata identifies the released version and commit.
 - Each application release includes a generated skill distribution from the same tested commit and package version, with `npm run test:skill` passing. Installed skills are snapshots: document replacement and dependency installation for upgrades; do not assume website deployment updates an installed skill. Keep installed runtime guidance self-contained; repository maintenance policy belongs in AGENTS.md and the PRD.
 
 ## Security

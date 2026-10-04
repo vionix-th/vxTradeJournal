@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-05 — Reduce routine test workload
+
+Revise the [website/CLI/skill maintenance decision](#2026-10-02--maintain-website-cli-and-skill-together) and acceptance-gate frequency: keep worker-m delegation, but use focused failing/passing checks and affected final coverage, reusing results while tested inputs remain unchanged. Complete checks run before integrating an accumulated batch into main and for releases; fresh skill installation is required for packaging, runtime dependencies and installation guidance, not every shared behavior edit. Preserve independent financial expectations, interface parity and release coverage. Forward integration/CLI filters, reject zero executed tests and make CLI scenarios self-contained. This reduces routine execution while accepting that unrelated regressions may be discovered at the next integration gate. Browser fixture migration, emulator reuse, dependency caching and concurrency tuning remain separate work. [PRD verification selection](PRD.md#verification-selection-and-checkpoints) defines the command matrix and escalation rules.
+
 ## 2026-10-05 — Restrict credential input and complete acceptance evidence
 
 Reject login/registration credential paths before filesystem access with the existing INVALID_INPUT contract. Preserve stdin and hidden prompts, journal JSON file input and refresh-only session storage. Command summaries and generated skill guidance expose the restriction without changing JSON shapes. Close concrete acceptance evidence gaps with CLI receipt reads, preview mismatch rejection, profile/project session isolation, draft readiness, independently specified sizing/scaled fills, and browser short partial covers. These are tests of established behavior, not new product features. [ACCEPTANCE.md](ACCEPTANCE.md) records requirements, evidence and verification limits; final check/build and remote synchronization complete the bounded remediation.

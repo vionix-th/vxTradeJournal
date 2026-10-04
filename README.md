@@ -10,11 +10,11 @@ Requirements: Node.js 22.13+ and Java 21+ (Firestore emulator runtime). Install 
 - `npm run dev:test` starts interactive test profile on Vite `5174`, Auth `9199`, Firestore `8180`, UI `4100`, project `demo-vxjournal-test`.
 - `npm run emulators` starts dev Auth and Firestore emulators without Vite.
 - Dev and interactive test emulator state persists in `.local-emulators/dev` and `.local-emulators/test` when processes stop cleanly. The automated profile is disposable.
-- `npm run test` starts isolated automated profile on Auth `9299`, Firestore `8280`, UI `4200`, runs unit, integration, and browser tests, then stops services. It does not reuse dev emulator data.
-- `npm run test:unit`, `npm run test:integration`, and `npm run test:e2e` run each test group. Integration and browser commands start and stop their own isolated emulator profile; E2E also manages Vite on port `5175`.
+- `npm run test` runs units first, then starts isolated automated profile on Auth `9299`, Firestore `8280`, UI `4200` for integration and browser tests, and stops services. It does not reuse dev emulator data or accept extra selectors.
+- `npm run test:unit`, `npm run test:integration`, and `npm run test:e2e` run each test group. Integration and browser commands start and stop their own isolated emulator profile; E2E also manages Vite on port `5175`. Integration/E2E commands forward native file/name filters; `npm run test:cli -- -t "off-increment plans"` selects a source CLI scenario without selecting other integration files. A run with no executed tests is unsuccessful verification.
 - `npm run test:watch` watches unit tests; `npm run lint` checks JavaScript; `npm run build` builds the skill first and creates `dist/` including its ZIP; `npm run preview` serves the bundle on Vite's selected profile port.
 - `npm run data:seed` idempotently writes synthetic dev data; `npm run data:reset` clears dev Auth and Firestore data, then restores sample records. Both require the dev emulators running. Seed login: `demo@example.test` / `Demo-journal-123`.
-- `npm run check` runs lint, skill documentation checks, full tests, application build and packaged-skill verification.
+- `npm run check` runs lint, skill documentation checks, full tests, application build and packaged-skill verification at integration/release checkpoints. Routine changes use the [PRD verification matrix](docs/PRD.md#verification-selection-and-checkpoints).
 
 The `dev` and `emulators` scripts accept `-- --profile dev|test|auto`; for example, `npm run dev -- --profile auto`. `VXJ_PROFILE` is also supported. Firebase demo project IDs prevent accidental access to hosted projects. Profile configuration lives in `firebase.dev.json`, `firebase.test.json`, and `firebase.auto.json`.
 

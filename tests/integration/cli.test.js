@@ -3,12 +3,13 @@ import { mkdtemp, rm, chmod, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import { spawn } from "node:child_process";
-import { beforeAll, afterAll, it, expect } from "vitest";
+import { beforeAll, beforeEach, afterAll, it, expect } from "vitest";
 import { initializeTestEnvironment } from "@firebase/rules-unit-testing";
 import { Repository } from "../../src/persistence/repository.js";
 import { SessionStore } from "../../src/cli/session-store.js";
+import { PRESETS } from "../../src/domain/journal.js";
 
-let env, root, email, uid;
+let env, root, email, uid, verifiedSession;
 const project = "demo-vxjournal-auto";
 const executable = process.env.VXJ_CLI_EXECUTABLE || resolve("src/cli/index.js");
 async function cli(command, input, extra = {}, directory = root, profile = "auto") {
@@ -39,8 +40,23 @@ beforeAll(async () => {
   const codes = await response.json();
   const code = codes.oobCodes.find((item) => item.email === email && item.requestType === "VERIFY_EMAIL");
   await fetch("http://127.0.0.1:9299/identitytoolkit.googleapis.com/v1/accounts:update?key=demo-key", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ oobCode: code.oobCode }) });
+  verifiedSession = await new SessionStore(root).read("auto");
 }, 30000);
+beforeEach(async () => {
+  await env.clearFirestore();
+  await new SessionStore(root).write("auto", verifiedSession);
+});
 afterAll(async () => { await env?.cleanup(); await rm(root, { recursive: true, force: true }); });
+
+async function prerequisites({ instrument = false } = {}) {
+  const repo = new Repository(env.authenticatedContext(uid, { email_verified: true }).firestore(), uid);
+  await repo.saveEntity("accounts", { id: "a", name: "Main", currency: "USD" });
+  if (instrument) {
+    const { label: _label, ...defaults } = PRESETS.equity;
+    await repo.saveEntity("instruments", { ...defaults, id: "i", name: "Acme", symbol: "ACME", preset: "equity", currency: "USD", priceUnit: "USD/share" });
+  }
+  return repo;
+}
 
 it("uses renewable sessions across processes and protects credentials", async () => {
   const status = await cli("auth status");
@@ -175,6 +191,9 @@ it("rejects off-increment plans before saving and preserves records after reject
 }, 60000);
 
 it("does not expose another user's records and rejects unsafe saved sessions", async () => {
+  const repo = await prerequisites();
+  expect(await repo.getEntity("accounts", "a")).toMatchObject({ id: "a", uid });
+  expect((await cli("accounts get", undefined, { id: "a" })).code).toBe(0);
   const other = await mkdtemp(join(tmpdir(), "vxj-user-"));
   try {
     await cli("auth register", { email: `other-${crypto.randomUUID()}@example.test`, password: "Synthetic-test-123" }, {}, other);
@@ -266,6 +285,7 @@ it("reproduces PRD sizing and scaled-fill fixtures through the CLI", async () =>
 }, 90000);
 
 it("blocks draft catalogue definitions from starting trades through the CLI", async () => {
+  await prerequisites();
   const definition = { id: "draft-definition", name: "Draft", symbol: "DRAFT", preset: "equity", draft: true };
   expect((await cli("instruments create", definition)).code).toBe(0);
   expect((await cli("instruments preview", { name: definition.name, symbol: definition.symbol, preset: definition.preset, draft: true })).body.data.availableForNewTrades).toBe(false);
@@ -275,6 +295,7 @@ it("blocks draft catalogue definitions from starting trades through the CLI", as
 });
 
 it("covers archives, settings, multi-leg manual results and retained incomplete FX", async () => {
+  await prerequisites({ instrument: true });
   expect((await cli("accounts create", { id: "eur", name: "Euro", currency: "EUR" })).code).toBe(0);
   expect((await cli("settings update", { theme: "dark", timezone: "Asia/Bangkok", defaultAccount: "eur" }, { revision: 0 })).code).toBe(0);
   expect((await cli("settings get")).body.data.defaultAccount).toBe("eur");
