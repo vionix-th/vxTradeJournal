@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-04 — Give editor routes one lifecycle policy
+
+Route descriptors own rendering, navigation section, refresh/cancel/completion destinations and completed-editor identity. Lifecycle methods execute cancellation, parent return, completion and retirement; editors supply saved data rather than repeat navigation callbacks. History replacement is explicit instead of depending on a pending-operation flag. A confirmed refresh discards a new trade session, while refreshing a persisted trade editor returns to its current saved trade. Keep browser mechanics in the lifecycle and raw composite state in its edit session.
+
 ## 2026-10-04 — Own composite trade drafts in retained edit sessions
 
 A detached trade editor session owns immutable source history, raw editable values, leg identities, disclosure state and the save operation ID. Controls send explicit updates; rendering and inline catalogue creation reuse the session rather than reconstructing submitted state from markup. Keep absent historical planning keys absent during context-only edits, and emit null when an existing value is cleared. Shared application operations still construct and validate domain records. This preserves idempotent retries after a committed write followed by a failed refresh without expanding simple catalogue editors into a general state framework.

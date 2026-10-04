@@ -7,6 +7,7 @@ import { icon, brand, authFrame } from "./icons.js";
 import { skillDownloadPanel } from "./skill-download.js";
 import { EditorLifecycle } from "./editor-lifecycle.js";
 import { TradeEditorSession } from "./trade-editor-session.js";
+import { routePolicies } from "./route-policy.js";
 import { recentInstruments } from "../application/instruments.js";
 import {
   onAuthStateChanged,
@@ -233,7 +234,7 @@ class JournalUI {
   renderRoute(route, arg) {
     this.route = route;
     this.arg = arg;
-    const navRoute = { trade: "journal", tradeEditor: "journal", executionEditor: "journal", adjustmentEditor: "journal", snapshotEditor: "journal", accountEditor: "accounts", instrumentEditor: "instruments", strategyEditor: "strategies" }[route] || route;
+    const navRoute = routePolicies[route]?.navigationSection || route;
     for (const n of root.querySelectorAll("[data-route]")) {
       if (n.dataset.route === navRoute) n.setAttribute("aria-current", "page");
       else n.removeAttribute("aria-current");
@@ -329,22 +330,15 @@ class JournalUI {
     if (!this.canLeave()) return;
     const generation = this.loadGeneration;
     const repo = this.repo;
-    let route = this.route,
-      arg = this.arg;
-    if (route === "tradeEditor" && arg?.session?.isExisting) {
-      route = "trade";
-      arg = arg.session.id;
-    } else if (["executionEditor", "adjustmentEditor", "snapshotEditor"].includes(route)) {
-      route = "trade";
-      arg = arg.tradeId;
-    }
+    const policy = routePolicies[this.route];
+    const refreshed = policy?.refresh(this.arg) || { route: this.route, arg: this.arg };
     try {
       await this.lifecycle.run(() => repo.load(), async (data) => {
         if (generation !== this.loadGeneration) return;
         this.data = data;
         this.dirty = false;
         this.theme();
-        this.go(route, arg, true, { replace: true });
+        this.go(refreshed.route, refreshed.arg, true, { replace: true });
       });
     } catch (e) {
       this.main.prepend(notice(e.message, "error"));
