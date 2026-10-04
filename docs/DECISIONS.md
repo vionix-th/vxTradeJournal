@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-04 — Share unsaved preference defaults
+
+Use one application factory for default preferences in individual repository reads and full journal loads. Both return the same complete preferences identity and values, including exports before the first settings save. Each call returns detached state. This removes duplicated defaults without changing saved records.
+
 ## 2026-10-04 — Repair audit findings with shared boundaries and editor ownership
 
 Extend the [currency editing decision](#2026-10-01--currency-editing-and-compact-mobile-journal): snapshot currency corrections invalidate the corrected leg's sizing and realized-result rates, preserve independent fee rates, and set `1` only when currencies match. Website and CLI retain one shared correction implementation and matching preview/replay/export expectations. Enforce immutable existing leg instrument references in application validation and Firestore rules while retaining explicit snapshot corrections.

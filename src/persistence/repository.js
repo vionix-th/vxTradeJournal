@@ -15,6 +15,7 @@ import {
 } from "../domain/journal.js";
 import { prepareTrade } from "../application/journal.js";
 import { fingerprint } from "../application/fingerprint.js";
+import { defaultSettings } from "../application/settings.js";
 export class ConflictError extends Error {
   constructor(message = "Save conflict. Reload current records, then reconcile changes.") {
     super(message);
@@ -60,10 +61,7 @@ export class Repository {
     return result.exists() ? result.data() : null;
   }
   async getSettings() {
-    return (await this.getEntity("settings", "preferences")) || {
-      id: "preferences", theme: "system", timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      defaultAccount: null, revision: 0,
-    };
+    return (await this.getEntity("settings", "preferences")) || defaultSettings();
   }
   async getTrade(id) {
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -96,12 +94,7 @@ export class Repository {
       instruments,
       strategies,
       trades: trades.filter(Boolean),
-      settings: settings.find((s) => s.id === "preferences") || {
-        theme: "system",
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        defaultAccount: null,
-        revision: 0,
-      },
+      settings: settings.find((s) => s.id === "preferences") || defaultSettings(),
     };
   }
   metadata(input, old = null) {
