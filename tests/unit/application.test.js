@@ -27,6 +27,13 @@ const instrument = normalizeInstrument({
 });
 const account = normalizeAccount({ id: "a", name: "Main", currency: "USD" });
 describe("application boundaries", () => {
+  it("rejects off-increment plans during preparation without changing the draft", () => {
+    const source = createTrade({ id: "invalid-plan", account, instruments: [{ instrument, direction: "long", planning: { quantity: "1.5" } }] });
+    const before = structuredClone(source);
+    expect(() => prepareTrade(source, { accounts: [account], instruments: [instrument], strategies: [] })).toThrow(/quantity.*increment/i);
+    expect(source).toEqual(before);
+  });
+
   it("prepares a detached persistence projection and full calculation together", () => {
     const source = createTrade({ id: "prepared", account, instruments: [{ instrument, direction: "long" }] });
     source.executions = ["entry", "exit"].map((kind, index) => ({

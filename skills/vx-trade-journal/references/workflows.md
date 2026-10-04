@@ -2,6 +2,8 @@
 
 These examples use the dev emulator profile and synthetic records. Resolve current field contracts with `schema` before use; keep generated IDs and returned revisions from the CLI response.
 
+Planned quantities and fills must match the leg snapshot's quantity increment. An optional plan may omit quantity; a supplied off-increment quantity is rejected, including when correcting a snapshot's increment. Read the historical snapshot rather than assuming the current catalogue definition applies.
+
 ## Record a trade
 
 1. Check the selected environment and signed-in user with `doctor --profile dev`.

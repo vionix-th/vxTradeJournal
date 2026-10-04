@@ -7,6 +7,23 @@ const data = { accounts: [account], instruments: [instrument], strategies: [{ id
 const base = () => newTrade({ id: "t", accountId: "a", legs: [{ instrumentId: "i", direction: "long" }] }, data);
 const entry = { id: "e", legId: "t-leg-1", kind: "entry", quantity: "2", price: "10", timestamp: "2026-01-01T07:00:00+07:00" };
 describe("shared workflow operations", () => {
+  it("enforces planned quantity increments on initial creation and leg edits", () => {
+    expect(() => newTrade({ id: "invalid-plan", accountId: "a", legs: [
+      { instrumentId: "i", direction: "long", planning: { quantity: "1.5" } },
+    ] }, data)).toThrow(/quantity.*increment/i);
+    const original = base();
+    const before = structuredClone(original);
+    expect(() => editLeg(original, "t-leg-1", { planning: { quantity: "1.5" } })).toThrow(/quantity.*increment/i);
+    expect(original).toEqual(before);
+  });
+
+  it("rejects a snapshot increment correction invalidating its existing plan atomically", () => {
+    const original = editLeg(base(), "t-leg-1", { planning: { quantity: "1" } });
+    const before = structuredClone(original);
+    expect(() => correctSnapshot(original, "t-leg-1", { quantityIncrement: "2" })).toThrow(/quantity.*increment/i);
+    expect(original).toEqual(before);
+  });
+
   it("rejects invalid initial direction before returning a source trade", () => {
     expect(() => newTrade({ id: "invalid", accountId: "a", legs: [{ instrumentId: "i", direction: "sideways" }] }, data)).toThrow(/direction/i);
   });

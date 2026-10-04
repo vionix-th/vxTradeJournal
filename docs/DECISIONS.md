@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-04 — Validate planned quantity increments
+
+Apply the same snapshot quantity increment to supplied plans and actual fills. Empty plans remain optional, fractional quantities remain valid for fractional increments, and explicit snapshot corrections reject plans that would become invalid. Website and CLI share the domain check; rejected writes leave records and receipts unchanged.
+
 ## 2026-10-04 — Expose field and disclosure interaction contracts
 
 Shared native form components expose explicit controls, content, visibility, unit and error handles. Control attributes and container attributes have separate owners. Errors update accessible associations without replacing help or units, and disclosure content no longer depends on child positions. Migrate callers together rather than retaining a flat-options compatibility layer. This keeps native form submission and keyboard behavior while isolating markup changes from editor logic.

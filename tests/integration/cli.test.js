@@ -135,6 +135,34 @@ it("rejects impossible instrument expiry dates through the CLI", async () => {
   expect(preview.body.data.instrument.expiry).toBe("2028-02-29");
 });
 
+it("rejects off-increment plans before saving and preserves records after rejected edits", async () => {
+  expect((await cli("accounts create", { id: "plan-account", name: "Plan increments", currency: "USD" })).code).toBe(0);
+  expect((await cli("instruments create", { id: "plan-whole", name: "Whole contracts", symbol: "WHOLE", preset: "futures", currency: "USD" })).code).toBe(0);
+  const nativeRepo = new Repository(env.authenticatedContext(uid, { email_verified: true }).firestore(), uid);
+  const invalid = await cli("trades create", { id: "invalid-plan", accountId: "plan-account", legs: [
+    { instrumentId: "plan-whole", direction: "long", planning: { quantity: "1.5" } },
+  ] }, { "operation-id": "invalid-plan-create" });
+  expect(invalid.code).toBe(2);
+  expect(invalid.body.error.message).toMatch(/quantity.*increment/i);
+  expect(await nativeRepo.getTrade("invalid-plan")).toBeNull();
+  expect(await nativeRepo.getOperation("invalid-plan", "invalid-plan-create")).toBeNull();
+
+  expect((await cli("instruments create", { id: "plan-fractional", name: "Fractional units", symbol: "FRAC", preset: "equity", currency: "USD", quantityIncrement: "0.25" })).code).toBe(0);
+  const created = await cli("trades create", { id: "fractional-plan", accountId: "plan-account", legs: [
+    { id: "fractional-leg", instrumentId: "plan-fractional", direction: "long", planning: { quantity: "1.5" } },
+  ] }, { "operation-id": "fractional-plan-create" });
+  expect(created.code, JSON.stringify(created.body)).toBe(0);
+  const before = await nativeRepo.getTrade("fractional-plan");
+  const edited = await cli("legs update", { planning: { quantity: "1.3" } }, {
+    trade: "fractional-plan", id: "fractional-leg", revision: 1, "operation-id": "invalid-plan-edit",
+  });
+  expect(edited.code).toBe(2);
+  expect(edited.body.error.message).toMatch(/quantity.*increment/i);
+  expect(await nativeRepo.getTrade("fractional-plan")).toEqual(before);
+  expect(await nativeRepo.getOperation("fractional-plan", "invalid-plan-edit")).toBeNull();
+  expect((await cli("trades delete", undefined, { id: "fractional-plan", revision: 1, yes: true })).code).toBe(0);
+}, 60000);
+
 it("does not expose another user's records and rejects unsafe saved sessions", async () => {
   const other = await mkdtemp(join(tmpdir(), "vxj-user-"));
   try {

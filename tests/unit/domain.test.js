@@ -276,6 +276,29 @@ describe("complete trade validation", () => {
     expect(t).toEqual(before);
   });
 });
+
+describe("planned quantity increments", () => {
+  it("rejects an off-increment plan without changing source records", () => {
+    const t = trade([leg({ planning: { quantity: "1.5" } })]);
+    const before = structuredClone(t);
+    expect(() => calculateTrade(t)).toThrow(/quantity.*increment/i);
+    expect(t).toEqual(before);
+  });
+
+  it("accepts fractional quantities matching the configured increment", () => {
+    const t = trade([leg({ snapshot: instrument({ quantityIncrement: "0.25" }), planning: { quantity: "1.5" } })]);
+    expect(calculateTrade(t).legs[0].remaining).toBe("0");
+    expect(t.legs[0].planning.quantity).toBe("1.5");
+  });
+
+  it.each([null, ""])("keeps optional planned quantity %s absent", (quantity) => {
+    expect(calculateTrade(trade([leg({ planning: { quantity } })])).status).toBe("open");
+  });
+
+  it.each(["0", "-1"])("rejects nonpositive planned quantity %s independently", (quantity) => {
+    expect(() => calculateTrade(trade([leg({ planning: { quantity } })]))).toThrow(/quantity.*positive/i);
+  });
+});
 describe("sizing and contracts", () => {
   it("sizes five contracts and floors fractional increments", () => {
     const l = leg({

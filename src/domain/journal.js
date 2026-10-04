@@ -349,8 +349,10 @@ export function validatePlanning(leg) {
       increment(value, leg.snapshot.priceIncrement, label);
     }
   }
-  for (const [key, label] of Object.entries({ rate: "Conversion rate", riskBudget: "Risk budget", quantity: "Quantity" }))
+  for (const [key, label] of Object.entries({ rate: "Conversion rate", riskBudget: "Risk budget" }))
     decimal(p[key], label, true, true);
+  const quantity = decimal(p.quantity, "Quantity", true, true);
+  if (quantity != null) increment(quantity, leg.snapshot.quantityIncrement, "Quantity");
 }
 /** Structural prerequisites for replay; record and position validation happen during replay. */
 function validateTradeStructure(t) {

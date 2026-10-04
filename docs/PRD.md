@@ -1,6 +1,6 @@
 # vxTradeJournal — Product Requirements Document
 
-Version: 1.6 · Status: Proposed · Date: 4 October 2026
+Version: 1.7 · Status: Proposed · Date: 4 October 2026
 
 ## 1. Product purpose and scope
 
@@ -135,6 +135,7 @@ Recommended quantity =
 - Target optional; show planned reward/risk when provided.
 - Sizing excludes fees and slippage; label result as planned risk at entered stop.
 - Planned quantity stays separate from actual filled quantity.
+- Planned quantity must honor the leg snapshot's quantity increment, including manually entered single-leg and multi-leg plans. Website and CLI reject off-increment plans and snapshot corrections that invalidate retained planned quantities without saving source records or receipts. Empty planned quantities remain optional.
 - Scaled entries update actual average entry and remaining position.
 - Display remaining position’s planned risk at current recorded stop separately from realized loss.
 - Multi-leg quantities and combined risk budget entered manually. No automatic portfolio maximum-loss calculation.
