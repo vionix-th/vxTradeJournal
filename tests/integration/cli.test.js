@@ -66,6 +66,12 @@ it("records trades, calculations and corrections with revision and retry guarant
   const created = await cli("trades create", input, { "operation-id": "create" });
   expect(created.code).toBe(0);
   expect(created.body.data.trade.revision).toBe(1);
+  const createdDate = created.body.data.trade.createdAt;
+  expect(created.body.data.trade.openedAt).toBe(createdDate);
+  expect(created.body.data.trade.summary.openedAt).toBe(createdDate);
+  expect((await cli("calculate trade", undefined, { id: "t" })).body.data.calculation.openedAt).toBe(createdDate);
+  expect((await cli("journal list", undefined, { from: createdDate.slice(0, 10), to: createdDate.slice(0, 10), timezone: "UTC" })).body.data.total).toBe(1);
+  expect((await cli("export")).body.data.trades.find((trade) => trade.id === "t").openedAt).toBe(createdDate);
   const retry = await cli("trades create", input, { "operation-id": "create" });
   expect(retry.body.data.replayed).toBe(true);
   expect((await cli("trades create", { ...input, review: "Changed" }, { "operation-id": "create" })).code).toBe(5);

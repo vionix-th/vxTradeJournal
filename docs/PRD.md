@@ -173,6 +173,7 @@ Journal is home screen.
 - Paginated list, newest trade activity first.
 - Search instrument name/symbol.
 - Filter account, market, status, strategy, tag and opening-date range.
+- An unfilled trade uses its repository-assigned creation timestamp as its opening date. Once an entry exists, the earliest entry timestamp takes precedence. Stored summaries, replay, website/CLI filtering and export agree; context edits and retries preserve creation metadata.
 - Desktop rows and mobile cards expose instrument(s), status, account, strategy and realized result.
 - Opening trade reveals context, legs and execution history.
 - Delete trade through explicit confirmation; retain no orphan child records.

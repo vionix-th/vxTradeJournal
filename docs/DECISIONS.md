@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-05 — Assign canonical metadata before trade projection
+
+Prepare trades from one repository-owned parent metadata envelope inside the transaction. Creation time is immutable and assigned before calculating the opening-date cache; an actual entry still takes precedence. Keep request fingerprints on original input and receipt/revision checks unchanged. This fixes website/CLI date filtering, replay and export agreement without a schema change. Remediation uses disposable test data, so no retained-record repair is required. Track acceptance in [ACCEPTANCE.md](ACCEPTANCE.md).
+
 ## 2026-10-05 — Restore native cursors and isolate fallback history ledgers
 
 Supersede the 2026-10-04 unknown-fragment repair: copying the active marker onto another physical history slot produced duplicate indexes and could turn a rejected Back into `history.go(0)`, which reloads. One reconciliation path now handles actual browser state for both popstate and queued hashchange. Native entry keys restore the physical cursor without replacing controls or suspended drafts. Recovery callbacks belong to their authentication session, ledger epoch and active entry; rejected native recovery rebases once and releases the guard.

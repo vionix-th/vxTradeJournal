@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { beforeAll, afterAll, beforeEach, describe, it, expect } from "vitest";
 import { initializeTestEnvironment } from "@firebase/rules-unit-testing";
 import { Repository } from "../../src/persistence/repository.js";
-import { createTrade } from "../../src/domain/journal.js";
+import { createTrade, calculateTrade } from "../../src/domain/journal.js";
+import { filterJournal, exportJournal } from "../../src/application/journal.js";
 let env, repo;
 beforeAll(async () => {
   env = await initializeTestEnvironment({
@@ -52,6 +53,26 @@ async function fixtures() {
   return { account, instrument, strategy };
 }
 describe("transactional repository", () => {
+  it("derives unfilled opening dates from canonical creation metadata", async () => {
+    const { account, instrument } = await fixtures();
+    const source = createTrade({ id: "dated", account, instruments: [{ instrument, direction: "long" }] });
+    source.createdAt = "2000-01-01T00:00:00.000Z";
+    const saved = await repo.saveTrade(source, "dated-create");
+    expect(saved.createdAt).not.toBe(source.createdAt);
+    expect(saved.openedAt).toBe(saved.createdAt);
+    expect(saved.summary.openedAt).toBe(saved.createdAt);
+    expect(calculateTrade(saved).openedAt).toBe(saved.createdAt);
+    expect((await repo.saveTrade(source, "dated-create")).createdAt).toBe(saved.createdAt);
+    const edited = await repo.saveTrade({ ...saved, createdAt: source.createdAt, review: "Updated" }, "dated-edit");
+    expect(edited.summary.openedAt).toBe(saved.createdAt);
+    const data = await repo.load();
+    const day = saved.createdAt.slice(0, 10);
+    expect(filterJournal(data.trades, { from: day, to: day }).total).toBe(1);
+    expect(exportJournal(data).trades[0].openedAt).toBe(saved.createdAt);
+    const entered = await repo.saveTrade({ ...edited, executions: [{ id: "entry", legId: saved.legs[0].id, kind: "entry", quantity: "1", price: "10", fees: "0", feeCurrency: "USD", timestamp: "2026-01-01T00:00:00Z" }] }, "dated-entry");
+    expect(entered.createdAt).toBe(saved.createdAt);
+    expect(entered.openedAt).toBe("2026-01-01T00:00:00.000Z");
+  });
   it("saves six distinct legs atomically with first-account lock, strategy and complete history", async () => {
     const { account, instrument, strategy } = await fixtures();
     const instruments = await Promise.all(Array.from({ length: 6 }, (_, index) =>

@@ -175,12 +175,9 @@ export class Repository {
         instruments: instruments.filter(Boolean),
         strategies: strategyDoc?.exists() ? [strategyDoc.data()] : [],
       };
-      const prepared = prepareTrade(clean(input), data, previous);
+      const prepared = prepareTrade(this.metadata(input, old), data, previous);
       const { legs, executions, adjustments, ...parent } = prepared;
-      const saved = this.metadata(
-        { ...parent, lastOperation: operationId },
-        old,
-      );
+      const saved = { ...parent, lastOperation: operationId };
       for (const [type, records] of Object.entries({
         legs,
         executions,
