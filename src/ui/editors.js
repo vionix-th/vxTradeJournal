@@ -23,7 +23,8 @@ import {
   details,
   bindConversionRate,
 } from "./components.js";
-import { hasPlanValues, nextConversionRate, planningFeedback } from "./planning.js";
+import { hasPlanValues, planningFeedback } from "./planning.js";
+import { conversionState } from "./conversion-state.js";
 import { instrumentHelp, tradeHelp } from "./field-help.js";
 const choices = (items) => items.map((i) => ({ value: i.id, label: i.name }));
 const nullable = (v) => (v === "" ? null : v);
@@ -465,11 +466,11 @@ export function tradeEditor(ui, original = null, disclosureState = new Map()) {
       if (b.remove) b.remove.disabled = blocks.length === 1;
       const l = t.legs[index];
       const instrument = l.snapshot;
-      const pair = `${instrument?.currency || ""}/${t.accountCurrency}`;
       const input = b.rate.control;
-      input.value = nextConversionRate(b.pair, pair, input.value);
-      b.pair = pair;
-      input.readOnly = instrument?.currency === t.accountCurrency;
+      const conversion = conversionState(b.pair, instrument?.currency || "", t.accountCurrency, input.value);
+      input.value = conversion.rate;
+      b.pair = conversion.pair;
+      input.readOnly = conversion.automatic;
       l.planning.rate = nullable(input.value);
       b.rate.setVisible(!!instrument && !input.readOnly);
       b.source.textContent = `1 ${instrument?.currency || ""} =`;
@@ -645,10 +646,9 @@ export function executionEditor(ui, trade, legId, existing = null) {
     fields.resultRate.setVisible(v.kind !== "entry");
     fields.reason.setVisible(v.kind === "settlement");
     fields.price.control.required = v.kind !== "settlement";
-    if (i.currency === trade.accountCurrency) {
-      fields.resultRate.control.value = "1";
-      fields.resultRate.control.readOnly = true;
-    }
+    const resultConversion = conversionState(`${i.currency}/${trade.accountCurrency}`, i.currency, trade.accountCurrency, fields.resultRate.control.value);
+    fields.resultRate.control.value = resultConversion.rate;
+    fields.resultRate.control.readOnly = resultConversion.automatic;
   };
   bindConversionRate(
     form.node,

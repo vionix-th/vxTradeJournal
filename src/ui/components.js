@@ -1,4 +1,5 @@
 import { money } from "../domain/journal.js";
+import { conversionState } from "./conversion-state.js";
 let nextId = 0;
 let activeHelp = null;
 let helpEventsBound = false;
@@ -269,14 +270,12 @@ export function bindConversionRate(
 ) {
   const source = form.elements[sourceName];
   const rate = form.elements[rateName];
-  let previous = source.value;
+  let previousPair = `${source.value}/${accountCurrency}`;
   const update = () => {
-    if (source.value !== previous) {
-      rate.value = source.value === accountCurrency ? "1" : "";
-      previous = source.value;
-    }
-    rate.readOnly = source.value === accountCurrency;
-    if (rate.readOnly) rate.value = "1";
+    const state = conversionState(previousPair, source.value, accountCurrency, rate.value);
+    rate.value = state.rate;
+    rate.readOnly = state.automatic;
+    previousPair = state.pair;
   };
   source.addEventListener("input", update);
   source.addEventListener("change", update);

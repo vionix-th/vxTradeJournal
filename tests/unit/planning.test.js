@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasPlanValues, planningFeedback, nextConversionRate } from "../../src/ui/planning.js";
+import { hasPlanValues, planningFeedback } from "../../src/ui/planning.js";
 const snapshot = { id: "i", name: "Acme", symbol: "ACME", preset: "equity", market: "Equities", model: "linear", quantityUnit: "shares", quantityIncrement: "1", priceIncrement: "0.01", pointValue: "1", currency: "USD" };
 const leg = (planning = {}, instrument = snapshot) => ({ snapshot: instrument, direction: "long", planning });
 describe("optional planning presentation", () => {
@@ -18,11 +18,5 @@ describe("optional planning presentation", () => {
   it("keeps manual and multi-leg sizing manual", () => {
     expect(planningFeedback(leg(), "USD", 2).message).toMatch(/combined risk manually/);
     expect(planningFeedback(leg({}, { ...snapshot, model: "manual", pointValue: null }), "USD", 1).message).toMatch(/manually/);
-  });
-  it("clears rates on currency-pair changes and uses automatic same-currency one", () => {
-    expect(nextConversionRate("EUR/USD", "EUR/USD", "0.8")).toBe("0.8");
-    expect(nextConversionRate("EUR/USD", "GBP/USD", "0.8")).toBe("");
-    expect(nextConversionRate("EUR/USD", "EUR/EUR", "0.8")).toBe("1");
-    expect(nextConversionRate("EUR/EUR", "EUR/USD", "1")).toBe("");
   });
 });

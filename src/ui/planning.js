@@ -6,10 +6,6 @@ export function hasPlanValues(leg, accountCurrency) {
   return ["entry", "stop", "target", "riskBudget", "quantity"].some((key) => supplied(p[key])) ||
     (leg.snapshot?.currency !== accountCurrency && supplied(p.rate));
 }
-export function nextConversionRate(previousPair, pair, rate) {
-  const [source, account] = pair.split("/");
-  return source === account ? "1" : previousPair === pair ? rate : "";
-}
 export function planningFeedback(leg, accountCurrency, legCount) {
   if (!leg.snapshot) return { kind: "guidance", message: "Choose an instrument to plan this trade." };
   try {

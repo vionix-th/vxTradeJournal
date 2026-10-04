@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-04 — Share currency-pair editing transitions
+
+One pure UI transition determines the pair, retained rate and automatic/manual state for planning, fee and adjustment controls and fixed result-currency controls. An unchanged foreign pair retains its rate, a changed foreign pair clears it, and matching currencies use one. Domain conversion and save validation remain authoritative and independent of the DOM.
+
 ## 2026-10-04 — Share recent catalogue ordering
 
 Website and CLI use one pure instrument selector ordered by the latest linked trade activity, with instrument name as a deterministic tie breaker. Adapters provide source references; the selector leaves input arrays intact. This removes duplicated ordering policy while retaining filtering and read contracts.
