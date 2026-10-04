@@ -6,6 +6,7 @@ import "./styles.css";
 import { icon, brand, authFrame } from "./icons.js";
 import { skillDownloadPanel } from "./skill-download.js";
 import { EditorLifecycle } from "./editor-lifecycle.js";
+import { recentInstruments } from "../application/instruments.js";
 import {
   onAuthStateChanged,
   createUserWithEmailAndPassword,
@@ -348,18 +349,7 @@ class JournalUI {
     }).format(new Date(value));
   }
   recentInstruments() {
-    const lastUsed = new Map();
-    for (const t of this.data.trades)
-      for (const l of t.legs)
-        lastUsed.set(
-          l.instrumentId,
-          [lastUsed.get(l.instrumentId) || "", t.updatedAt].sort().at(-1),
-        );
-    return [...this.data.instruments].sort(
-      (a, b) =>
-        (lastUsed.get(b.id) || "").localeCompare(lastUsed.get(a.id) || "") ||
-        a.name.localeCompare(b.name),
-    );
+    return recentInstruments(this.data.instruments, this.data.trades);
   }
   authPage(mode = "signin", message = null) {
     const errors = el("div");

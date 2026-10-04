@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-04 — Share recent catalogue ordering
+
+Website and CLI use one pure instrument selector ordered by the latest linked trade activity, with instrument name as a deterministic tie breaker. Adapters provide source references; the selector leaves input arrays intact. This removes duplicated ordering policy while retaining filtering and read contracts.
+
 ## 2026-10-04 — Validate planned quantity increments
 
 Apply the same snapshot quantity increment to supplied plans and actual fills. Empty plans remain optional, fractional quantities remain valid for fractional increments, and explicit snapshot corrections reject plans that would become invalid. Website and CLI share the domain check; rejected writes leave records and receipts unchanged.

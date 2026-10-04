@@ -3,6 +3,7 @@ import { prepareTradeResult, filterJournal, journalOverview, exportJournal } fro
 import { newTrade, editTrade, replaceLegs, editLeg, putExecution, putAdjustment, removeChild, correctSnapshot } from "../application/operations.js";
 import { fingerprint } from "../application/fingerprint.js";
 import { CliError } from "./errors.js";
+import { recentInstruments } from "../application/instruments.js";
 
 const normalizers = { accounts: normalizeAccount, instruments: normalizeInstrument, strategies: normalizeStrategy };
 const required = (record, label = "Record") => {
@@ -38,10 +39,9 @@ async function entity({ repo, spec, options, input }) {
       items = items.filter((i) => [i.name, i.symbol, i.market, i.venue, i.underlying, i.expiry, i.strike, i.optionType].filter(Boolean).join(" ").toLowerCase().includes(q));
     }
     if (type === "instruments") {
-      const trades = await repo.list("trades"), recent = new Map();
-      for (const t of trades) for (const leg of await repo.listChildren(t.id, "legs"))
-        recent.set(leg.instrumentId, [recent.get(leg.instrumentId) || "", t.updatedAt].sort().at(-1));
-      items.sort((a, b) => (recent.get(b.id) || "").localeCompare(recent.get(a.id) || "") || a.name.localeCompare(b.name));
+      const trades = await repo.list("trades");
+      const linked = await Promise.all(trades.map(async (trade) => ({ ...trade, legs: await repo.listChildren(trade.id, "legs") })));
+      items = recentInstruments(items, linked);
     }
     return items;
   }
