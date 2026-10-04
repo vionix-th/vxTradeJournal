@@ -58,6 +58,7 @@ export class EditorLifecycle {
 
   go(route, arg = null, { force = false, replace = false, parent = null, dirty = false, focus = null } = {}) {
     if (!force && !this.canLeave()) return false;
+    if (!force) this.discardEditor();
     this.clearRecovery();
     const entry = {
       key: crypto.randomUUID(),
@@ -161,6 +162,30 @@ export class EditorLifecycle {
     return this.policies[this.current.route].refresh(this.current.arg);
   }
 
+  /** Ordinary departures retire one composite session and its suspended branch. */
+  discardEditor() {
+    let branch = this.current;
+    while (branch?.parent) branch = branch.parent.entry;
+    const policy = this.policies[branch?.route];
+    const identity = policy?.draftIdentity?.(branch.arg);
+    if (identity == null) return;
+    const destination = policy.discard(branch.arg);
+    const retired = new Set([branch, ...[...this.entries.values()].filter((entry) =>
+      this.policies[entry.route]?.draftIdentity?.(entry.arg) === identity)]);
+    const affected = [...new Set([...this.entries.values(), ...retired])].filter((entry) => {
+      let ancestor = entry;
+      while (ancestor && !retired.has(ancestor)) ancestor = ancestor.parent?.entry;
+      return !!ancestor;
+    });
+    for (const entry of affected) {
+      entry.route = destination.route;
+      entry.arg = destination.arg;
+      entry.dirty = false;
+      entry.parent = null;
+      entry.returnFocus = null;
+    }
+  }
+
   openChild(route, arg, { onSaved }) {
     const entry = this.current;
     entry.dirty = this.dirty;
@@ -209,6 +234,7 @@ export class EditorLifecycle {
     this.editorDirty = false;
     if (this.hasParent) return this.returnParent();
     const destination = this.policies[this.current.route].cancel(this.current.arg);
+    this.discardEditor();
     return this.go(destination.route, destination.arg, { force: true, focus });
   }
 
@@ -246,6 +272,7 @@ export class EditorLifecycle {
       this.recover(entry);
       return;
     }
+    if (!returning) this.discardEditor();
     if (entry) {
       const focus = returning ? this.current.returnFocus : null;
       this.activate(entry, entry.dirty, focus);

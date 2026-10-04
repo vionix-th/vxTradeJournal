@@ -52,8 +52,10 @@ export const routePolicies = {
   tradeEditor: {
     navigationSection: "journal",
     render: (ui, arg) => {
+      const current = arg?.id ? ui.data.trades.find((record) => record.id === arg.id) : null;
+      if (arg?.id && !current) return tradeView(ui, arg.id);
       const session = tradeSession(arg) || new TradeEditorSession({
-        baseRecord: currentEntity(ui, "trades", arg), data: ui.data,
+        baseRecord: current, data: ui.data,
         defaultInstrumentId: ui.recentInstruments().find((instrument) => !instrument.archived && !instrument.draft)?.id,
       });
       session.setContext(ui.data);
@@ -70,6 +72,9 @@ export const routePolicies = {
     },
     complete: (saved) => destination("trade", saved?.id),
     identity: (arg) => tradeSession(arg)?.id || null,
+    draftIdentity: tradeSession,
+    discard: (arg) => tradeSession(arg)?.isExisting
+      ? destination("tradeEditor", { id: tradeSession(arg).id }) : destination("tradeEditor"),
   },
   executionEditor: {
     navigationSection: "journal",

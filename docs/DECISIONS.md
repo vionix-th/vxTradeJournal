@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-05 — Retire discarded composite sessions explicitly
+
+Extend the retained-session and route-policy decisions with a discard transition. Match session object identity, collect aliases and descendants before rewriting them, and preserve history markers and independent sessions. Ordinary navigation, accepted browser departure and top-level Cancel reconstruct clean editors; explicit child suspension/return preserves parent state. Successful reload retires aliases after its read, while failed reload and rejected departure change nothing. Existing editors resolve current data by ID rather than a stale record fallback.
+
 ## 2026-10-05 — Reconcile unsaved snapshots during context refresh
 
 Retained edit sessions refresh catalogue snapshots only for legs absent from their immutable base record. Preserve raw planning and disclosures, use shared instrument normalization, and apply existing currency-pair rate transitions. Missing, archived or draft selections remain visible and cannot save. Historical legs continue using their stored snapshots. Browser preview and shared new-leg operations now agree after inline catalogue refresh without changing persisted contracts.

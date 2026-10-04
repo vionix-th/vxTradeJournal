@@ -284,6 +284,7 @@ class JournalUI {
         this.data = data;
         this.dirty = false;
         this.theme();
+        this.lifecycle.discardEditor();
         this.go(refreshed.route, refreshed.arg, true, { replace: true });
       });
     } catch (e) {

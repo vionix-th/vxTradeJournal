@@ -45,6 +45,9 @@ describe("journal route policy", () => {
     expect(policy.refresh(retained)).toEqual(destination("trade", "trade-1"));
     expect(policy.cancel(retained)).toEqual(destination("trade", "trade-1"));
     expect(policy.complete({ id: "trade-1" }, retained)).toEqual(destination("trade", "trade-1"));
+    expect(policy.draftIdentity(fresh)).toBe(fresh.session);
+    expect(policy.discard(fresh)).toEqual(destination("tradeEditor"));
+    expect(policy.discard(retained)).toEqual(destination("tradeEditor", { id: "trade-1" }));
   });
 
   it("owns trade-child transitions and reopens cancelled snapshot context", () => {

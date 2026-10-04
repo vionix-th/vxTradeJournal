@@ -54,7 +54,9 @@ for (const fallback of [false, true]) {
     await expect(page.getByRole("heading", { name: "Journal", exact: true })).toBeVisible();
     expect(await page.evaluate(() => window.fragmentAuditSentinel)).toBe(true);
     await page.evaluate(() => history.back());
-    await expect(page.getByRole("heading", { name: "New instrument", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "New trade", exact: true })).toBeVisible();
+    await expect(page.getByLabel("Entry rationale", { exact: true })).toHaveValue("");
+    await expect(page.getByLabel("Instrument name", { exact: true })).toHaveCount(0);
     await page.evaluate(() => history.forward());
     await expect(page.getByRole("heading", { name: "Journal", exact: true })).toBeVisible();
     expect(await page.evaluate(() => window.fragmentAuditSentinel)).toBe(true);
