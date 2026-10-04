@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-04 — Keep invalid planning controls reachable
+
+Planning validation exposes stable field paths while retaining existing error names and messages. Editors keep supplied combined and per-leg values visible when applicability changes, attach errors to their controls and preserve raw input until correction. This avoids hidden invalid state blocking a save and keeps website feedback aligned with CLI/domain validation.
+
 ## 2026-10-04 — Give editor routes one lifecycle policy
 
 Route descriptors own rendering, navigation section, refresh/cancel/completion destinations and completed-editor identity. Lifecycle methods execute cancellation, parent return, completion and retirement; editors supply saved data rather than repeat navigation callbacks. History replacement is explicit instead of depending on a pending-operation flag. A confirmed refresh discards a new trade session, while refreshing a persisted trade editor returns to its current saved trade. Keep browser mechanics in the lifecycle and raw composite state in its edit session.

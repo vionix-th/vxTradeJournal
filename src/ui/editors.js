@@ -6,6 +6,7 @@ import {
   normalizeStrategy,
   validateSettings,
   calculateTrade,
+  validateCombinedRiskBudget,
   requireValue,
   money,
 } from "../domain/journal.js";
@@ -368,7 +369,7 @@ export function tradeEditor(ui, session) {
       }, "button secondary small");
       node.append(remove);
     }
-    blocks.push({ legId: leg.id, node, legend, plan, explanation, sizingDetails, sizing, priceFields, quantity, budget, rate, source, destination, remove });
+    blocks.push({ legId: leg.id, node, legend, plan, explanation, sizingDetails, sizing, priceFields, quantity, budget, rate, source, destination, remove, planning });
     legArea.append(node);
   }
   function updatePlanExplanation() {
@@ -378,7 +379,14 @@ export function tradeEditor(ui, session) {
   function updatePlanning() {
     updatePlanExplanation();
     if (addLegAction) addLegAction.disabled = !session.canAddLeg;
-    combined.setVisible(draft.legs.length >= 2);
+    const combinedSupplied = draft.combinedRiskBudget !== "";
+    combined.setVisible(draft.legs.length >= 2 || combinedSupplied);
+    try {
+      validateCombinedRiskBudget(draft.combinedRiskBudget);
+      combined.setError(null);
+    } catch (error) {
+      combined.setError(error.message);
+    }
     const input = session.toInput();
     combined.setUnit(input.accountCurrency);
     for (const [index, block] of blocks.entries()) {
@@ -396,8 +404,13 @@ export function tradeEditor(ui, session) {
       for (const price of block.priceFields) price.setUnit(instrument?.priceUnit || "Quote unit not configured.");
       block.quantity.setUnit(instrument?.quantityUnit || "Quantity unit not configured.");
       block.budget.setUnit(input.accountCurrency);
-      block.sizingDetails.setVisible(blocks.length === 1 && instrument?.model === "linear");
       const feedback = planningFeedback(leg, input.accountCurrency, blocks.length);
+      for (const planningField of Object.values({ ...block.planning || {}, ...block.fields || {} })) planningField?.setError?.(null);
+      const errorKey = feedback.path?.[3];
+      const errorField = errorKey && block.planning?.[errorKey];
+      errorField?.setError(feedback.kind === "error" ? feedback.message : null);
+      const invalidSizing = feedback.kind === "error" && ["riskBudget", "rate", "quantity"].includes(errorKey);
+      block.sizingDetails.setVisible((blocks.length === 1 && instrument?.model === "linear") || invalidSizing);
       block.sizing.classList.toggle("error", feedback.kind === "error");
       if (feedback.kind === "ready") {
         const result = feedback.result;

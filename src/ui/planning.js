@@ -15,16 +15,16 @@ export function planningFeedback(leg, accountCurrency, legCount) {
     const p = leg.planning || {};
     if (supplied(p.entry) && supplied(p.stop) &&
       !(leg.direction === "long" ? new D(p.stop).lt(p.entry) : new D(p.stop).gt(p.entry)))
-      throw new Error("Stop must be adverse to entry");
+      throw Object.assign(new Error("Stop must be adverse to entry"), { path: ["legs", leg.id, "planning", "stop"] });
     if (supplied(p.entry) && supplied(p.target) &&
       !(leg.direction === "long" ? new D(p.target).gt(p.entry) : new D(p.target).lt(p.entry)))
-      throw new Error("Target must be favorable");
+      throw Object.assign(new Error("Target must be favorable"), { path: ["legs", leg.id, "planning", "target"] });
     if (!["entry", "stop", "riskBudget"].every((key) => supplied(p[key])))
       return { kind: "guidance", message: "Enter entry price, stop price and risk budget to calculate size." };
     if (leg.snapshot.currency !== accountCurrency && !supplied(p.rate))
       return { kind: "guidance", message: "Enter conversion rate to calculate size in account currency." };
     return { kind: "ready", result: sizePosition(leg, accountCurrency) };
   } catch (error) {
-    return { kind: "error", message: error.message };
+    return { kind: "error", message: error.message, path: error.path || null };
   }
 }
