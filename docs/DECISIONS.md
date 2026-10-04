@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-04 — Give new legs one construction contract
+
+Use a pure leg factory for initial trade creation and later leg additions. Normalize catalogue snapshots once, detach snapshots and planning from caller state, and accept caller IDs before construction. Preserve deterministic fallback IDs and leave historical legs intact. This consolidates shared model creation for website and CLI without changing persisted shapes.
+
 ## 2026-10-04 — Share unsaved preference defaults
 
 Use one application factory for default preferences in individual repository reads and full journal loads. Both return the same complete preferences identity and values, including exports before the first settings save. Each call returns detached state. This removes duplicated defaults without changing saved records.

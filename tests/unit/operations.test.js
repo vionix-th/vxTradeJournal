@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { newTrade, editTrade, editLeg, putExecution, putAdjustment, removeChild, correctSnapshot } from "../../src/application/operations.js";
+import { newTrade, editTrade, replaceLegs, editLeg, putExecution, putAdjustment, removeChild, correctSnapshot } from "../../src/application/operations.js";
 import { normalizeInstrument, normalizeAccount, calculateTrade } from "../../src/domain/journal.js";
 const account = normalizeAccount({ id: "a", name: "Main", currency: "USD" });
 const instrument = normalizeInstrument({ id: "i", name: "Acme", symbol: "ACME", market: "Equities", preset: "equity", model: "linear", quantityUnit: "shares", quantityIncrement: "1", priceIncrement: "0.01", pointValue: "1", currency: "USD" });
@@ -7,6 +7,53 @@ const data = { accounts: [account], instruments: [instrument], strategies: [{ id
 const base = () => newTrade({ id: "t", accountId: "a", legs: [{ instrumentId: "i", direction: "long" }] }, data);
 const entry = { id: "e", legId: "t-leg-1", kind: "entry", quantity: "2", price: "10", timestamp: "2026-01-01T07:00:00+07:00" };
 describe("shared workflow operations", () => {
+  it("normalizes initial and added leg snapshots identically while preserving detached historical legs", () => {
+    const catalogue = {
+      id: "raw", uid: "alice", revision: 3, schemaVersion: 1,
+      name: "  Example  ", symbol: " EX ", market: " Equities ",
+      preset: "equity", model: "linear", quantityUnit: " shares ",
+      quantityIncrement: "1.0", priceIncrement: "0.010", pointValue: "01.00", currency: "USD",
+      priceUnit: " USD/share ",
+    };
+    const records = { ...data, instruments: [catalogue] };
+    const initial = newTrade({ id: "normalized", accountId: "a", legs: [
+      { id: "historical-leg", instrumentId: "raw", direction: "long", planning: { entry: "10" } },
+    ] }, records);
+    const planning = { entry: "12", stop: "10" };
+    const added = replaceLegs(initial, [...initial.legs, {
+      id: "added-leg", instrumentId: "raw", direction: "short", planning,
+    }], records);
+
+    expect(added.legs.map((item) => item.id)).toEqual(["historical-leg", "added-leg"]);
+    expect(added.legs[0]).toEqual(initial.legs[0]);
+    expect(added.legs[1].snapshot).toEqual(initial.legs[0].snapshot);
+    expect(added.legs[1].snapshot).toMatchObject({
+      id: "raw", uid: "alice", revision: 3, schemaVersion: 1,
+      name: "Example", symbol: "EX", market: "Equities", preset: "equity", model: "linear",
+      quantityUnit: "shares", priceUnit: "USD/share", quantityIncrement: "1", priceIncrement: "0.01", pointValue: "1",
+      venue: "", underlying: "", expiry: "", strike: null, optionType: "", draft: false, archived: false, lastUsedAt: null,
+    });
+    expect(added.legs[1].snapshot).not.toBe(catalogue);
+    expect(added.legs[1].planning).not.toBe(planning);
+    catalogue.pointValue = "100";
+    planning.stop = "11";
+    expect(initial.legs[0].snapshot.pointValue).toBe("1");
+    expect(added.legs[1].snapshot.pointValue).toBe("1");
+    expect(added.legs[1].planning.stop).toBe("10");
+  });
+
+  it("keeps absent quotation metadata absent for both initial and added legs", () => {
+    const withoutQuotation = { ...instrument };
+    delete withoutQuotation.priceUnit;
+    const records = { ...data, instruments: [withoutQuotation] };
+    const initial = newTrade({ id: "absent", accountId: "a", legs: [{ instrumentId: "i", direction: "long" }] }, records);
+    const added = replaceLegs(initial, [...initial.legs, { id: "added", instrumentId: "i", direction: "short" }], records);
+
+    expect(initial.legs[0].snapshot).not.toHaveProperty("priceUnit");
+    expect(added.legs[1].snapshot).not.toHaveProperty("priceUnit");
+    expect(added.legs[1].planning).toEqual({});
+  });
+
   it("constructs immutable snapshots and preserves them when context changes", () => {
     const t = base();
     expect(t.legs[0].snapshot).toEqual(instrument);

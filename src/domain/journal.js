@@ -233,26 +233,36 @@ export function validateSettings(s) {
     defaultAccount: s.defaultAccount || null,
   };
 }
-/** Snapshot copies are detached from live catalogue definitions. */
+/**
+ * Construct one new leg from a catalogue instrument; historical legs are not rebuilt.
+ * @param {{id: string, instrument: object, direction: "long"|"short", planning?: Record<string, string|null>}} input
+ */
+export function createLeg({ id, instrument, direction, planning = {} }) {
+  const snapshot = normalizeInstrument(instrument);
+  requireValue(
+    !snapshot.draft && !snapshot.archived,
+    "Archived or draft instrument cannot start trades",
+  );
+  return {
+    id,
+    instrumentId: snapshot.id,
+    snapshot: structuredClone(snapshot),
+    direction,
+    planning: structuredClone(planning),
+  };
+}
+/** Snapshot copies and editable plans are detached from their inputs. */
 export function createTrade({ id, account, instruments, strategy = null }) {
   const a = normalizeAccount(account);
   requireValue(!a.archived, "Archived account cannot start trades");
   requireValue(instruments?.length > 0, "At least one leg required");
   const legs = instruments.map(
-    ({ instrument, direction, planning = {} }, index) => {
-      const i = normalizeInstrument(instrument);
-      requireValue(
-        !i.draft && !i.archived,
-        "Archived or draft instrument cannot start trades",
-      );
-      return {
-        id: `${id}-leg-${index + 1}`,
-        instrumentId: i.id,
-        snapshot: structuredClone(i),
-        direction,
-        planning,
-      };
-    },
+    ({ id: legId, instrument, direction, planning }, index) => createLeg({
+      id: legId || `${id}-leg-${index + 1}`,
+      instrument,
+      direction,
+      planning,
+    }),
   );
   requireValue(!strategy?.archived, "Archived strategy cannot link new trades");
   return {

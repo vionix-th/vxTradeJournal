@@ -1,4 +1,4 @@
-import { createTrade, normalizeInstrument, calculateTrade, timestamp, requireValue } from "../domain/journal.js";
+import { createTrade, createLeg, normalizeInstrument, calculateTrade, timestamp, requireValue } from "../domain/journal.js";
 
 const copy = (value) => structuredClone(value);
 const find = (records, id, label) => {
@@ -15,7 +15,6 @@ export function newTrade(input, data) {
     id: input.id, account, strategy,
     instruments: input.legs.map((leg) => ({ ...leg, instrument: find(data.instruments, leg.instrumentId, "Instrument") })),
   });
-  trade.legs = trade.legs.map((leg, index) => ({ ...leg, id: input.legs[index].id || leg.id }));
   return editTrade(trade, input, data);
 }
 
@@ -42,8 +41,7 @@ export function replaceLegs(trade, legs, data) {
       return { ...copy(old), direction: leg.direction, planning: copy(leg.planning || {}) };
     }
     const instrument = find(data.instruments, leg.instrumentId, "Instrument");
-    requireValue(!instrument.archived && !instrument.draft, "Archived or draft instrument cannot start trades");
-    return { id: leg.id, instrumentId: instrument.id, snapshot: copy(instrument), direction: leg.direction, planning: copy(leg.planning || {}) };
+    return createLeg({ id: leg.id, instrument, direction: leg.direction, planning: leg.planning || {} });
   });
   calculateTrade(next);
   return next;

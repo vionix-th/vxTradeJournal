@@ -224,6 +224,36 @@ describe("weighted average accounting and historical rates", () => {
     }
   });
 });
+
+describe("trade leg construction", () => {
+  it("retains caller leg IDs and detaches planning from input", () => {
+    const planning = { entry: "10", stop: "8", quantity: "2" };
+    const t = createTrade({
+      id: "t",
+      account: { id: "a", name: "Main", currency: "USD" },
+      instruments: [{ id: "caller-leg", instrument: instrument(), direction: "long", planning }],
+    });
+
+    expect(t.legs[0].id).toBe("caller-leg");
+    expect(t.legs[0].planning).toEqual({ entry: "10", stop: "8", quantity: "2" });
+    expect(t.legs[0].planning).not.toBe(planning);
+    planning.stop = "7";
+    expect(t.legs[0].planning.stop).toBe("8");
+  });
+
+  it("keeps deterministic fallback IDs when caller IDs are absent", () => {
+    const t = createTrade({
+      id: "t",
+      account: { id: "a", name: "Main", currency: "USD" },
+      instruments: [
+        { instrument: instrument(), direction: "long" },
+        { instrument: instrument(), direction: "short" },
+      ],
+    });
+
+    expect(t.legs.map((item) => item.id)).toEqual(["t-leg-1", "t-leg-2"]);
+  });
+});
 describe("sizing and contracts", () => {
   it("sizes five contracts and floors fractional increments", () => {
     const l = leg({
