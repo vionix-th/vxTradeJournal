@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { TradeEditorSession } from "../../src/ui/trade-editor-session.js";
+import { planningFeedback } from "../../src/ui/planning.js";
+import { newTrade, replaceLegs } from "../../src/application/operations.js";
 
 const usd = { id: "usd-instrument", name: "Dollar equity", symbol: "USD", market: "Equities", preset: "equity", model: "linear", quantityUnit: "shares", quantityIncrement: "1", priceIncrement: "0.01", pointValue: "1", currency: "USD", priceUnit: "USD/share" };
 const eur = { ...usd, id: "eur-instrument", name: "Euro equity", currency: "EUR", priceUnit: "EUR/share" };
@@ -20,6 +22,44 @@ function session(baseRecord = null, data = records()) {
 }
 
 describe("composite trade editor session", () => {
+  it("refreshes only unsaved leg snapshots and keeps preview and save consistent", () => {
+    for (const base of [null, retained()]) {
+      const draft = session(base);
+      const leg = base ? draft.addLeg(usd.id) : draft.editableValues.legs[0];
+      for (const [key, value] of Object.entries({ entry: "10", stop: "8", riskBudget: "100" })) draft.setPlanning(leg.id, key, value);
+      draft.setDisclosure(leg.id, { planOpen: true, sizingOpen: true });
+      expect(planningFeedback(leg, "USD", 1).result.quantity).toBe("50");
+      const changed = records();
+      changed.instruments[0].pointValue = "10";
+      draft.setContext(changed);
+      expect(planningFeedback(leg, "USD", 1).result.quantity).toBe("5");
+      const input = draft.toInput();
+      const saved = base ? replaceLegs(base, input.legs, changed) : newTrade(input, changed);
+      expect(saved.legs.find((item) => item.id === leg.id).snapshot.pointValue).toBe("10");
+      if (base) expect(saved.legs[0].snapshot.pointValue).toBe("1");
+      expect(draft.disclosureFor(leg.id)).toEqual({ planOpen: true, sizingOpen: true });
+    }
+  });
+
+  it("reconciles refreshed draft currencies without losing raw planning or historical snapshots", () => {
+    const draft = session();
+    const leg = draft.editableValues.legs[0];
+    draft.setPlanning(leg.id, "entry", "-.");
+    const data = records();
+    data.instruments[0].currency = "EUR";
+    draft.setContext(data);
+    expect(leg.planning.rate).toBe("");
+    draft.setPlanning(leg.id, "rate", "0.8");
+    draft.setContext(structuredClone(data));
+    expect(leg.planning.rate).toBe("0.8");
+    data.instruments[0].currency = "USD";
+    draft.setContext(data);
+    expect(leg.planning.rate).toBe("1");
+    expect(leg.planning.entry).toBe("-.");
+    draft.setContext({ ...data, instruments: [] });
+    expect(leg.instrumentId).toBe(usd.id);
+    expect(leg.snapshot).toBeNull();
+  });
   it("retains raw invalid values, trade identity and save identity through editable transitions", () => {
     const draft = session();
     const id = draft.id;

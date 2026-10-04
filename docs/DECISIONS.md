@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-05 — Reconcile unsaved snapshots during context refresh
+
+Retained edit sessions refresh catalogue snapshots only for legs absent from their immutable base record. Preserve raw planning and disclosures, use shared instrument normalization, and apply existing currency-pair rate transitions. Missing, archived or draft selections remain visible and cannot save. Historical legs continue using their stored snapshots. Browser preview and shared new-leg operations now agree after inline catalogue refresh without changing persisted contracts.
+
 ## 2026-10-05 — Assign canonical metadata before trade projection
 
 Prepare trades from one repository-owned parent metadata envelope inside the transaction. Creation time is immutable and assigned before calculating the opening-date cache; an actual entry still takes precedence. Keep request fingerprints on original input and receipt/revision checks unchanged. This fixes website/CLI date filtering, replay and export agreement without a schema change. Remediation uses disposable test data, so no retained-record repair is required. Track acceptance in [ACCEPTANCE.md](ACCEPTANCE.md).

@@ -24,7 +24,7 @@ This ledger maps the PRD acceptance criteria to permanent evidence. Test names d
 | Contract | Evidence |
 |---|---|
 | Canonical creation/opening date | Repository: derives unfilled opening dates from canonical creation metadata; CLI creation/filter/replay/export assertions; browser `final-dates.spec.js` |
-| Draft snapshots | Pending issue 2 |
+| Draft snapshots | Session: refreshes only unsaved leg snapshots and keeps preview and save consistent; reconciles refreshed draft currencies; browser `final-snapshots.spec.js` verifies quantity 50 → 5 and persisted replay |
 | Accepted discard | Pending issue 3 |
 | Confirmed-save refresh recovery | Pending issue 4 |
 | Existing leg removal | Pending issue 5 |

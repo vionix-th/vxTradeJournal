@@ -1,4 +1,5 @@
 import { MAX_NEW_TRADE_LEGS } from "../domain/leg-capacity.js";
+import { normalizeInstrument } from "../domain/journal.js";
 import { conversionState } from "./conversion-state.js";
 import { hasPlanValues } from "./planning.js";
 
@@ -50,15 +51,27 @@ export class TradeEditorSession {
   setContext(data) {
     const previousCurrency = this.accountCurrency;
     this.data = data;
-    if (previousCurrency !== this.accountCurrency)
-      for (const leg of this.editableValues.legs)
-        this.changePair(leg, `${leg.snapshot?.currency || ""}/${previousCurrency}`);
+    for (const leg of this.editableValues.legs) {
+      const previousPair = `${leg.snapshot?.currency || ""}/${previousCurrency}`;
+      if (!this.baseRecord?.legs.some((record) => record.id === leg.id)) {
+        const instrument = data.instruments.find((record) => record.id === leg.instrumentId);
+        leg.snapshot = instrument ? immutable(normalizeInstrument(copy(instrument))) : null;
+      }
+      if (previousPair !== `${leg.snapshot?.currency || ""}/${this.accountCurrency}`)
+        this.changePair(leg, previousPair);
+    }
   }
   setField(name, value) { this.editableValues[name] = value; }
   leg(id) {
     const leg = this.editableValues.legs.find((record) => record.id === id);
     if (!leg) throw new Error("Trade leg not found");
     return leg;
+  }
+  instrumentUnavailable(legId) {
+    const leg = this.leg(legId);
+    if (this.baseRecord?.legs.some((record) => record.id === legId)) return false;
+    const instrument = this.data.instruments.find((record) => record.id === leg.instrumentId);
+    return !!leg.instrumentId && (!instrument || instrument.archived || instrument.draft);
   }
   setAccount(accountId) {
     if (accountId === this.editableValues.accountId) return;

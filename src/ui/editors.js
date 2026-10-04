@@ -259,6 +259,7 @@ export function tradeEditor(ui, session) {
     "Save trade",
     async () => {
       const input = session.toInput();
+      requireValue(!input.legs.some((leg) => session.instrumentUnavailable(leg.id)), "Choose an available instrument before saving");
       const trade = session.isExisting
         ? replaceLegs(editTrade(session.baseRecord, input, ui.data), input.legs, ui.data)
         : newTrade(input, ui.data);
@@ -300,9 +301,12 @@ export function tradeEditor(ui, session) {
     const existingLeg = session.baseRecord?.legs.some((record) => record.id === leg.id);
     const legend = el("legend", {}, `Leg ${blocks.length + 1}`);
     const node = el("fieldset", { class: "leg-card" }, legend);
+    const instrumentChoices = choices(ui.data.instruments.filter(
+      (record) => (!record.archived && !record.draft) || record.id === leg.instrumentId));
+    if (leg.instrumentId && !instrumentChoices.some((record) => record.value === leg.instrumentId))
+      instrumentChoices.push({ value: leg.instrumentId, label: "Unavailable instrument" });
     const instrument = inputField("Instrument", "instrumentId", leg.instrumentId, {
-      choices: [{ value: "", label: "Choose instrument" }, ...choices(ui.data.instruments.filter(
-        (record) => (!record.archived && !record.draft) || record.id === leg.instrumentId))],
+      choices: [{ value: "", label: "Choose instrument" }, ...instrumentChoices],
       controlAttrs: { disabled: existingLeg },
     });
     const direction = inputField("Direction", "direction", leg.direction, {
@@ -352,7 +356,7 @@ export function tradeEditor(ui, session) {
       }, "button secondary small");
       node.append(remove);
     }
-    blocks.push({ legId: leg.id, node, legend, plan, explanation, sizingDetails, sizing, priceFields, quantity, budget, rate, source, destination, remove, planning });
+    blocks.push({ legId: leg.id, node, legend, instrument, plan, explanation, sizingDetails, sizing, priceFields, quantity, budget, rate, source, destination, remove, planning });
     legArea.append(node);
   }
   function updatePlanExplanation() {
@@ -377,6 +381,7 @@ export function tradeEditor(ui, session) {
       if (block.remove) block.remove.disabled = blocks.length === 1;
       const leg = input.legs.find((record) => record.id === block.legId);
       const instrument = leg.snapshot;
+      block.instrument.setError(session.instrumentUnavailable(leg.id) ? "Choose an available instrument before saving" : null);
       const conversion = conversionState(`${instrument?.currency || ""}/${input.accountCurrency}`, instrument?.currency || "", input.accountCurrency, leg.planning.rate ?? "");
       block.rate.control.value = conversion.rate;
       block.rate.control.readOnly = conversion.automatic;
