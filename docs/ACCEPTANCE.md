@@ -26,7 +26,7 @@ This ledger maps the PRD acceptance criteria to permanent evidence. Test names d
 | Canonical creation/opening date | Repository: derives unfilled opening dates from canonical creation metadata; CLI creation/filter/replay/export assertions; browser `final-dates.spec.js` |
 | Draft snapshots | Session: refreshes only unsaved leg snapshots and keeps preview and save consistent; reconciles refreshed draft currencies; browser `final-snapshots.spec.js` verifies quantity 50 → 5 and persisted replay |
 | Accepted discard | Lifecycle/route-policy unit tests: session aliases, independent sessions, clean drafts, rejected departures, child Back and deleted-record handling; browser `final-discard.spec.js`: Cancel → Back, nested sidebar departure and reload success/failure |
-| Confirmed-save refresh recovery | Pending issue 4 |
+| Confirmed-save refresh recovery | Browser `final-recovery.spec.js`: catalogue at 375/800/1280, trade, nested parent/focus return, repeated read failures, parent-discard Sign out acceptance/rejection and stale-auth completion; `editor-session.spec.js` verifies one write after inline reconstruction |
 | Existing leg removal | Pending issue 5 |
 | Reachable execution validation | Pending issue 6 |
 | Current component contract | Existing planning-errors and component-contracts regressions |

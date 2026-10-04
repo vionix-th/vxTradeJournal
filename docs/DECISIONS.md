@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-05 — Preserve confirmed writes across refresh failure
+
+Supersede the retained-session decision's refresh-failure Save retry: the application now owns pending completion after a write resolves, retaining saved result, callback, editor identity and authentication generation. Failed reads show a recovery screen and block ordinary navigation through the lifecycle's injected guard. Retry loads data without rerunning the write; successful refresh clears pending state before one completion. Recovery Sign out bypasses only that navigation block, preserving operation/restoration guards and confirmation for an unsaved parent. Authentication reset invalidates stale callbacks. Pre-confirmation write errors still retain editable content and existing receipt/conflict semantics.
+
 ## 2026-10-05 — Retire discarded composite sessions explicitly
 
 Extend the retained-session and route-policy decisions with a discard transition. Match session object identity, collect aliases and descendants before rewriting them, and preserve history markers and independent sessions. Ordinary navigation, accepted browser departure and top-level Cancel reconstruct clean editors; explicit child suspension/return preserves parent state. Successful reload retires aliases after its read, while failed reload and rejected departure change nothing. Existing editors resolve current data by ID rather than a stale record fallback.

@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { setup } from "./fixtures.js";
 
-test("a retained trade draft retries the same operation after inline editor reconstruction", async ({ page, request }) => {
+test("a retained trade draft completes one write after inline reconstruction and refresh recovery", async ({ page, request }) => {
   await setup(page, request);
   await page.getByRole("button", { name: "Instruments", exact: true }).click();
   await page.getByRole("button", { name: "New instrument", exact: true }).click();
@@ -18,6 +18,10 @@ test("a retained trade draft retries the same operation after inline editor reco
   await leg.getByLabel("Stop price", { exact: true }).fill("8");
   await leg.getByText("Position sizing", { exact: true }).click();
   await leg.getByLabel("Risk budget", { exact: true }).fill("500");
+  await page.getByRole("button", { name: "Create instrument", exact: true }).click();
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(page.getByLabel("Entry rationale", { exact: true })).toHaveValue("Retry this captured idea");
+  await expect(leg.getByLabel("Risk budget", { exact: true })).toHaveValue("500");
   await page.evaluate(async () => {
     const { Repository } = await import("/src/persistence/repository.js");
     const save = Repository.prototype.saveTrade;
@@ -41,15 +45,9 @@ test("a retained trade draft retries the same operation after inline editor reco
   });
   await page.getByRole("button", { name: "Save trade", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("Synthetic reload failure after committed trade");
-  await page.getByRole("button", { name: "Create instrument", exact: true }).click();
-  await page.getByRole("button", { name: "Cancel", exact: true }).click();
-  await expect(page.getByLabel("Entry rationale", { exact: true })).toHaveValue("Retry this captured idea");
-  await expect(leg.getByLabel("Risk budget", { exact: true })).toBeVisible();
-  await expect(leg.getByLabel("Risk budget", { exact: true })).toHaveValue("500");
-  await page.getByRole("button", { name: "Save trade", exact: true }).click();
-  await expect.poll(() => page.evaluate(() => window.sessionAuditOperations.length)).toBe(2);
+  await page.getByRole("button", { name: "Retry refresh", exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.sessionAuditOperations.length)).toBe(1);
   const operations = await page.evaluate(() => window.sessionAuditOperations);
-  expect(operations[1]).toEqual(operations[0]);
   await expect(page.getByRole("button", { name: "Edit trade", exact: true })).toBeVisible();
   const persisted = await page.evaluate(async () => {
     const data = await window.sessionAuditRepository.load();

@@ -24,7 +24,10 @@ import { el, button, field, values, header, notice } from "./components.js";
 const root = document.getElementById("app");
 class JournalUI {
   constructor() {
-    this.lifecycle = new EditorLifecycle(root, (route, arg) => this.renderRoute(route, arg), routePolicies);
+    this.pendingCompletion = null;
+    this.lifecycle = new EditorLifecycle(root, (route, arg) => this.renderRoute(route, arg), routePolicies, {
+      canNavigate: () => !this.pendingCompletion,
+    });
     this.dirty = false;
     this.filters = {};
     this.page = 1;
@@ -47,6 +50,7 @@ class JournalUI {
   set dirty(value) { this.lifecycle.dirty = value; }
   async loadUser(user) {
     const generation = ++this.loadGeneration;
+    this.pendingCompletion = null;
     this.lifecycle.reset();
     this.data = null;
     this.repo = null;
@@ -257,14 +261,51 @@ class JournalUI {
     const generation = this.loadGeneration;
     return this.lifecycle.run(action, async (saved) => {
       if (generation !== this.loadGeneration) return;
-      const data = await this.repo.load();
-      if (generation !== this.loadGeneration) return;
+      const completion = { saved, after, generation, repo: this.repo, entry: this.lifecycle.current };
+      this.pendingCompletion = completion;
       this.dirty = false;
-      this.data = data;
-      this.theme();
-      if (after) await after(saved);
-      else this.lifecycle.completeEditor(saved);
+      await this.finishCommit(completion);
     });
+  }
+  completionIsCurrent(completion) {
+    return this.pendingCompletion === completion && completion.generation === this.loadGeneration &&
+      completion.repo === this.repo && completion.entry === this.lifecycle.current;
+  }
+  async finishCommit(completion) {
+    let data;
+    try {
+      data = await completion.repo.load();
+    } catch (error) {
+      if (this.completionIsCurrent(completion)) this.showCommitRecovery(completion, error);
+      return;
+    }
+    if (!this.completionIsCurrent(completion)) return;
+    this.data = data;
+    this.dirty = false;
+    this.theme();
+    this.pendingCompletion = null;
+    if (completion.after) await completion.after(completion.saved);
+    else this.lifecycle.completeEditor(completion.saved);
+  }
+  showCommitRecovery(completion, error) {
+    this.show(el("section", { class: "panel" },
+      header("Saved; refresh failed", "The write is confirmed. Refresh the journal before continuing."),
+      notice(error.message, "error"),
+      el("div", { class: "actions" },
+        button("Retry refresh", async () => {
+          if (!this.completionIsCurrent(completion)) return;
+          try {
+            await this.lifecycle.run(() => this.finishCommit(completion), () => {});
+          } catch (failure) {
+            this.main.prepend(notice(failure.message, "error"));
+          }
+        }),
+        button("Sign out", () => {
+          if (this.completionIsCurrent(completion) && this.lifecycle.canLeave(false, { allowBlocked: true }))
+            signOut(auth);
+        }, "button secondary"),
+      ),
+    ));
   }
   async action(action, after) {
     try {

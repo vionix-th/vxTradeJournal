@@ -28,6 +28,17 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("route policy lifecycle integration", () => {
+  it("allows confirmed recovery sign-out to check dirty state without bypassing operation locks", () => {
+    lifecycle.go("tradeEditor", { session: { id: "new", isExisting: false } });
+    lifecycle.dirty = true;
+    lifecycle.canNavigate = () => false;
+    expect(lifecycle.canLeave()).toBe(false);
+    expect(confirm).not.toHaveBeenCalled();
+    expect(lifecycle.canLeave(false, { allowBlocked: true })).toBe(true);
+    expect(confirm).toHaveBeenCalledTimes(1);
+    lifecycle.operation = {};
+    expect(lifecycle.canLeave(false, { allowBlocked: true })).toBe(false);
+  });
   it("discards session aliases and descendants while preserving independent sessions", () => {
     const session = { id: "t", isExisting: true };
     lifecycle.go("tradeEditor", { session });

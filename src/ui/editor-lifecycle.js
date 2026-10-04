@@ -22,10 +22,11 @@ function restoreFocus(root, target) {
 
 /** Owns editor departure, suspended drafts, history and pending operation locks. */
 export class EditorLifecycle {
-  constructor(root, render, policies) {
+  constructor(root, render, policies, { canNavigate = () => true } = {}) {
     this.root = root;
     this.render = render;
     this.policies = policies;
+    this.canNavigate = canNavigate;
     this.entries = new Map();
     this.reset();
     window.addEventListener("popstate", () => this.pop());
@@ -50,8 +51,8 @@ export class EditorLifecycle {
   get dirty() { return this.editorDirty || !!this.current?.parent?.dirty; }
   set dirty(value) { this.editorDirty = value; }
 
-  canLeave(currentOnly = false) {
-    if (this.busy || this.restoring) return false;
+  canLeave(currentOnly = false, { allowBlocked = false } = {}) {
+    if (this.busy || this.restoring || (!allowBlocked && !this.canNavigate())) return false;
     return !(currentOnly ? this.editorDirty : this.dirty) ||
       confirm("Unsaved changes will be discarded. Continue?");
   }
