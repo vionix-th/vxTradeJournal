@@ -5,6 +5,7 @@ import {
   exportJournal,
   prepareTrade,
 } from "../../src/application/journal.js";
+import * as journalApplication from "../../src/application/journal.js";
 import {
   normalizeInstrument,
   normalizeAccount,
@@ -26,6 +27,26 @@ const instrument = normalizeInstrument({
 });
 const account = normalizeAccount({ id: "a", name: "Main", currency: "USD" });
 describe("application boundaries", () => {
+  it("prepares a detached persistence projection and full calculation together", () => {
+    const source = createTrade({ id: "prepared", account, instruments: [{ instrument, direction: "long" }] });
+    source.executions = ["entry", "exit"].map((kind, index) => ({
+      id: `e${index}`, legId: source.legs[0].id, kind, quantity: "1", price: index ? "12" : "10",
+      timestamp: `2026-01-0${index + 1}T00:00:00Z`, fees: "0", feeCurrency: "USD",
+    }));
+    source.summary = { complete: true, accountNet: "999" };
+    source.status = "open";
+    const before = structuredClone(source);
+    const result = journalApplication.prepareTradeResult(source, { accounts: [account], instruments: [instrument], strategies: [] });
+
+    expect(result.trade).toMatchObject({ status: "closed", summary: { accountNet: "2", complete: true } });
+    expect(result.calculation).toMatchObject({ status: "closed", accountNet: "2", complete: true });
+    expect(result.calculation.legs[0].history).toHaveLength(2);
+    expect(result.trade.summary.legs[0]).not.toHaveProperty("history");
+    expect(result.trade.legs[0].snapshot).not.toBe(source.legs[0].snapshot);
+    expect(source).toEqual(before);
+    expect(prepareTrade(source, { accounts: [account], instruments: [instrument], strategies: [] })).toEqual(result.trade);
+  });
+
   it("filters each dimension then paginates by newest activity", () => {
     const trades = Array.from({ length: 25 }, (_, i) => ({
       id: String(i),

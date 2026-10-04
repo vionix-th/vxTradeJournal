@@ -7,6 +7,56 @@ const data = { accounts: [account], instruments: [instrument], strategies: [{ id
 const base = () => newTrade({ id: "t", accountId: "a", legs: [{ instrumentId: "i", direction: "long" }] }, data);
 const entry = { id: "e", legId: "t-leg-1", kind: "entry", quantity: "2", price: "10", timestamp: "2026-01-01T07:00:00+07:00" };
 describe("shared workflow operations", () => {
+  it("rejects invalid initial direction before returning a source trade", () => {
+    expect(() => newTrade({ id: "invalid", accountId: "a", legs: [{ instrumentId: "i", direction: "sideways" }] }, data)).toThrow(/direction/i);
+  });
+
+  it.each([
+    ["tags", { tags: [42] }, /tags/i],
+    ["risk budget", { riskBudget: "-1" }, /budget/i],
+  ])("validates %s consistently when creating and editing context", (_label, patch, error) => {
+    expect(() => newTrade({ id: "invalid", accountId: "a", legs: [{ instrumentId: "i", direction: "long" }], ...patch }, data)).toThrow(error);
+    expect(() => editTrade(base(), patch, data)).toThrow(error);
+  });
+
+  const mutations = [
+    ["context", (t) => editTrade(t, { review: "Changed" }, data)],
+    ["leg replacement", (t) => replaceLegs(t, t.legs, data)],
+    ["leg edit", (t) => editLeg(t, "t-leg-1", { planning: { stop: "8" } })],
+    ["execution", (t) => putExecution(t, { ...entry, id: "later", timestamp: "2026-01-03T00:00:00Z" })],
+    ["adjustment", (t) => putAdjustment(t, { id: "new-adjustment", amount: "1", currency: "USD", timestamp: "2026-01-03T00:00:00Z", reason: "Credit" })],
+    ["removal", (t) => removeChild(t, "adjustments", "existing-adjustment")],
+    ["snapshot correction", (t) => correctSnapshot(t, "t-leg-1", { pointValue: "2" })],
+  ];
+  const withRecords = () => ({
+    ...putExecution(base(), entry),
+    revision: 4, uid: "alice", createdAt: "2026-01-01T00:00:00.000Z", lastOperation: "previous-op",
+    adjustments: [{ id: "existing-adjustment", amount: "0", currency: "USD", rate: "1", timestamp: "2026-01-02T00:00:00Z", reason: "Recorded" }],
+  });
+
+  it.each(mutations)("%s rejects invalid resulting execution history", (_label, mutate) => {
+    const invalid = withRecords();
+    invalid.executions.push({ ...entry, id: "over-exit", kind: "exit", quantity: "3", timestamp: "2026-01-02T00:00:00Z" });
+    expect(() => mutate(invalid)).toThrow(/remaining/i);
+  });
+
+  it.each(mutations)("%s returns detached, valid source records without stale derived fields", (_label, mutate) => {
+    const input = {
+      ...withRecords(),
+      summary: { complete: true, accountNet: "999" }, status: "closed",
+      openedAt: "1999-01-01T00:00:00Z", instruments: [{ name: "Stale", symbol: "OLD", market: "Old" }],
+    };
+    const before = structuredClone(input);
+    const next = mutate(input);
+
+    for (const field of ["summary", "status", "openedAt", "instruments"]) expect(next).not.toHaveProperty(field);
+    expect(next).toMatchObject({ revision: 4, uid: "alice", createdAt: "2026-01-01T00:00:00.000Z", lastOperation: "previous-op" });
+    expect(next).not.toBe(input);
+    expect(next.legs[0].snapshot).not.toBe(input.legs[0].snapshot);
+    expect(calculateTrade(next).status).toBe("open");
+    expect(input).toEqual(before);
+  });
+
   it("normalizes initial and added leg snapshots identically while preserving detached historical legs", () => {
     const catalogue = {
       id: "raw", uid: "alice", revision: 3, schemaVersion: 1,

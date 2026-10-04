@@ -1,4 +1,4 @@
-import { createTrade, createLeg, normalizeInstrument, calculateTrade, timestamp, requireValue } from "../domain/journal.js";
+import { createTrade, createLeg, normalizeInstrument, validateTrade, timestamp, requireValue } from "../domain/journal.js";
 
 const copy = (value) => structuredClone(value);
 const find = (records, id, label) => {
@@ -6,6 +6,13 @@ const find = (records, id, label) => {
   requireValue(record, `${label} not found`);
   return record;
 };
+
+/** Every mutation returns detached, replay-valid source records; preparation owns derived fields. */
+function finishMutation(next) {
+  for (const field of ["summary", "status", "openedAt", "instruments"]) delete next[field];
+  validateTrade(next);
+  return next;
+}
 
 /** Construct source records from user-owned references, never caller-supplied snapshots. */
 export function newTrade(input, data) {
@@ -29,7 +36,7 @@ export function editTrade(trade, patch, data) {
     next.strategyId = strategy?.id || null;
     next.strategySnapshot = strategy ? copy(strategy) : null;
   }
-  return next;
+  return finishMutation(next);
 }
 
 export function replaceLegs(trade, legs, data) {
@@ -43,16 +50,14 @@ export function replaceLegs(trade, legs, data) {
     const instrument = find(data.instruments, leg.instrumentId, "Instrument");
     return createLeg({ id: leg.id, instrument, direction: leg.direction, planning: leg.planning || {} });
   });
-  calculateTrade(next);
-  return next;
+  return finishMutation(next);
 }
 
 export function editLeg(trade, id, patch) {
   const next = copy(trade), leg = find(next.legs, id, "Leg");
   if (Object.hasOwn(patch, "direction")) leg.direction = patch.direction;
   if (Object.hasOwn(patch, "planning")) leg.planning = { ...leg.planning, ...copy(patch.planning) };
-  calculateTrade(next);
-  return next;
+  return finishMutation(next);
 }
 
 /** Browser and CLI share defaults, UTC normalization and replay ordering. */
@@ -75,8 +80,7 @@ export function putExecution(trade, input, editing = false) {
   const next = copy(trade);
   if (editing) next.executions[next.executions.findIndex((e) => e.id === record.id)] = record;
   else next.executions.push(record);
-  calculateTrade(next);
-  return next;
+  return finishMutation(next);
 }
 
 export function putAdjustment(trade, input, editing = false) {
@@ -89,8 +93,7 @@ export function putAdjustment(trade, input, editing = false) {
   const next = copy(trade);
   if (editing) next.adjustments[next.adjustments.findIndex((a) => a.id === record.id)] = record;
   else next.adjustments.push(record);
-  calculateTrade(next);
-  return next;
+  return finishMutation(next);
 }
 
 export function removeChild(trade, type, id) {
@@ -99,8 +102,7 @@ export function removeChild(trade, type, id) {
   if (type === "legs") requireValue(!trade.executions.some((e) => e.legId === id), "Remove leg executions before removing its leg");
   const next = copy(trade);
   next[type] = next[type].filter((r) => r.id !== id);
-  calculateTrade(next);
-  return next;
+  return finishMutation(next);
 }
 
 export function correctSnapshot(trade, legId, patch) {
@@ -113,6 +115,5 @@ export function correctSnapshot(trade, legId, patch) {
     for (const execution of next.executions)
       if (execution.legId === legId) execution.resultRate = rate;
   }
-  calculateTrade(next);
-  return next;
+  return finishMutation(next);
 }

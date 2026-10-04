@@ -352,7 +352,8 @@ export function validatePlanning(leg) {
   for (const [key, label] of Object.entries({ rate: "Conversion rate", riskBudget: "Risk budget", quantity: "Quantity" }))
     decimal(p[key], label, true, true);
 }
-export function validateTrade(t) {
+/** Structural prerequisites for replay; record and position validation happen during replay. */
+function validateTradeStructure(t) {
   requireValue(t.id && t.accountId, "Trade and account IDs required");
   currency(t.accountCurrency);
   requireValue(
@@ -392,9 +393,14 @@ export function validateTrade(t) {
   decimal(t.riskBudget, "Combined risk budget", true, true);
   return t;
 }
+/** Validate the complete source history without modifying it or retaining a derived cache. */
+export function validateTrade(t) {
+  calculateTrade(t);
+  return t;
+}
 /** Pure deterministic replay. Timestamp, sequence, ID define reproducible event order. */
 export function calculateTrade(t) {
-  validateTrade(t);
+  validateTradeStructure(t);
   const native = {};
   const nativeIncomplete = new Set();
   const incomplete = [];

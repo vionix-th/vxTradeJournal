@@ -7,8 +7,13 @@ import {
   requireValue,
   normalizeInstrument,
 } from "../domain/journal.js";
-/** The repository supplies only this user's records; references are checked again before persistence. */
-export function prepareTrade(trade, data, previous = null) {
+/**
+ * Check user-owned references and return a detached persistence projection with its full replay.
+ * Commit-boundary callers supply fresh references and the current previous trade.
+ * @returns {{trade: object, calculation: ReturnType<typeof calculateTrade>}}
+ */
+export function prepareTradeResult(input, data, previous = null) {
+  let trade = structuredClone(input);
   const account = data.accounts.find((a) => a.id === trade.accountId);
   requireValue(account, "Trading account does not belong to user");
   requireValue(
@@ -62,12 +67,12 @@ export function prepareTrade(trade, data, previous = null) {
       );
     }
   }
-  const calculated = calculateTrade(trade);
+  const calculation = calculateTrade(trade);
   const summary = {
-    ...calculated,
-    legs: calculated.legs.map(({ history: _history, ...leg }) => leg),
+    ...structuredClone(calculation),
+    legs: calculation.legs.map(({ history: _history, ...leg }) => leg),
   };
-  return {
+  const prepared = {
     ...trade,
     schemaVersion: SCHEMA_VERSION,
     status: summary.status,
@@ -79,6 +84,11 @@ export function prepareTrade(trade, data, previous = null) {
       market: l.snapshot.market,
     })),
   };
+  return { trade: prepared, calculation };
+}
+/** Persistence callers need the projection; previews can reuse prepareTradeResult's full calculation. */
+export function prepareTrade(trade, data, previous = null) {
+  return prepareTradeResult(trade, data, previous).trade;
 }
 export function filterJournal(
   trades,

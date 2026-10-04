@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-04 — Make mutation and preparation guarantees explicit
+
+All shared trade mutations return detached, fully replay-valid source records without derived caches. Complete validation includes execution ordering, position history and adjustments; keep structural prerequisites private. Preparation returns the persistence projection and full calculation together so CLI previews reuse the calculation. Repository saves still check fresh references and replay at the transaction boundary. This preserves financial and external JSON contracts while giving callers consistent guarantees.
+
 ## 2026-10-04 — Give new legs one construction contract
 
 Use a pure leg factory for initial trade creation and later leg additions. Normalize catalogue snapshots once, detach snapshots and planning from caller state, and accept caller IDs before construction. Preserve deterministic fallback IDs and leave historical legs intact. This consolidates shared model creation for website and CLI without changing persisted shapes.

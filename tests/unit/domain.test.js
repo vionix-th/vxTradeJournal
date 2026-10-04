@@ -254,6 +254,28 @@ describe("trade leg construction", () => {
     expect(t.legs.map((item) => item.id)).toEqual(["t-leg-1", "t-leg-2"]);
   });
 });
+
+describe("complete trade validation", () => {
+  it("rejects exits beyond earlier entry quantity", () => {
+    const t = trade();
+    t.executions = [execution("1", "entry", "1", "10"), execution("2", "exit", "2", "12")];
+    expect(() => validateTrade(t)).toThrow(/remaining/i);
+  });
+
+  it("rejects malformed adjustment records", () => {
+    const t = trade();
+    t.adjustments = [{ id: "a", amount: "invalid", currency: "USD", timestamp: "2026-01-01T00:00:00Z", reason: "Credit" }];
+    expect(() => validateTrade(t)).toThrow(/decimal/i);
+  });
+
+  it("keeps valid source records unchanged", () => {
+    const t = trade();
+    t.executions = [execution("1", "entry", "1", "10"), execution("2", "exit", "1", "12")];
+    const before = structuredClone(t);
+    expect(validateTrade(t)).toBe(t);
+    expect(t).toEqual(before);
+  });
+});
 describe("sizing and contracts", () => {
   it("sizes five contracts and floors fractional increments", () => {
     const l = leg({

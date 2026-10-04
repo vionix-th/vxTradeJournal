@@ -1,5 +1,5 @@
 import { PRESETS, normalizeAccount, normalizeInstrument, normalizeStrategy, validateSettings, calculateTrade, sizePosition, isCalendarDate } from "../domain/journal.js";
-import { prepareTrade, filterJournal, journalOverview, exportJournal } from "../application/journal.js";
+import { prepareTradeResult, filterJournal, journalOverview, exportJournal } from "../application/journal.js";
 import { newTrade, editTrade, replaceLegs, editLeg, putExecution, putAdjustment, removeChild, correctSnapshot } from "../application/operations.js";
 import { fingerprint } from "../application/fingerprint.js";
 import { CliError } from "./errors.js";
@@ -97,8 +97,7 @@ async function tradeWrite({ command, spec, repo, options, input }) {
   }
   const previous = spec.action === "create" ? null : await getTrade(repo, id);
   if (previous) revision(previous, options.revision);
-  const prepared = prepareTrade(next, data, previous);
-  const calculation = calculateTrade(prepared);
+  const { trade: prepared, calculation } = prepareTradeResult(next, data, previous);
   let previewFingerprint;
   if (spec.action === "correct-snapshot") {
     previewFingerprint = await fingerprint({ tradeId: id, revision: options.revision, legId: options.id, snapshot: prepared.legs.find((l) => l.id === options.id).snapshot, calculation });
