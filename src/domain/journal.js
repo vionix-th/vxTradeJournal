@@ -342,19 +342,35 @@ export function sizePosition(leg, accountCurrency) {
     rewardRisk,
   };
 }
+/** Keep Error/CLI classification while exposing stable model paths to form adapters. */
+function validateField(path, check) {
+  try { return check(); }
+  catch (error) {
+    error.path = Object.freeze(path);
+    throw error;
+  }
+}
+export function validateCombinedRiskBudget(value) {
+  return validateField(["riskBudget"], () => decimal(value, "Combined risk budget", true, true));
+}
 /** Validate supplied plan values independently of whether sizing inputs are complete. */
 export function validatePlanning(leg) {
   const p = leg.planning || {};
+  const check = (key, validate) => validateField(["legs", leg.id, "planning", key], validate);
   for (const [key, label] of Object.entries({ entry: "Entry price", stop: "Stop price", target: "Target price" })) {
-    if (p[key] != null && p[key] !== "") {
-      const value = decimal(p[key], label);
-      increment(value, leg.snapshot.priceIncrement, label);
-    }
+    check(key, () => {
+      if (p[key] != null && p[key] !== "") {
+        const value = decimal(p[key], label);
+        increment(value, leg.snapshot.priceIncrement, label);
+      }
+    });
   }
   for (const [key, label] of Object.entries({ rate: "Conversion rate", riskBudget: "Risk budget" }))
-    decimal(p[key], label, true, true);
-  const quantity = decimal(p.quantity, "Quantity", true, true);
-  if (quantity != null) increment(quantity, leg.snapshot.quantityIncrement, "Quantity");
+    check(key, () => decimal(p[key], label, true, true));
+  check("quantity", () => {
+    const quantity = decimal(p.quantity, "Quantity", true, true);
+    if (quantity != null) increment(quantity, leg.snapshot.quantityIncrement, "Quantity");
+  });
 }
 /** Structural prerequisites for replay; record and position validation happen during replay. */
 function validateTradeStructure(t) {
@@ -394,7 +410,7 @@ function validateTradeStructure(t) {
   );
   text(t.rationale, "Rationale");
   text(t.review, "Review");
-  decimal(t.riskBudget, "Combined risk budget", true, true);
+  validateCombinedRiskBudget(t.riskBudget);
   return t;
 }
 /** Validate the complete source history without modifying it or retaining a derived cache. */
