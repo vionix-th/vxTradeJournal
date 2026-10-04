@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-05 — Keep invalid execution rates reachable
+
+Use the existing domain decimal rule for live result-rate feedback. Foreign invalid input remains visible with the shared field's error association after switching a closing record to Entry. Preserve supplied values; matching-currency rates remain automatic one. Website/CLI still reject invalid source input, with browser keyboard correction and CLI no-write/corrected-value regressions.
+
 ## 2026-10-05 — Expose eligible persisted leg removal
 
 Use the edit session's immutable execution history and current leg count to own removal eligibility and its UI explanation. Show removal for historical and new legs, retain at least one, and protect executed legs. Shared replacement/removal operations and transaction validation remain authoritative. Browser and CLI regressions verify identical prerequisites, including reductions of oversized retained records.

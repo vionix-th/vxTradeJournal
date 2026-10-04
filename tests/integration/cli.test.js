@@ -197,6 +197,18 @@ it("removes eligible persisted legs and preserves executed legs and the final le
   expect((await cli("legs delete", undefined, { trade: "removal", id: "protected", revision: 4, "operation-id": "empty-delete", yes: true })).code).toBe(2);
 }, 60000);
 
+it("rejects invalid supplied Entry result rates and accepts corrected retained rates", async () => {
+  await cli("accounts create", { id: "rate-account", name: "Rates", currency: "USD" });
+  await cli("instruments create", { id: "rate-instrument", name: "Foreign equity", symbol: "RATE", preset: "equity", currency: "EUR" });
+  const created = await cli("trades create", { id: "rates", accountId: "rate-account", legs: [{ id: "rate-leg", instrumentId: "rate-instrument", direction: "long" }] }, { "operation-id": "rates-create" });
+  expect(created.code).toBe(0);
+  const entry = { id: "rate-entry", legId: "rate-leg", kind: "entry", quantity: "1", price: "10", feeCurrency: "USD", timestamp: "2026-01-01T00:00:00Z", resultRate: "-1" };
+  expect((await cli("executions add", entry, { trade: "rates", revision: 1, "operation-id": "invalid-rate" })).code).toBe(2);
+  expect((await cli("trades get", undefined, { id: "rates" })).body.data.trade.executions).toHaveLength(0);
+  const saved = await cli("executions add", { ...entry, resultRate: "0.8" }, { trade: "rates", revision: 1, "operation-id": "valid-rate" });
+  expect(saved.body.data.trade.executions[0].resultRate).toBe("0.8");
+}, 60000);
+
 it("covers archives, settings, multi-leg manual results and retained incomplete FX", async () => {
   expect((await cli("accounts create", { id: "eur", name: "Euro", currency: "EUR" })).code).toBe(0);
   expect((await cli("settings update", { theme: "dark", timezone: "Asia/Bangkok", defaultAccount: "eur" }, { revision: 0 })).code).toBe(0);

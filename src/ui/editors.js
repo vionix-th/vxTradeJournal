@@ -8,6 +8,7 @@ import {
   calculateTrade,
   validateCombinedRiskBudget,
   requireValue,
+  decimal,
   money,
 } from "../domain/journal.js";
 import { exportJournal } from "../application/journal.js";
@@ -537,12 +538,16 @@ export function executionEditor(ui, trade, legId, existing = null) {
       (i.model === "manual" || (v.kind === "settlement" && !v.price));
     for (const key of ["manualGross", "manualSource"])
       fields[key].setVisible(manual);
-    fields.resultRate.setVisible(v.kind !== "entry");
     fields.reason.setVisible(v.kind === "settlement");
     fields.price.control.required = v.kind !== "settlement";
     const resultConversion = conversionState(`${i.currency}/${trade.accountCurrency}`, i.currency, trade.accountCurrency, fields.resultRate.control.value);
     fields.resultRate.control.value = resultConversion.rate;
     fields.resultRate.control.readOnly = resultConversion.automatic;
+    let resultRateError = null;
+    try { decimal(resultConversion.rate, "Result conversion rate", true, true); }
+    catch (error) { resultRateError = error.message; }
+    fields.resultRate.setError(resultRateError);
+    fields.resultRate.setVisible(v.kind !== "entry" || !!resultRateError);
   };
   bindConversionRate(
     form.node,

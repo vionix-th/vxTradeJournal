@@ -160,6 +160,7 @@ Account-currency amount = source amount × rate
 ```
 
 - Same-currency rate automatically equals `1`.
+- Invalid supplied foreign execution result rates remain visible and associated with field errors even after switching to Entry. Empty or valid Entry rates may be hidden; domain validation still rejects invalid supplied rates in both website and CLI.
 - Planning stores supplied sizing rate.
 - Each realized closing result stores its own conversion rate.
 - Each fee or cash adjustment stores applicable conversion rate independently.
