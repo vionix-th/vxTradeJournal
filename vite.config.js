@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import { defineConfig } from "vite";
 import { firebaseConfiguration } from "./src/config/firebase.js";
 import { profiles } from "./scripts/profiles.js";
+import { fileURLToPath } from "node:url";
+import { skillDistributionPlugin } from "./scripts/skill-distribution.js";
 
 function buildMetadata() {
   try {
@@ -30,6 +32,7 @@ export default defineConfig(({ mode }) => {
   const config = firebaseConfiguration(profileName, web);
   const profile = profiles[profileName] ?? { id: web.projectId, vite: 4173 };
   return {
+    plugins: [skillDistributionPlugin(fileURLToPath(new URL(".", import.meta.url)), packageVersion)],
     build: { outDir: profileName === "prod" ? "dist-prod" : "dist" },
     define: {
       __FIREBASE_CONFIG__: JSON.stringify(config),

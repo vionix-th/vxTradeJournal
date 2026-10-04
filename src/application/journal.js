@@ -45,7 +45,12 @@ export function prepareTrade(trade, data, previous = null) {
   for (const l of trade.legs) {
     const i = data.instruments.find((i) => i.id === l.instrumentId);
     requireValue(i, "Instrument does not belong to user");
-    if (!previous?.legs.some((p) => p.id === l.id)) {
+    const previousLeg = previous?.legs.find((p) => p.id === l.id);
+    requireValue(
+      !previousLeg || previousLeg.instrumentId === l.instrumentId,
+      "Leg instrument cannot change",
+    );
+    if (!previousLeg) {
       requireValue(
         !i.archived && !i.draft,
         "Archived or draft instrument cannot start trades",

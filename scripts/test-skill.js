@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { cp, mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { unzipSync } from "fflate";
+import { skillDownload } from "../src/config/skill.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const temporary = await mkdtemp(join(tmpdir(), "vxj-portable-skill-"));
@@ -28,7 +30,16 @@ function cli(executable, args) {
 try {
   await command(process.execPath, [join(root, "scripts/build-skill.js")]);
   const installed = join(temporary, "vx-trade-journal");
-  await cp(join(root, "dist-skill/vx-trade-journal"), installed, { recursive: true });
+  const packageVersion = JSON.parse(await readFile(join(root, "package.json"))).version;
+  const entries = unzipSync(await readFile(join(root, "dist-skill", skillDownload(packageVersion).filename)));
+  for (const [path, contents] of Object.entries(entries)) {
+    assert.match(path, /^vx-trade-journal\//);
+    assert.ok(!path.split("/").includes(".."));
+    assert.ok(!path.includes("node_modules") && !path.includes(".env"));
+    const destination = join(temporary, path);
+    await mkdir(dirname(destination), { recursive: true });
+    await writeFile(destination, contents);
+  }
   await command("npm", ["ci", "--omit=dev", "--ignore-scripts", "--no-audit", "--no-fund"], { cwd: installed, env: { ...process.env, npm_config_cache: join(temporary, "npm-cache") } });
   const executable = join(installed, "scripts/vxjournal.mjs");
   const version = await cli(executable, ["version"]);
@@ -48,5 +59,5 @@ try {
   const manifest = JSON.parse(await readFile(join(installed, "package.json")));
   assert.deepEqual(Object.keys(manifest.dependencies).sort(), ["decimal.js", "firebase"]);
   await command(process.execPath, [join(root, "scripts/test.js"), "cli"], { env: { ...process.env, VXJ_CLI_EXECUTABLE: executable } });
-  console.log("Portable skill contracts, fresh dependency install, references and emulator workflows passed.");
+  console.log("Portable skill ZIP extraction, contracts, fresh dependency install, references and emulator workflows passed.");
 } finally { await rm(temporary, { recursive: true, force: true }); }

@@ -12,7 +12,11 @@
     "emulators": "node scripts/emulators.js",
     "cli": "node src/cli/index.js",
     "skill:build": "node scripts/build-skill.js",
+    "skill:docs": "node scripts/skill-docs.js",
+    "skill:docs:check": "node scripts/skill-docs.js --check",
+    "prebuild": "npm run skill:build",
     "build": "vite build",
+    "prebuild:prod": "npm run skill:build",
     "build:prod": "vite build --mode hosted",
     "preview:prod": "vite preview --mode hosted --host 127.0.0.1",
     "deploy:prod": "npm run build:prod && firebase deploy --config firebase.json --project vionixtradejournal --only firestore:rules,hosting",
@@ -28,7 +32,7 @@
     "lint": "eslint .",
     "data:seed": "node scripts/data.js seed",
     "data:reset": "node scripts/data.js reset",
-    "check": "npm run lint && npm test && npm run build"
+    "check": "npm run lint && npm run skill:docs:check && npm test && npm run build && npm run test:skill"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",
@@ -44,10 +48,11 @@
     "@eslint/js": "^9.35.0",
     "@firebase/rules-unit-testing": "^5.0.0",
     "@playwright/test": "^1.55.0",
+    "esbuild": "^0.28.2",
     "eslint": "^10.11.0",
+    "fflate": "^0.8.3",
     "firebase-tools": "^15.32.1",
     "globals": "^16.5.0",
-    "esbuild": "^0.28.2",
     "vite": "^8.3.1",
     "vitest": "^5.0.3"
   }

@@ -4,8 +4,12 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
+import { checkSkillDocumentation } from "./skill-docs.js";
+import { createSkillArchive } from "./skill-archive.js";
+import { skillDownload } from "../src/config/skill.js";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
+await checkSkillDocumentation(root);
 const packageJson = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
 const packageLock = JSON.parse(await readFile(join(root, "package-lock.json"), "utf8"));
 const authoredSkill = join(root, "skills", "vx-trade-journal");
@@ -70,4 +74,6 @@ try {
   await rm(cache, { recursive: true, force: true });
 }
 
-console.log(`Built ${join("dist-skill", "vx-trade-journal")} for vxTradeJournal ${packageJson.version} (${commit}).`);
+const archive = join(root, "dist-skill", skillDownload(packageJson.version).filename);
+await createSkillArchive(output, archive);
+console.log(`Built ${join("dist-skill", "vx-trade-journal")} and ${archive} for vxTradeJournal ${packageJson.version} (${commit}).`);

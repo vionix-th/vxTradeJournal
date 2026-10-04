@@ -1,5 +1,21 @@
 # Development decisions
 
+## 2026-10-04 — Repair audit findings with shared boundaries and editor ownership
+
+Extend the [currency editing decision](#2026-10-01--currency-editing-and-compact-mobile-journal): snapshot currency corrections invalidate the corrected leg's sizing and realized-result rates, preserve independent fee rates, and set `1` only when currencies match. Website and CLI retain one shared correction implementation and matching preview/replay/export expectations. Enforce immutable existing leg instrument references in application validation and Firestore rules while retaining explicit snapshot corrections.
+
+Extend the [time validation decision](#2026-10-01--time-and-read-consistency) with one calendar-date predicate for timestamps, instrument expiry and CLI opening-date filters. Remove the unused, stale JSDoc contract module rather than introducing a project-wide type migration.
+
+Extend the [native UI decision](#2026-10-01--local-prototype-implementation) with one editor/navigation lifecycle: captured saves lock editing and departure, nested instrument creation owns a suspended parent draft, and browser history uses the same departure guard. Retire cached trade drafts and their nested callbacks after successful save, and clear private history arguments at authentication transitions. Restore invoking focus after cancellation. Reuse existing unit descriptions for execution prices and preserve strategy information at intermediate widths. Keep schema/calculation versions and release version unchanged; these fixes need no data conversion and are not release preparation.
+
+## 2026-10-02 — Distribute the skill through the website
+
+Extend the [skill maintenance contract](#2026-10-02--maintain-website-cli-and-skill-together): local and hosted website builds first generate the portable skill and a versioned ZIP, then Vite includes the exact archive as a downloadable asset. Development serving prepares the same archive. Use the build-only fflate dependency for ZIP creation and extraction tests; ship the installable folder and locked dependency manifest without node_modules or sessions. Sort archive entries and fix ZIP container timestamps so unchanged file contents produce identical ZIP bytes across rebuilds. Offer public sign-in and signed-in Session download links with installation instructions. Revalidate download responses because development artifacts can change before the release version changes. Portable-install tests now extract the ZIP users receive.
+
+## 2026-10-02 — Maintain website, CLI and skill together
+
+Extend the [agent CLI decision](#2026-10-01--agent-cli-and-portable-skill) with an explicit capability-parity contract in AGENTS.md and PRD 1.4. Each affected workflow assesses both interfaces and updates command contracts, guidance and acceptance coverage together; intentional capability exclusions belong in the PRD. Generate command inventory from the runtime catalogue and validate documented shell examples without executing them. Include documentation and portable-install checks in `npm run check` and require the packaged skill for each application release. Installed skills remain versioned snapshots upgraded by replacing the distribution and reinstalling locked dependencies; keep runtime guidance independent of repository maintenance files.
+
 ## 2026-10-01 — Agent CLI and portable skill
 
 Expose website-equivalent journal operations through a Node.js CLI that reuses application operations, calculations and Firebase persistence. Maintain authored skill guidance under `skills/vx-trade-journal`; generate the portable installable distribution at `dist-skill/vx-trade-journal`. Bundle project-owned JavaScript and install runtime dependencies with npm so the installed skill works outside the source repository. Use Firebase user refresh tokens in profile-separated private files; do not persist passwords or ID tokens. CLI mutations require stable IDs/revisions and trade operation IDs, with explicit dry-run and snapshot preview flows. Do not create a server API, admin capability, import workflow or billing-dependent service for this interface. Recover stale locks through an explicit safe error rather than racy automatic deletion.

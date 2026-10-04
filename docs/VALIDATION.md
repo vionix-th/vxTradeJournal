@@ -1,6 +1,38 @@
 # Local prototype validation
 
-Validated on 1 October 2026. Application version: `0.1.0`. Hosted deployment and release publication remain separate work after prototype review, as specified in [PRD delivery defaults](PRD.md#5-delivery-and-release-defaults).
+Validated through 4 October 2026. Application version: `0.1.0`. Hosted deployment and release publication remain separate work after prototype review, as specified in [PRD delivery defaults](PRD.md#5-delivery-and-release-defaults).
+
+## Code quality audit fixes — 4 October 2026
+
+Shared snapshot correction now invalidates the corrected leg's sizing and realized-result conversion rates when its P&L currency changes. Matching account currencies use `1`; foreign rates remain missing until explicitly supplied. Fee currencies/rates and other legs remain independent. Website and CLI regressions use the same independently derived fixture: two units bought at 10 and sold at 12 realize 4 in the snapshot currency; a 1 USD fee remains 1 USD. Correcting the snapshot to EUR produces an incomplete account result with a known subtotal of -1 USD. Supplying a result rate of 0.8 produces 2.2 USD net. Preview, persistence and export preserve these outcomes without changing the catalogue.
+
+Existing leg instrument references are immutable in application validation and Firestore rules. Application, repository and atomic direct-write regressions reject instrument replacement while permitting explicit same-instrument snapshot correction. The independent point-value fixture retains 2 USD before correction and produces 20 USD after an authorized point-value correction. A shared calendar predicate validates instrument expiry, timestamps and CLI opening-date filters, including leap-century cases. The unused contract module was removed after confirming it had no consumers.
+
+The [editor lifecycle](../src/ui/editor-lifecycle.js) owns pending-operation locks, departure guards, suspended parent drafts, history and Cancel focus. Save payloads are captured before controls are disabled; failure restores the original enabled/disabled states. Nested instrument save/cancel preserves trade values, disclosure state and unsaved protection. Browser Back/Forward uses the same guard; cached draft arguments are cleared at authentication transitions and retired after successful trade save. Conflict reload still returns to the current saved trade. Regression coverage confirms parent protection during sidebar/reload departure, pending-save failure recovery, rejected history navigation, focus restoration and prevention of pre-save draft resurrection. An isolated original-UI baseline accepted the valid save payload but failed the pending-field lock assertion before the fix.
+
+Execution price fields use snapshot quotation-unit descriptions, including missing-unit guidance. Journal cards now preserve strategy information at intermediate widths. Worker-m visual review covered journal screenshots at 375, 800 and 1280 pixels; dense trade-plan forms at 375, 996 and 1280 pixels; missing-FX guidance; and a dark-theme tooltip. No blocking clipping, overlap or readability issue was identified. Accessible descriptions, keyboard/focus behavior and overflow are separately covered by browser assertions; screenshots alone do not establish contrast ratios.
+
+Worker-m completed `npm run check`: lint, generated skill documentation checks, 79 unit tests, 23 emulator integration tests, 28 Chromium browser tests, the local build and 6 freshly installed portable-skill CLI tests passed. `npm run build:prod` and `git diff --check` passed. The hosted build retains the approximately 652 kB main-chunk advisory. PRD 1.6 and portable skill guidance document the correction and lifecycle contracts. No deployment or release was performed; application, schema and calculation versions remain unchanged.
+
+## Website skill download — 2 October 2026
+
+Local and hosted website builds now generate the skill first and publish its versioned ZIP under `downloads/`. Development serving prepares the same resource before listening. Sign-in and signed-in Session areas share the download link and extraction/dependency-installation guidance. Hosting configuration sets ZIP downloads to `application/zip` with cache revalidation.
+
+`worker-m` confirmed the archive test initially failed for the missing archive module and all three browser scenarios failed for the absent download link. The archive-content test, lint and focused browser tests then passed. Browser checks download and inspect the ZIP before sign-in, verify the authenticated link, activate it with the keyboard, preserve the Journal view and check 44-pixel targets and no page overflow at 375, 996 and 1280 CSS pixels. All six sign-in/journal screenshots were visually reviewed; content and installation guidance remain readable.
+
+The full `npm run check` passed 64 unit tests, 19 emulator integration tests, 18 Chromium browser tests, local build and four packaged CLI workflows. A subsequent archive-byte comparison exposed timestamp-only differences across unchanged rebuilds; a regression test first failed for that difference. Fixed ZIP timestamps then passed both archive tests, all 65 unit tests, lint, four ZIP-install CLI workflows and all three download browser scenarios. Final local and hosted builds passed, with each website ZIP matching its generated source byte for byte and both website archives matching each other. Independent `unzip -t` reported no compressed-data errors. Changed Markdown references and Firebase download-header configuration passed checks. Vite retains its roughly 646 kB main-chunk advisory.
+
+Portable-install acceptance now extracts the built ZIP into an isolated temporary directory before installing its locked runtime dependencies and exercising CLI workflows. The ZIP contains the generated installable folder, bundled CLI and guidance/manifests; it excludes installed node_modules and user sessions. No deployment or release was performed by this implementation.
+
+## CLI and skill maintenance contract — 2 October 2026
+
+AGENTS.md and PRD 1.4 now require affected website and CLI capabilities to evolve together, with documented exclusions and equivalent observable acceptance outcomes. The command inventory is generated from the runtime catalogue. Documentation checks reject stale inventory, unsupported commands/options, missing required options and invalid JSON heredoc input in fenced shell examples. Both the standard check command and portable skill builder enforce documentation checks; the standard check also verifies a fresh skill installation.
+
+`worker-m` confirmed the failing stage for the missing documentation module, then passed all eight focused tests. `npm run skill:docs:check` verified the inventory and six shell examples. The expanded `npm run check` passed lint, documentation checks, 63 unit tests, 19 emulator integration tests, 15 Chromium browser tests, the local application build and all four CLI workflows through a freshly installed portable skill. Vite retains its roughly 645 kB main-chunk advisory.
+
+The hosted production build, changed Markdown references and official authored/generated skill validation also passed. PyYAML was installed only in a temporary validation environment and removed afterward. A temporary skill copy with an altered inventory row failed the documentation gate as expected; regeneration restored a passing check without modifying source documentation.
+
+Installed skills remain application-version/source-commit snapshots; replacement and locked dependency installation are documented in the README and runtime skill. This patch does not change financial behavior, application/export schemas, the release version or production records.
 
 ## Agent CLI and portable skill — 1 October 2026
 

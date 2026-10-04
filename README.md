@@ -12,9 +12,9 @@ Requirements: Node.js 22.13+ and Java 21+ (Firestore emulator runtime). Install 
 - Dev and interactive test emulator state persists in `.local-emulators/dev` and `.local-emulators/test` when processes stop cleanly. The automated profile is disposable.
 - `npm run test` starts isolated automated profile on Auth `9299`, Firestore `8280`, UI `4200`, runs unit, integration, and browser tests, then stops services. It does not reuse dev emulator data.
 - `npm run test:unit`, `npm run test:integration`, and `npm run test:e2e` run each test group. Integration and browser commands start and stop their own isolated emulator profile; E2E also manages Vite on port `5175`.
-- `npm run test:watch` watches unit tests; `npm run lint` checks JavaScript; `npm run build` creates `dist/`; `npm run preview` serves the bundle on Vite's selected profile port.
+- `npm run test:watch` watches unit tests; `npm run lint` checks JavaScript; `npm run build` builds the skill first and creates `dist/` including its ZIP; `npm run preview` serves the bundle on Vite's selected profile port.
 - `npm run data:seed` idempotently writes synthetic dev data; `npm run data:reset` clears dev Auth and Firestore data, then restores sample records. Both require the dev emulators running. Seed login: `demo@example.test` / `Demo-journal-123`.
-- `npm run check` runs lint, full tests, then build.
+- `npm run check` runs lint, skill documentation checks, full tests, application build and packaged-skill verification.
 
 The `dev` and `emulators` scripts accept `-- --profile dev|test|auto`; for example, `npm run dev -- --profile auto`. `VXJ_PROFILE` is also supported. Firebase demo project IDs prevent accidental access to hosted projects. Profile configuration lives in `firebase.dev.json`, `firebase.test.json`, and `firebase.auto.json`.
 
@@ -32,7 +32,13 @@ Implementation decisions: [docs/DECISIONS.md](docs/DECISIONS.md). Executed check
 
 The CLI exposes the same owned journal workflows as the website through the shared domain and Firebase repository. Run it from the source checkout with `npm run cli -- help`; network commands require an explicit `--profile dev|test|auto|prod`. Use emulator profiles for synthetic work. Production commands use the authenticated user's hosted Firebase account and records.
 
-Build the distributable skill with `npm run skill:build`. The authored skill lives in [`skills/vx-trade-journal`](skills/vx-trade-journal); copy the generated `dist-skill/vx-trade-journal` directory into the agent's skill directory, then run `npm ci --omit=dev` inside the copied directory. The installed CLI runs from any working directory with Node.js 22.13+ on macOS or Linux.
+Build the distributable skill with `npm run skill:build`. The authored skill lives in [`skills/vx-trade-journal`](skills/vx-trade-journal); the build produces both `dist-skill/vx-trade-journal` and `dist-skill/vx-trade-journal-<version>.zip`. Download the ZIP through the website's sign-in screen or signed-in Session area, extract its `vx-trade-journal` folder into the agent's skill directory, then run `npm ci --omit=dev` inside that folder. The installed CLI runs from any working directory with Node.js 22.13+ on macOS or Linux.
+
+Both `npm run build` and `npm run build:prod` build the skill before Vite and include its ZIP under `downloads/` in the website artifact. Development Vite serving prepares the same download before starting. `npm run test:skill` extracts the ZIP before verifying installation and emulator workflows.
+
+Maintain website/CLI capability parity under [AGENTS.md](AGENTS.md) and the [PRD](docs/PRD.md#agent-cli-and-skill). After changing the CLI catalogue, run `npm run skill:docs` to regenerate its command inventory. `npm run skill:docs:check` checks inventory freshness and documented shell examples; `npm run test:skill` verifies a fresh portable installation and emulator workflows. Both are included in `npm run check`.
+
+Each release includes a skill built from the same tested application commit and version. To upgrade an installed skill, replace its directory with the new generated distribution and run `npm ci --omit=dev` there again. Saved sessions live in the separate user configuration directory. Run the installed executable's `version` command to identify its application version and source commit; website deployment does not update installed copies.
 
 Authentication setup reads credentials through stdin or a hidden terminal prompt. Sessions are stored per profile under `VXJ_CONFIG_DIR`, `XDG_CONFIG_HOME`, or `~/.config/vx-trade-journal`, with private file permissions. The CLI never stores passwords or ID tokens. See the installed skill's `SKILL.md` and references for command schemas, mutation safeguards and workflow examples.
 

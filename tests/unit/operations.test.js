@@ -51,4 +51,38 @@ describe("shared workflow operations", () => {
     expect(foreignFees.executions[0].feeRate).toBeNull();
     expect(calculateTrade(foreignFees).complete).toBe(false);
   });
+  it("invalidates only corrected leg result and sizing rates, preserving independent fees", () => {
+    let trade = newTrade({ id: "t", accountId: "a", legs: [
+      { id: "first", instrumentId: "i", direction: "long", planning: { entry: "10", stop: "8", rate: "1" } },
+      { id: "other", instrumentId: "i", direction: "long", planning: { rate: "1" } },
+    ] }, data);
+    trade = putExecution(trade, { ...entry, legId: "first", fees: "1" });
+    trade = putExecution(trade, { ...entry, id: "exit", legId: "first", kind: "exit", price: "12", timestamp: "2026-01-02T00:00:00Z" });
+    trade = putExecution(trade, { ...entry, id: "other-entry", legId: "other" });
+    const corrected = correctSnapshot(trade, "first", { currency: "EUR" });
+    expect(calculateTrade(corrected)).toMatchObject({ complete: false, accountNet: null, knownAccountNet: "-1", native: { EUR: "4", USD: "-1" } });
+    expect(corrected.legs[0].planning.rate).toBeNull();
+    expect(corrected.executions.filter((e) => e.legId === "first").map((e) => e.resultRate)).toEqual([null, null]);
+    expect(corrected.executions[0]).toMatchObject({ feeCurrency: "USD", feeRate: "1" });
+    expect(corrected.legs[1].planning.rate).toBe("1");
+    expect(corrected.executions[2].resultRate).toBe("1");
+    expect(trade.legs[0].snapshot.currency).toBe("USD");
+    const restored = putExecution(corrected, { id: "exit", resultRate: "0.8" }, true);
+    expect(calculateTrade(restored).accountNet).toBe("2.2");
+  });
+  it("clears foreign-to-foreign rates and automatically converts only matching currencies", () => {
+    const foreign = correctSnapshot(base(), "t-leg-1", { currency: "EUR" });
+    foreign.legs[0].planning.rate = "0.8";
+    let trade = putExecution(foreign, { ...entry, feeCurrency: "EUR", fees: "1", feeRate: "0.8" });
+    trade = putExecution(trade, { ...entry, id: "exit", kind: "exit", price: "12", resultRate: "0.8", timestamp: "2026-01-02T00:00:00Z" });
+    const sterling = correctSnapshot(trade, "t-leg-1", { currency: "GBP" });
+    expect(sterling.legs[0].planning.rate).toBeNull();
+    expect(sterling.executions[1].resultRate).toBeNull();
+    expect(sterling.executions[0]).toMatchObject({ feeCurrency: "EUR", feeRate: "0.8" });
+    const dollar = correctSnapshot(sterling, "t-leg-1", { currency: "USD" });
+    expect(dollar.legs[0].planning.rate).toBe("1");
+    expect(dollar.executions.map((e) => e.resultRate)).toEqual(["1", "1"]);
+    expect(calculateTrade(dollar).accountNet).toBe("3.2");
+    expect(correctSnapshot(trade, "t-leg-1", { priceUnit: "EUR/share", pointValue: "2" }).executions[1].resultRate).toBe("0.8");
+  });
 });

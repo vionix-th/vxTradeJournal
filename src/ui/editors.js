@@ -361,7 +361,10 @@ export function tradeEditor(ui, original = null, disclosureState = new Map()) {
         : newTrade(collected, ui.data);
       await ui.commit(
         () => ui.repo.saveTrade(t, form.operationId),
-        () => ui.go("trade", t.id, true),
+        () => {
+          ui.lifecycle.retireEditors("tradeEditor", (arg) => (arg?.draft || arg)?.id === t.id, "trade", t.id);
+          ui.go("trade", t.id, true);
+        },
       );
     },
     () => ui.go(isExisting ? "trade" : "journal", isExisting ? draft.id : null),
@@ -517,17 +520,15 @@ export function tradeEditor(ui, original = null, disclosureState = new Map()) {
       () => {
         const next = collect();
         const state = new Map(blocks.map((b) => [b.leg.id, { planOpen: b.plan.open, sizingOpen: b.sizingDetails.open }]));
-        ui.dirty = false;
-        instrumentEditor(ui, null, (i) => {
-          if (i) {
+        ui.lifecycle.openChild("instrumentEditor", null, {
+          arg: { draft: next, disclosures: [...state] },
+          onSaved: (i) => {
             const last = next.legs.at(-1);
             if (!last.instrumentId) {
               last.instrumentId = i.id;
               last.snapshot = i;
             }
-          }
-          ui.dirty = true;
-          tradeEditor(ui, next, state);
+          },
         });
       },
       "button secondary",
@@ -602,6 +603,7 @@ export function executionEditor(ui, trade, legId, existing = null) {
       help: `Increment ${i.quantityIncrement} ${i.quantityUnit}`,
     }),
     decimalField("Price", "price", record.price, {
+      unit: i.priceUnit || "Quote unit not configured.",
       help: `Price increment ${i.priceIncrement}. Settlement may omit price and report manual result.`,
     }),
     field(

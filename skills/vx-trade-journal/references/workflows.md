@@ -45,6 +45,8 @@ node /path/to/vx-trade-journal/scripts/vxjournal.mjs legs correct-snapshot \
 
 The apply call retains `--revision 3` and the same input, replaces `--preview` with `--accept-preview <returned fingerprint>`, and adds `--operation-id <unique ID>`. A changed trade or proposal requires a new preview.
 
+Changing the snapshot P&L currency changes the source side of its FX pair. The correction clears that leg's planning and execution result rates; if the corrected currency matches the account, rates become `1`. Fee currencies/rates and other legs remain unchanged. Review the resulting incomplete flags rather than inferring replacement rates. After saving, use `executions update` with a known `resultRate` for each realized closing result, and `legs update` with a known planning rate when sizing is needed. Read the current revision before every update. Existing leg instrument references cannot be replaced; snapshot corrections retain that reference.
+
 ## Handle an uncertain write or conflict
 
 If a command times out, inspect `operations get --profile <profile> --trade <id> --operation-id <original ID>` and read the current trade. A matching receipt confirms the write committed; report its applied revision without adding the execution again. If no receipt exists, retry the original request with the same operation ID, IDs, expected revision and identical JSON. If that retry conflicts, reconcile fresh source data; do not blindly change the revision or operation ID. Only submit a new intentional operation after determining what happened to the original write.

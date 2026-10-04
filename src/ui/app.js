@@ -4,6 +4,8 @@ import "@fontsource/inter/latin-600.css";
 import "@fontsource/inter/latin-700.css";
 import "./styles.css";
 import { icon, brand, authFrame } from "./icons.js";
+import { skillDownloadPanel } from "./skill-download.js";
+import { EditorLifecycle } from "./editor-lifecycle.js";
 import {
   onAuthStateChanged,
   createUserWithEmailAndPassword,
@@ -22,6 +24,8 @@ import {
   instrumentEditor,
   strategyEditor,
   tradeEditor,
+  executionEditor,
+  adjustmentEditor,
   settingsEditor,
 } from "./editors.js";
 import {
@@ -32,20 +36,34 @@ import {
   tradeView,
 } from "./views.js";
 const root = document.getElementById("app");
+const currentEntity = (ui, type, record) => record?.id
+  ? ui.data[type].find((item) => item.id === record.id) || record
+  : record;
+const withTrade = (ui, arg, render) => {
+  const trade = ui.data.trades.find((item) => item.id === arg.tradeId);
+  if (trade) render(trade);
+  else tradeView(ui, arg.tradeId);
+};
 const routes = {
   journal: journalView,
   accounts: accountsView,
   instruments: instrumentsView,
   strategies: strategiesView,
   trade: tradeView,
-  accountEditor,
-  instrumentEditor,
-  strategyEditor,
-  tradeEditor,
+  accountEditor: (ui, arg) => accountEditor(ui, currentEntity(ui, "accounts", arg?.first ? null : arg), !!arg?.first && !ui.data.accounts.length),
+  instrumentEditor: (ui, arg) => instrumentEditor(ui, currentEntity(ui, "instruments", arg),
+    ui.lifecycle.current.parent ? (saved) => ui.lifecycle.returnParent(saved) : null),
+  strategyEditor: (ui, arg) => strategyEditor(ui, currentEntity(ui, "strategies", arg)),
+  tradeEditor: (ui, arg) => tradeEditor(ui, arg?.draft || currentEntity(ui, "trades", arg), new Map(arg?.disclosures || [])),
+  executionEditor: (ui, arg) => withTrade(ui, arg, (trade) => executionEditor(ui, trade, arg.legId, trade.executions.find((item) => item.id === arg.executionId))),
+  adjustmentEditor: (ui, arg) => withTrade(ui, arg, (trade) => adjustmentEditor(ui, trade, trade.adjustments.find((item) => item.id === arg.adjustmentId))),
+  snapshotEditor: (ui, arg) => withTrade(ui, arg, (trade) => instrumentEditor(ui,
+    trade.legs.find((leg) => leg.id === arg.legId).snapshot, null, { trade, legId: arg.legId })),
   settings: settingsEditor,
 };
 class JournalUI {
   constructor() {
+    this.lifecycle = new EditorLifecycle(root, (route, arg) => this.renderRoute(route, arg));
     this.dirty = false;
     this.filters = {};
     this.page = 1;
@@ -60,14 +78,23 @@ class JournalUI {
       if (session) session.open = event.matches;
     });
     window.addEventListener("beforeunload", (e) => {
-      if (this.dirty) {
+      if (this.dirty || this.lifecycle.busy) {
         e.preventDefault();
         e.returnValue = "";
       }
     });
   }
+  get dirty() { return this.lifecycle.dirty; }
+  set dirty(value) { this.lifecycle.dirty = value; }
   async loadUser(user) {
     const generation = ++this.loadGeneration;
+    this.lifecycle.reset();
+    this.route = "journal";
+    this.arg = null;
+    this.data = null;
+    this.repo = null;
+    this.filters = {};
+    this.page = 1;
     this.user = user;
     if (!user) {
       this.repo = null;
@@ -94,8 +121,8 @@ class JournalUI {
       this.data = data;
       this.theme();
       this.shell();
-      if (!data.accounts.length) accountEditor(this, null, true);
-      else this.go("journal", null, true);
+      if (!data.accounts.length) this.go("accountEditor", { first: true }, true, { replace: true });
+      else this.go("journal", null, true, { replace: true });
     } catch (e) {
       if (generation !== this.loadGeneration) return;
       root.replaceChildren(
@@ -170,6 +197,7 @@ class JournalUI {
           },
           "session-action",
         ),
+        skillDownloadPanel({ compact: true }),
         el(
           "p",
           { class: "help" },
@@ -178,22 +206,25 @@ class JournalUI {
       ),
     );
     root.replaceChildren(
-      el("a", { class: "skip-link", href: "#main" }, "Skip to journal"),
+      el("a", { class: "skip-link", href: "#main", onClick: (event) => {
+        event.preventDefault();
+        this.main.focus();
+      } }, "Skip to journal"),
       el("div", { class: "shell" }, sidebar, this.main),
     );
   }
   canLeave() {
-    return (
-      !this.dirty || confirm("Unsaved changes will be discarded. Continue?")
-    );
+    return this.lifecycle.canLeave();
   }
-  go(route, arg = null, force = false) {
-    if (!force && !this.canLeave()) return;
-    this.dirty = false;
+  go(route, arg = null, force = false, options = {}) {
+    return this.lifecycle.go(route, arg, { ...options, force });
+  }
+  renderRoute(route, arg) {
     this.route = route;
     this.arg = arg;
+    const navRoute = { trade: "journal", tradeEditor: "journal", executionEditor: "journal", adjustmentEditor: "journal", snapshotEditor: "journal", accountEditor: "accounts", instrumentEditor: "instruments", strategyEditor: "strategies" }[route] || route;
     for (const n of root.querySelectorAll("[data-route]")) {
-      if (n.dataset.route === route) n.setAttribute("aria-current", "page");
+      if (n.dataset.route === navRoute) n.setAttribute("aria-current", "page");
       else n.removeAttribute("aria-current");
     }
     try {
@@ -223,12 +254,7 @@ class JournalUI {
         { class: "actions editor-actions" },
         button(
           "Cancel",
-          () => {
-            if (this.canLeave()) {
-              this.dirty = false;
-              onCancel();
-            }
-          },
+          () => this.lifecycle.cancel(onCancel),
           "button secondary",
         ),
         submit,
@@ -270,11 +296,16 @@ class JournalUI {
     return state;
   }
   async commit(action, after) {
-    const saved = await action();
-    this.dirty = false;
-    this.data = await this.repo.load();
-    this.theme();
-    await after(saved);
+    const generation = this.loadGeneration;
+    return this.lifecycle.run(action, async (saved) => {
+      if (generation !== this.loadGeneration) return;
+      const data = await this.repo.load();
+      if (generation !== this.loadGeneration) return;
+      this.dirty = false;
+      this.data = data;
+      this.theme();
+      await after(saved);
+    });
   }
   async action(action, after) {
     try {
@@ -285,13 +316,25 @@ class JournalUI {
   }
   async reloadCurrent() {
     if (!this.canLeave()) return;
-    const route = this.route,
+    const generation = this.loadGeneration;
+    const repo = this.repo;
+    let route = this.route,
       arg = this.arg;
+    if (route === "tradeEditor" && (arg?.draft || arg)?.revision) {
+      route = "trade";
+      arg = (arg?.draft || arg).id;
+    } else if (["executionEditor", "adjustmentEditor", "snapshotEditor"].includes(route)) {
+      route = "trade";
+      arg = arg.tradeId;
+    }
     try {
-      this.data = await this.repo.load();
-      this.dirty = false;
-      this.theme();
-      this.go(route, arg, true);
+      await this.lifecycle.run(() => repo.load(), async (data) => {
+        if (generation !== this.loadGeneration) return;
+        this.data = data;
+        this.dirty = false;
+        this.theme();
+        this.go(route, arg, true, { replace: true });
+      });
     } catch (e) {
       this.main.prepend(notice(e.message, "error"));
     }

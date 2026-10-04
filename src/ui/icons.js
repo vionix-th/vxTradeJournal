@@ -1,4 +1,5 @@
 import { el } from './components.js';
+import { skillDownloadPanel } from './skill-download.js';
 const paths = {
   journal: ['M5 4h14v16H5z', 'M9 4v16', 'M12 8h4M12 12h4'],
   instruments: ['M6 3v18M18 3v18M3 8h6v7H3zM15 6h6v10h-6z'],
@@ -30,5 +31,5 @@ export function brand() {
 export function authFrame(card) {
   return el('main', {class:'auth-shell auth-layout'},
     el('aside', {class:'auth-story'}, brand(), el('div', {class:'auth-intro'}, el('span', {class:'eyebrow'}, 'A record behind every decision'), el('h2', {}, 'Trade with intention.\nReview with clarity.'), el('p', {}, 'One private workspace for your instruments, executions and trading decisions.'), el('div', {class:'auth-features'}, ...[['journal','Every execution, in context'],['accounts','Precise results, by account'],['lock','A journal that stays yours']].map(([name,text])=>el('div', {}, icon(name), text)))), el('p', {class:'auth-story-footer'}, 'vxTradeJournal · A clearer trading record')),
-    el('div', {class:'auth-form-area'}, card, el('p', {class:'auth-footnote'}, 'Your process. Your record. Your perspective.')));
+    el('div', {class:'auth-form-area'}, card, el('p', {class:'auth-footnote'}, 'Your process. Your record. Your perspective.'), skillDownloadPanel()));
 }

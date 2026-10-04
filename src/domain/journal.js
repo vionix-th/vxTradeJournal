@@ -122,6 +122,12 @@ export function currency(value) {
   );
   return result;
 }
+export function isCalendarDate(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value))
+    return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
 export function timestamp(value) {
   requireValue(
     typeof value === "string" &&
@@ -137,8 +143,7 @@ export function timestamp(value) {
       Number(parts[1]) < 24 &&
       Number(parts[2]) < 60 &&
       Number(parts[3]) < 60 &&
-      new Date(`${value.slice(0, 10)}T00:00:00Z`).toISOString().slice(0, 10) ===
-        value.slice(0, 10),
+      isCalendarDate(value.slice(0, 10)),
     "Valid timestamp required",
   );
   return new Date(value).toISOString();
@@ -193,7 +198,7 @@ export function normalizeInstrument(i) {
     lastUsedAt: i.lastUsedAt || null,
   };
   requireValue(
-    !result.expiry || /^\d{4}-\d{2}-\d{2}$/.test(result.expiry),
+    !result.expiry || isCalendarDate(result.expiry),
     "Expiry must be a date",
   );
   requireValue(

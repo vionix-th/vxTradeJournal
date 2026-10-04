@@ -320,6 +320,18 @@ describe("sizing and contracts", () => {
 });
 
 describe("input and chronology boundaries", () => {
+  it.each(["", "2028-02-29", "2000-02-29", "2026-04-30"])(
+    "accepts empty or real instrument expiry %s",
+    (expiry) => {
+      expect(instrument({ expiry }).expiry).toBe(expiry);
+    },
+  );
+  it.each(["2026-02-30", "2026-13-01", "2026-02-29", "1900-02-29", "2026-04-31", "2026-00-01", "2026-1-01"])(
+    "rejects nonexistent or malformed instrument expiry %s",
+    (expiry) => {
+      expect(() => instrument({ expiry })).toThrow(/expiry.*date/i);
+    },
+  );
   it("requires positive explicitly supplied same-currency rates", () => {
     const l = leg({
       planning: { entry: "10", stop: "8", riskBudget: "500", rate: "0" },

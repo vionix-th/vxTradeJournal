@@ -7,6 +7,7 @@ Engineering standards for consistent development across models and sessions.
 - [docs/PRD.md](docs/PRD.md) owns product requirements, technology direction and acceptance criteria.
 - Ground changes in current repository state and a defined requirement. Keep scope bounded and preserve existing workspace contributions.
 - Resolve material ambiguities before implementing affected behavior. Requirement changes belong in the PRD.
+- For each new or changed journal capability, assess website and CLI access together. Update affected shared operations, CLI contracts, skill guidance and acceptance coverage in the same change. Define equivalent observable outcomes in the PRD; document intentional interface exclusions there.
 
 ## Engineering
 
@@ -36,15 +37,17 @@ Engineering standards for consistent development across models and sessions.
 - Functional, visual and accessibility checks provide distinct acceptance evidence. Review rendered screens at representative mobile, intermediate and desktop widths, including dense forms, long content and relevant interaction states.
 - Changes to shared interface components receive targeted layout and interaction regressions. Test expectations verify component contracts and user-visible outcomes.
 - Documentation changes receive content and reference checks.
+- Generate the skill command inventory from the CLI catalogue with `npm run skill:docs`. `npm run skill:docs:check` rejects stale inventory and invalid documented command examples. Run `npm run test:skill` for changes to CLI behavior, shared operations/calculations/persistence, runtime dependencies, skill guidance or packaging; `npm run check` includes these gates.
 
 ## Releases
 
 - Use [Semantic Versioning](https://semver.org/) for application releases. Initialize `package.json` version to `0.1.0` when scaffolding; it is the release version source. Keep lockfile metadata synchronized and derive application build metadata from it.
 - During `0.x` development, increment minor for new features or breaking changes and patch for compatible fixes. From `1.0.0`, increment major for breaking changes, minor for compatible features and patch for compatible fixes; reset lower components when incrementing a higher one.
-- Assess compatibility against supported workflows and persisted/exported data contracts actually in use. Establish `1.0.0` for the first stable production release.
+- Assess compatibility against supported website and CLI workflows, CLI command/JSON contracts and persisted/exported data contracts actually in use. Establish `1.0.0` for the first stable production release.
 - Update versions when preparing releases. Use numbered prerelease identifiers for release candidates. Document, schema and calculation versions remain independent.
 - Each release uses an immutable annotated Git tag `v<version>` matching the package version and tested commit. Tag notes describe changes, any required data-conversion steps and known limitations.
 - Release readiness requires applicable tests executed by `worker-m` and a successful production build. Deployment metadata identifies the released version and commit.
+- Each application release includes a generated skill distribution from the same tested commit and package version, with `npm run test:skill` passing. Installed skills are snapshots: document replacement and dependency installation for upgrades; do not assume website deployment updates an installed skill. Keep installed runtime guidance self-contained; repository maintenance policy belongs in AGENTS.md and the PRD.
 
 ## Security
 

@@ -129,6 +129,22 @@ describe("application boundaries", () => {
 });
 
 describe("historical context boundaries", () => {
+  it("rejects existing leg instrument replacement but permits snapshot correction", () => {
+    const replacement = normalizeInstrument({ ...instrument, id: "other", pointValue: "10" });
+    const data = { accounts: [account], instruments: [instrument, replacement], strategies: [] };
+    const t = createTrade({ id: "t", account, instruments: [{ instrument, direction: "long" }] });
+    t.executions = ["entry", "exit"].map((kind, index) => ({
+      id: `e${index}`, legId: t.legs[0].id, kind, quantity: "1", price: index ? "12" : "10",
+      timestamp: `2026-01-0${index + 1}T00:00:00Z`, fees: "0", feeCurrency: "USD",
+    }));
+    const previous = prepareTrade(t, data);
+    expect(previous.summary.accountNet).toBe("2");
+    const rebound = { ...previous, legs: [{ ...previous.legs[0], instrumentId: replacement.id, snapshot: replacement }] };
+    expect(() => prepareTrade(rebound, data, previous)).toThrow(/leg instrument cannot change/i);
+    const corrected = { ...previous, legs: [{ ...previous.legs[0], snapshot: { ...previous.legs[0].snapshot, pointValue: "10" } }] };
+    expect(prepareTrade(corrected, data, previous).summary.accountNet).toBe("20");
+    expect(previous.legs[0].snapshot.pointValue).toBe("1");
+  });
   it("stores current strategy definition when newly linked and rejects silent snapshot changes", () => {
     const strategy = {
       id: "s",

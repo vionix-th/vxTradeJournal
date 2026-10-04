@@ -107,7 +107,14 @@ export function removeChild(trade, type, id) {
 
 export function correctSnapshot(trade, legId, patch) {
   const next = copy(trade), leg = find(next.legs, legId, "Leg");
+  const previousCurrency = leg.snapshot.currency;
   leg.snapshot = normalizeInstrument({ ...leg.snapshot, ...copy(patch), id: leg.instrumentId });
+  if (leg.snapshot.currency !== previousCurrency) {
+    const rate = leg.snapshot.currency === next.accountCurrency ? "1" : null;
+    leg.planning = { ...leg.planning, rate };
+    for (const execution of next.executions)
+      if (execution.legId === legId) execution.resultRate = rate;
+  }
   calculateTrade(next);
   return next;
 }

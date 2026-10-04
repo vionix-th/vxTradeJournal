@@ -1,4 +1,4 @@
-import { PRESETS, normalizeAccount, normalizeInstrument, normalizeStrategy, validateSettings, calculateTrade, sizePosition } from "../domain/journal.js";
+import { PRESETS, normalizeAccount, normalizeInstrument, normalizeStrategy, validateSettings, calculateTrade, sizePosition, isCalendarDate } from "../domain/journal.js";
 import { prepareTrade, filterJournal, journalOverview, exportJournal } from "../application/journal.js";
 import { newTrade, editTrade, replaceLegs, editLeg, putExecution, putAdjustment, removeChild, correctSnapshot } from "../application/operations.js";
 import { fingerprint } from "../application/fingerprint.js";
@@ -123,7 +123,7 @@ export const handlers = {
     return (await repo.list("trades")).filter((t) => t.strategyId === options.id);
   },
   journal: async ({ repo, options }) => {
-    for (const key of ["from", "to"]) if (options[key] && (!/^\d{4}-\d{2}-\d{2}$/.test(options[key]) || !Number.isFinite(Date.parse(options[key])) || new Date(`${options[key]}T00:00:00Z`).toISOString().slice(0, 10) !== options[key])) throw new CliError("VALIDATION", `Invalid --${key} date.`);
+    for (const key of ["from", "to"]) if (options[key] && !isCalendarDate(options[key])) throw new CliError("VALIDATION", `Invalid --${key} date.`);
     if (options.from && options.to && options.from > options.to) throw new CliError("VALIDATION", "Opening-date range is reversed.");
     if (options.status && !["open", "closed"].includes(options.status)) throw new CliError("VALIDATION", "Status must be open or closed.");
     const settings = await repo.getSettings();

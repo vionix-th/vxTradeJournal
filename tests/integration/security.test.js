@@ -213,6 +213,41 @@ describe("ownership and structural validation", () => {
 });
 
 describe("historical and configuration integrity", () => {
+  it("denies atomic leg instrument replacement and permits same-instrument snapshot correction", async () => {
+    const instrument = {
+      ...base, id: "i", name: "Acme", symbol: "ACME", market: "Equities", venue: "",
+      preset: "equity", model: "linear", quantityUnit: "shares", quantityIncrement: "1",
+      priceIncrement: "0.01", pointValue: "1", currency: "USD", underlying: "", expiry: "",
+      strike: null, optionType: "", draft: false, archived: false, lastUsedAt: null,
+    };
+    const replacement = { ...instrument, id: "other", pointValue: "10" };
+    const leg = { ...base, id: "l", instrumentId: "i", snapshot: instrument, direction: "long", planning: {} };
+    await env.withSecurityRulesDisabled(async (c) => {
+      const d = c.firestore();
+      await setDoc(doc(d, "users/alice/accounts/a"), { ...account, hasTrades: true });
+      await setDoc(doc(d, "users/alice/instruments/i"), instrument);
+      await setDoc(doc(d, "users/alice/instruments/other"), replacement);
+      await setDoc(doc(d, "users/alice/trades/t"), {
+        ...base, id: "t", accountId: "a", accountCurrency: "USD", strategyId: null,
+        strategySnapshot: null, rationale: "", review: "", tags: [], riskBudget: null,
+        status: "open", summary: {}, lastOperation: "op",
+      });
+      await setDoc(doc(d, "users/alice/trades/t/legs/l"), leg);
+    });
+    const d = db();
+    const rebound = writeBatch(d);
+    rebound.update(doc(d, "users/alice/trades/t"), { revision: 2 });
+    rebound.set(doc(d, "users/alice/trades/t/legs/l"), {
+      ...leg, revision: 2, instrumentId: "other", snapshot: replacement,
+    });
+    await assertFails(rebound.commit());
+    const corrected = writeBatch(d);
+    corrected.update(doc(d, "users/alice/trades/t"), { revision: 2 });
+    corrected.set(doc(d, "users/alice/trades/t/legs/l"), {
+      ...leg, revision: 2, snapshot: { ...instrument, pointValue: "10" },
+    });
+    await assertSucceeds(corrected.commit());
+  });
   it("rejects forged strategy snapshots on new links and subsequent edits", async () => {
     const strategy = {
       ...base,

@@ -52,6 +52,22 @@ async function fixtures() {
   return { account, instrument, strategy };
 }
 describe("transactional repository", () => {
+  it("rejects rebinding persisted leg while retaining explicit snapshot corrections", async () => {
+    const { account, instrument } = await fixtures();
+    const replacement = await repo.saveEntity("instruments", { ...instrument, id: "other", revision: 0, pointValue: "10" });
+    const t = createTrade({ id: "t", account, instruments: [{ instrument, direction: "long" }] });
+    t.executions = ["entry", "exit"].map((kind, index) => ({
+      id: `e${index}`, legId: t.legs[0].id, kind, quantity: "1", price: index ? "12" : "10",
+      timestamp: `2026-01-0${index + 1}T00:00:00Z`, fees: "0", feeCurrency: "USD",
+    }));
+    const saved = await repo.saveTrade(t, "create");
+    expect(saved.summary.accountNet).toBe("2");
+    await expect(repo.saveTrade({ ...saved, legs: [{ ...saved.legs[0], instrumentId: replacement.id, snapshot: replacement }] }, "rebind")).rejects.toThrow(/leg instrument cannot change/i);
+    expect((await repo.getTrade(t.id)).summary.accountNet).toBe("2");
+    const corrected = await repo.saveTrade({ ...saved, legs: [{ ...saved.legs[0], snapshot: { ...saved.legs[0].snapshot, pointValue: "10" } }] }, "correct-snapshot");
+    expect(corrected.summary.accountNet).toBe("20");
+    expect((await repo.getTrade(t.id)).legs[0].instrumentId).toBe(instrument.id);
+  });
   it("persists source records, snapshots, historical edits and export-ready reload", async () => {
     const { account, instrument, strategy } = await fixtures();
     let t = createTrade({

@@ -3,14 +3,6 @@ import { calculateTrade, money } from "../domain/journal.js";
 import { filterJournal, aggregateAccount, journalOverview } from "../application/journal.js";
 import { removeChild } from "../application/operations.js";
 import {
-  accountEditor,
-  instrumentEditor,
-  strategyEditor,
-  tradeEditor,
-  executionEditor,
-  adjustmentEditor,
-} from "./editors.js";
-import {
   el,
   button,
   field,
@@ -120,7 +112,7 @@ export function accountsView(ui) {
     node.append(
       recordCard(
         a.name,
-        button("Edit account", () => accountEditor(ui, a), "button secondary small"),
+        button("Edit account", () => ui.go("accountEditor", a), "button secondary small"),
         el(
           "p",
           { class: "muted" },
@@ -178,7 +170,7 @@ export function instrumentsView(ui) {
       list.append(
         recordCard(
           i.name,
-          button("Edit instrument", () => instrumentEditor(ui, i), "button secondary small"),
+          button("Edit instrument", () => ui.go("instrumentEditor", i), "button secondary small"),
           el(
             "p",
             { class: "muted" },
@@ -235,7 +227,7 @@ export function strategiesView(ui) {
     node.append(
       recordCard(
         s.name,
-        button("Edit strategy", () => strategyEditor(ui, s), "button secondary small"),
+        button("Edit strategy", () => ui.go("strategyEditor", s), "button secondary small"),
         el("span", { class: "badge record-state" }, s.archived ? "Archived" : "Active"),
         s.purpose ? el("p", { class: "prose" }, s.purpose) : null,
         details(
@@ -298,7 +290,7 @@ export function tradeView(ui, id) {
     header(
       t.instruments.map((i) => i.symbol || i.name).join(" / "),
       `${label(ui, "accounts", t.accountId)} · opened ${ui.date(summary.openedAt)}`,
-      button("Edit trade", () => tradeEditor(ui, t), "button secondary"),
+      button("Edit trade", () => ui.go("tradeEditor", t), "button secondary"),
       button(
         "Delete trade",
         async () => {
@@ -448,12 +440,12 @@ export function tradeView(ui, id) {
           ),
           button(
             "Correct snapshot",
-            () => instrumentEditor(ui, i, null, { trade: t, legId: l.id }),
+            () => ui.go("snapshotEditor", { tradeId: t.id, legId: l.id }),
             "button secondary",
           ),
         ),
       ),
-      button("Add execution", () => executionEditor(ui, t, l.id)),
+      button("Add execution", () => ui.go("executionEditor", { tradeId: t.id, legId: l.id })),
     );
     const executions = t.executions
       .filter((e) => e.legId === l.id)
@@ -504,7 +496,7 @@ export function tradeView(ui, id) {
             { class: "actions" },
             button(
               `Edit execution ${index + 1}`,
-              () => executionEditor(ui, t, l.id, e),
+              () => ui.go("executionEditor", { tradeId: t.id, legId: l.id, executionId: e.id }),
               "button secondary small",
             ),
             button(
@@ -529,7 +521,7 @@ export function tradeView(ui, id) {
   }
   const adjustments = section(
     "Cash adjustments",
-    button("New cash adjustment", () => adjustmentEditor(ui, t)),
+    button("New cash adjustment", () => ui.go("adjustmentEditor", { tradeId: t.id })),
   );
   for (const a of t.adjustments)
     adjustments.append(
@@ -546,7 +538,7 @@ export function tradeView(ui, id) {
           { class: "actions" },
           button(
             "Edit adjustment",
-            () => adjustmentEditor(ui, t, a),
+            () => ui.go("adjustmentEditor", { tradeId: t.id, adjustmentId: a.id }),
             "button secondary small",
           ),
           button(

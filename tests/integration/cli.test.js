@@ -95,6 +95,46 @@ it("records trades, calculations and corrections with revision and retry guarant
   expect(await nativeRepo.listChildren("t", "operations")).toEqual([]);
 }, 90000);
 
+it("invalidates snapshot FX in correction previews and saved records, then accepts explicit historical rates", async () => {
+  expect((await cli("accounts create", { id: "fx-account", name: "FX audit", currency: "USD" })).code).toBe(0);
+  expect((await cli("instruments create", { id: "fx-instrument", name: "FX equity", symbol: "FX", preset: "equity", currency: "USD" })).code).toBe(0);
+  let saved = await cli("trades create", { id: "fx-trade", accountId: "fx-account", legs: [{ id: "fx-leg", instrumentId: "fx-instrument", direction: "long", planning: { entry: "10", stop: "8", rate: "1" } }] }, { "operation-id": "fx-create" });
+  expect(saved.code).toBe(0);
+  for (const [index, kind] of ["entry", "exit"].entries()) {
+    saved = await cli("executions add", { id: `fx-${kind}`, legId: "fx-leg", kind, quantity: "2", price: kind === "entry" ? "10" : "12", fees: kind === "entry" ? "1" : "0", timestamp: `2026-01-0${index + 1}T00:00:00Z` }, { trade: "fx-trade", revision: saved.body.data.trade.revision, "operation-id": `fx-${kind}` });
+    expect(saved.code, JSON.stringify(saved.body)).toBe(0);
+  }
+  expect(saved.body.data.trade.summary.accountNet).toBe("3");
+  const options = { trade: "fx-trade", id: "fx-leg", revision: saved.body.data.trade.revision };
+  const preview = await cli("legs correct-snapshot", { currency: "EUR" }, { ...options, preview: true });
+  expect(preview.code).toBe(0);
+  expect(preview.body.data.calculation).toMatchObject({ complete: false, accountNet: null, knownAccountNet: "-1", native: { EUR: "4", USD: "-1" } });
+  expect((await cli("trades get", undefined, { id: "fx-trade" })).body.data.trade.summary.accountNet).toBe("3");
+  saved = await cli("legs correct-snapshot", { currency: "EUR" }, { ...options, "operation-id": "fx-correction", "accept-preview": preview.body.data.previewFingerprint });
+  expect(saved.code, JSON.stringify(saved.body)).toBe(0);
+  expect(saved.body.data.trade.legs[0].planning.rate).toBeNull();
+  expect(saved.body.data.trade.executions.map((e) => e.resultRate)).toEqual([null, null]);
+  expect(saved.body.data.trade.executions[0]).toMatchObject({ feeCurrency: "USD", feeRate: "1" });
+  saved = await cli("executions update", { resultRate: "0.8" }, { trade: "fx-trade", id: "fx-exit", revision: saved.body.data.trade.revision, "operation-id": "fx-explicit-rate" });
+  expect(saved.code).toBe(0);
+  expect(saved.body.data.trade.summary.accountNet).toBe("2.2");
+  const exported = await cli("export");
+  expect(exported.body.data.trades.find((t) => t.id === "fx-trade").summary.accountNet).toBe("2.2");
+  expect((await cli("instruments get", undefined, { id: "fx-instrument" })).body.data.currency).toBe("USD");
+  expect((await cli("trades delete", undefined, { id: "fx-trade", revision: saved.body.data.trade.revision, yes: true })).code).toBe(0);
+}, 90000);
+
+it("rejects impossible instrument expiry dates through the CLI", async () => {
+  const input = { id: "invalid-expiry", name: "Expiry audit", symbol: "EXPA", preset: "options", currency: "USD", expiry: "2026-02-30" };
+  const rejected = await cli("instruments create", input);
+  expect(rejected.code).toBe(2);
+  expect(rejected.body.error.message).toMatch(/expiry.*date/i);
+  expect((await cli("instruments get", undefined, { id: input.id })).code).toBe(4);
+  const preview = await cli("instruments preview", { name: input.name, symbol: input.symbol, preset: input.preset, currency: input.currency, expiry: "2028-02-29" });
+  expect(preview.code, JSON.stringify(preview.body)).toBe(0);
+  expect(preview.body.data.instrument.expiry).toBe("2028-02-29");
+});
+
 it("does not expose another user's records and rejects unsafe saved sessions", async () => {
   const other = await mkdtemp(join(tmpdir(), "vxj-user-"));
   try {
