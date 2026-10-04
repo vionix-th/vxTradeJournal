@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-04 — Reconcile unknown fragments without guessing history direction
+
+Dirty editors reject foreign hash navigation while preserving live controls and draft state. The lifecycle replaces the transient fragment with the active application route and restores its managed navigation state; it does not infer Back versus Forward, push duplicate entries or leave a restoration lock set. This fallback preserves the editor and subsequent managed history on browsers exposing only the classic History API.
+
 ## 2026-10-04 — Restore focus by stable record identity
 
 Record actions expose stable focus keys derived from their parent and record IDs. Editor cancellation restores that key before falling back to the existing contextual match for generic actions. Duplicate labels therefore remain independently addressable across adjustment, execution and snapshot workflows.

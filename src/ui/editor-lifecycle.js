@@ -29,6 +29,7 @@ export class EditorLifecycle {
     this.entries = new Map();
     this.reset();
     window.addEventListener("popstate", (event) => this.pop(event.state));
+    window.addEventListener("hashchange", () => this.hashChange());
   }
 
   reset() {
@@ -74,6 +75,28 @@ export class EditorLifecycle {
       history.replaceState(history.state, "", `#${entry.route}`);
     this.render(entry.route, entry.arg);
     restoreFocus(this.root, focus);
+  }
+
+  restoreCurrentUrl() {
+    if (!this.current) return;
+    this.restoring = false;
+    history.replaceState({ journalNavigation: {
+      key: this.current.key,
+      index: this.current.index,
+      session: this.session,
+    } }, "", `#${this.current.route}`);
+  }
+
+  hashChange() {
+    if (!this.current || location.hash === `#${this.current.route}`) return;
+    if ([...this.entries.values()].some((entry) => `#${entry.route}` === location.hash)) return;
+    if (!this.canLeave()) {
+      this.restoreCurrentUrl();
+      return;
+    }
+    // Foreign fragments have no application route. Keep the active editor and
+    // replace the transient fragment entry instead of guessing traversal direction.
+    this.restoreCurrentUrl();
   }
 
   openChild(route, arg, { arg: parentArg, onSaved }) {
@@ -126,6 +149,10 @@ export class EditorLifecycle {
     const entry = target?.session === this.session ? this.entries.get(target.key) : null;
     const returning = entry && this.current.parent?.entry === entry;
     if (!this.canLeave(!!returning)) {
+      if (!target) {
+        this.restoreCurrentUrl();
+        return;
+      }
       this.restoring = true;
       history.go(this.position - (target?.index ?? this.position - 1));
       return;
