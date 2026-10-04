@@ -1,5 +1,11 @@
 # Development decisions
 
+## 2026-10-05 — Restore native cursors and isolate fallback history ledgers
+
+Supersede the 2026-10-04 unknown-fragment repair: copying the active marker onto another physical history slot produced duplicate indexes and could turn a rejected Back into `history.go(0)`, which reloads. One reconciliation path now handles actual browser state for both popstate and queued hashchange. Native entry keys restore the physical cursor without replacing controls or suspended drafts. Recovery callbacks belong to their authentication session, ledger epoch and active entry; rejected native recovery rebases once and releases the guard.
+
+Without native traversal, use a nonzero delta only between trusted entries in the current ledger. A queued Back can move the cursor again before the relative return executes; allow one corrective return from its observed landing slot, then rebase on failure, with a one-second bound for stalled classic recovery. Unknown entries require a fresh key and ledger epoch on the selected physical slot; preserve live controls, parent references, dirty state and operation locks. Classic History cannot determine that slot's distance from an unindexed origin, so this fallback preserves drafts and subsequent managed navigation but cannot promise the original physical cursor. Record that exception in the PRD. These mechanics are browser-only; CLI contracts remain unchanged.
+
 ## 2026-10-05 — Connect route policies to the editor lifecycle
 
 Complete the 2026-10-04 route-policy decision: descriptors now invoke actual renderers and own save, cancel, refresh and completed-editor identity. The application delegates transitions to the lifecycle; editors supply persistence actions without destination callbacks. Completion retires matching cached editors and their suspended descendants while preserving unrelated drafts. Replacement is explicit for saves, parent returns and mutation refreshes, rather than inferred from an operation lock. Browser regressions exercise real catalogue retirement and nested trade workflows.

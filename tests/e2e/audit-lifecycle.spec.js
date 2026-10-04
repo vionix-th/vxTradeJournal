@@ -62,6 +62,9 @@ test("pending save locks captured draft and navigation, then recovers after fail
   await page.evaluate(() => history.back());
   await expect(page.getByRole("heading", { name: "New instrument", exact: true })).toBeVisible();
   await expect(page).toHaveURL(savingUrl);
+  await page.evaluate(() => { location.hash = "#foreign-save-fragment"; });
+  await expect(page).toHaveURL(savingUrl);
+  await expect(page.getByLabel("Instrument name", { exact: true })).toBeDisabled();
   await page.evaluate(() => window.auditRejectSave());
   await expect(page.getByRole("alert")).toContainText("Synthetic save failure");
   await expect(page.getByLabel("Instrument name", { exact: true })).toBeEnabled();
