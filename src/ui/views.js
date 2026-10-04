@@ -401,7 +401,7 @@ export function tradeView(ui, idOrArg) {
         el("p", {}, `Point value ${i.pointValue ?? "manual"} · quantity increment ${i.quantityIncrement} · price increment ${i.priceIncrement} · P&L ${i.currency}`),
         el("p", {}, `Underlying ${i.underlying || "—"} · expiry ${i.expiry || "—"} · strike ${i.strike || "—"} · ${i.optionType || ""}`),
         el("p", {}, `Planned entry ${l.planning?.entry || "—"} · stop ${l.planning?.stop || "—"} · target ${l.planning?.target || "—"} · planned quantity ${l.planning?.quantity || "—"} · sizing rate ${l.planning?.rate || "—"}`),
-        button("Correct snapshot", () => ui.go("snapshotEditor", { tradeId: t.id, legId: l.id }), "button secondary"),
+        button("Correct snapshot", () => ui.go("snapshotEditor", { tradeId: t.id, legId: l.id }), "button secondary", { "data-focus-key": `snapshot:${t.id}:${l.id}:edit` }),
       ),
     );
     snapshotDetails.setOpen(l.id === reopenLegId);
@@ -528,6 +528,7 @@ export function tradeView(ui, idOrArg) {
             "Edit adjustment",
             () => ui.go("adjustmentEditor", { tradeId: t.id, adjustmentId: a.id }),
             "button secondary small",
+            { "data-focus-key": `adjustment:${a.id}:edit` },
           ),
           button(
             "Delete adjustment",

@@ -2,6 +2,7 @@ function focusTarget(root) {
   const control = document.activeElement;
   if (!root.contains(control) || control.tagName !== "BUTTON") return null;
   return {
+    key: control.dataset.focusKey || null,
     text: control.textContent.trim(),
     label: control.getAttribute("aria-label"),
     context: control.closest(".record-panel, .section-panel, .leg-card")
@@ -12,7 +13,7 @@ function focusTarget(root) {
 function restoreFocus(root, target) {
   if (!target) return;
   const control = [...root.querySelectorAll("button")].find((button) =>
-    button.textContent.trim() === target.text &&
+    (target.key ? button.dataset.focusKey === target.key : button.textContent.trim() === target.text) &&
     button.getAttribute("aria-label") === target.label &&
     button.closest(".record-panel, .section-panel, .leg-card")
       ?.querySelector("h2, legend")?.textContent === target.context);

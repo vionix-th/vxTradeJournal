@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-04 — Restore focus by stable record identity
+
+Record actions expose stable focus keys derived from their parent and record IDs. Editor cancellation restores that key before falling back to the existing contextual match for generic actions. Duplicate labels therefore remain independently addressable across adjustment, execution and snapshot workflows.
+
 ## 2026-10-04 — Snapshot cancellation returns to the invoking trade
 
 Snapshot correction is a child workflow of the trade view. Cancel returns to that trade, reopens the corrected leg's snapshot disclosure and restores the invoking correction control. The correction editor remains reusable for ordinary catalogue editing; only its explicit parent context changes the destination.
