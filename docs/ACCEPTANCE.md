@@ -27,7 +27,7 @@ This ledger maps the PRD acceptance criteria to permanent evidence. Test names d
 | Draft snapshots | Session: refreshes only unsaved leg snapshots and keeps preview and save consistent; reconciles refreshed draft currencies; browser `final-snapshots.spec.js` verifies quantity 50 → 5 and persisted replay |
 | Accepted discard | Lifecycle/route-policy unit tests: session aliases, independent sessions, clean drafts, rejected departures, child Back and deleted-record handling; browser `final-discard.spec.js`: Cancel → Back, nested sidebar departure and reload success/failure |
 | Confirmed-save refresh recovery | Browser `final-recovery.spec.js`: catalogue at 375/800/1280, trade, nested parent/focus return, repeated read failures, parent-discard Sign out acceptance/rejection and stale-auth completion; `editor-session.spec.js` verifies one write after inline reconstruction |
-| Existing leg removal | Pending issue 5 |
+| Existing leg removal | Session: removable-leg prerequisites for persisted/oversized records; browser `final-removal.spec.js` at 375/800/1280 verifies disabled descriptions and eligible save; CLI: removes eligible persisted legs and preserves executed legs and the final leg |
 | Reachable execution validation | Pending issue 6 |
 | Current component contract | Existing planning-errors and component-contracts regressions |
 | Credential input sources | Pending issue 8 |

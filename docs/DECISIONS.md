@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-05 — Expose eligible persisted leg removal
+
+Use the edit session's immutable execution history and current leg count to own removal eligibility and its UI explanation. Show removal for historical and new legs, retain at least one, and protect executed legs. Shared replacement/removal operations and transaction validation remain authoritative. Browser and CLI regressions verify identical prerequisites, including reductions of oversized retained records.
+
 ## 2026-10-05 — Preserve confirmed writes across refresh failure
 
 Supersede the retained-session decision's refresh-failure Save retry: the application now owns pending completion after a write resolves, retaining saved result, callback, editor identity and authentication generation. Failed reads show a recovery screen and block ordinary navigation through the lifecycle's injected guard. Retry loads data without rerunning the write; successful refresh clears pending state before one completion. Recovery Sign out bypasses only that navigation block, preserving operation/restoration guards and confirmation for an unsaved parent. Authentication reset invalidates stale callbacks. Pre-confirmation write errors still retain editable content and existing receipt/conflict semantics.

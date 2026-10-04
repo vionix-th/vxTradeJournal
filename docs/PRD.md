@@ -95,6 +95,7 @@ Trade represents one journalled trading idea. It contains one or more instrument
 
 - Single-leg trade is default. Additional legs added explicitly.
 - Each leg has instrument snapshot and long/short direction.
+- Website and CLI permit removing persisted legs when at least one leg remains and the removed leg has no executions. Website exposes disabled removal controls with the blocking prerequisite; shared operations and persistence reject invalid removal. Retained oversized trades can be reduced without adding legs above capacity.
 - New/Edit trade groups each leg in an accessible fieldset with concise Instrument and Direction labels. Optional prices and quantity appear under native Trade plan disclosure with one explanation: “Intended prices and size. Record actual fills separately.”
 - Empty plans start collapsed; saved plans containing values start open. Adding/removing legs and inline instrument creation preserve disclosure state and draft values. Catalogue edits do not rewrite historical quotation or quantity units.
 - Executions record quantity, price, timestamp, fees, fee currency and optional order reference.

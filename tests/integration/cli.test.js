@@ -181,6 +181,22 @@ it("does not expose another user's records and rejects unsafe saved sessions", a
   } finally { await rm(other, { recursive: true, force: true }); }
 });
 
+it("removes eligible persisted legs and preserves executed legs and the final leg", async () => {
+  await cli("accounts create", { id: "removal-account", name: "Removal", currency: "USD" });
+  await cli("instruments create", { id: "removal-instrument", name: "Removal equity", symbol: "REMOVE", preset: "equity", currency: "USD" });
+  let saved = await cli("trades create", { id: "removal", accountId: "removal-account", legs: ["protected", "eligible"].map((id) => ({ id, instrumentId: "removal-instrument", direction: "long" })) }, { "operation-id": "removal-create" });
+  expect(saved.code).toBe(0);
+  saved = await cli("executions add", { id: "removal-entry", legId: "protected", kind: "entry", quantity: "1", price: "10", timestamp: "2026-01-01T00:00:00Z" }, { trade: "removal", revision: 1, "operation-id": "removal-entry" });
+  expect(saved.code).toBe(0);
+  expect((await cli("legs delete", undefined, { trade: "removal", id: "protected", revision: 2, "operation-id": "protected-delete", yes: true })).code).toBe(2);
+  saved = await cli("legs delete", undefined, { trade: "removal", id: "eligible", revision: 2, "operation-id": "eligible-delete", yes: true });
+  expect(saved.body.data.trade.legs).toHaveLength(1);
+  expect(saved.body.data.trade.executions).toHaveLength(1);
+  expect((await cli("legs delete", undefined, { trade: "removal", id: "protected", revision: 3, "operation-id": "last-delete", yes: true })).code).toBe(2);
+  expect((await cli("executions delete", undefined, { trade: "removal", id: "removal-entry", revision: 3, "operation-id": "remove-entry", yes: true })).code).toBe(0);
+  expect((await cli("legs delete", undefined, { trade: "removal", id: "protected", revision: 4, "operation-id": "empty-delete", yes: true })).code).toBe(2);
+}, 60000);
+
 it("covers archives, settings, multi-leg manual results and retained incomplete FX", async () => {
   expect((await cli("accounts create", { id: "eur", name: "Euro", currency: "EUR" })).code).toBe(0);
   expect((await cli("settings update", { theme: "dark", timezone: "Asia/Bangkok", defaultAccount: "eur" }, { revision: 0 })).code).toBe(0);

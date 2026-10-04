@@ -22,6 +22,23 @@ function session(baseRecord = null, data = records()) {
 }
 
 describe("composite trade editor session", () => {
+  it("enforces removable-leg prerequisites for persisted and oversized records", () => {
+    const base = retained();
+    base.legs.push({ ...structuredClone(base.legs[0]), id: "second" });
+    base.executions = [{ id: "execution", legId: "historical-leg" }];
+    const draft = session(base);
+    expect(draft.removalReason("historical-leg")).toMatch(/executions/);
+    expect(() => draft.removeLeg("historical-leg")).toThrow(/executions/);
+    expect(draft.removalReason("second")).toBeNull();
+    draft.removeLeg("second");
+    expect(draft.removalReason("historical-leg")).toMatch(/one leg/);
+    expect(() => draft.removeLeg("historical-leg")).toThrow(/one leg/);
+    const large = retained();
+    large.legs = Array.from({ length: 7 }, (_, index) => ({ ...structuredClone(large.legs[0]), id: `leg-${index}` }));
+    const reduced = session(large);
+    reduced.removeLeg("leg-6");
+    expect(reduced.toInput().legs).toHaveLength(6);
+  });
   it("refreshes only unsaved leg snapshots and keeps preview and save consistent", () => {
     for (const base of [null, retained()]) {
       const draft = session(base);

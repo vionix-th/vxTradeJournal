@@ -112,10 +112,18 @@ export class TradeEditorSession {
     return leg;
   }
   removeLeg(legId) {
-    if (this.editableValues.legs.length === 1) return;
+    const reason = this.removalReason(legId);
+    if (reason) throw new Error(reason);
     const leg = this.leg(legId);
     this.editableValues.legs.splice(this.editableValues.legs.indexOf(leg), 1);
     this.disclosures.delete(legId);
+  }
+  removalReason(legId) {
+    this.leg(legId);
+    if (this.editableValues.legs.length === 1) return "At least one leg is required";
+    if (this.baseRecord?.executions.some((execution) => execution.legId === legId))
+      return "Remove leg executions before removing its leg";
+    return null;
   }
   disclosureFor(legId) {
     if (!this.disclosures.has(legId)) {

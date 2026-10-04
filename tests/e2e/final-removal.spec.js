@@ -1,0 +1,33 @@
+import { test, expect } from "@playwright/test";
+import { setup } from "./fixtures.js";
+import { openTradeDraft } from "./audit-editor-fixtures.js";
+
+for (const width of [375, 800, 1280]) test(`persisted leg removal prerequisites remain usable at ${width}px`, async ({ page, request }) => {
+  await page.setViewportSize({ width, height: 900 });
+  await setup(page, request);
+  await openTradeDraft(page);
+  await page.getByRole("button", { name: "Add leg", exact: true }).click();
+  await page.getByRole("button", { name: "Save trade", exact: true }).click();
+  await page.getByRole("button", { name: "Add execution", exact: true }).first().click();
+  await page.getByLabel("Quantity", { exact: true }).fill("1");
+  await page.getByLabel("Price", { exact: true }).fill("10");
+  await page.getByRole("button", { name: "Save execution", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Edit trade", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Edit trade", exact: true }).click();
+  const first = page.getByRole("group", { name: "Leg 1", exact: true });
+  const second = page.getByRole("group", { name: "Leg 2", exact: true });
+  await expect(first.getByRole("button", { name: "Remove leg", exact: true })).toBeDisabled();
+  await expect(first.getByRole("button", { name: "Remove leg", exact: true })).toHaveAccessibleDescription(/executions/);
+  await second.getByText("Trade plan", { exact: true }).click();
+  await second.getByLabel("Entry price", { exact: true }).fill("10");
+  await second.getByLabel("Stop price", { exact: true }).fill("8");
+  await second.getByLabel("Quantity", { exact: true }).fill("1");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({ path: `test-results/final-removal-${width}.png`, fullPage: true });
+  await second.getByRole("button", { name: "Remove leg", exact: true }).click();
+  await expect(first.getByRole("button", { name: "Remove leg", exact: true })).toHaveAccessibleDescription(/one leg/);
+  await page.getByRole("button", { name: "Save trade", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Add execution", exact: true })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Edit execution 1", exact: true })).toBeVisible();
+});

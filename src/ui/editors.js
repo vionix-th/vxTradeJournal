@@ -344,19 +344,16 @@ export function tradeEditor(ui, session) {
     plan.node.addEventListener("toggle", retainDisclosure);
     sizingDetails.node.addEventListener("toggle", retainDisclosure);
     append(node, grid, plan);
-    let remove;
-    if (!existingLeg) {
-      remove = button("Remove leg", () => {
-        if (blocks.length === 1) return;
-        session.removeLeg(leg.id);
-        blocks.splice(blocks.findIndex((block) => block.legId === leg.id), 1);
-        node.remove();
-        ui.dirty = true;
-        updatePlanning();
-      }, "button secondary small");
-      node.append(remove);
-    }
-    blocks.push({ legId: leg.id, node, legend, instrument, plan, explanation, sizingDetails, sizing, priceFields, quantity, budget, rate, source, destination, remove, planning });
+    const removalHelp = el("p", { class: "help", id: `leg-removal-${leg.id}` });
+    const remove = button("Remove leg", () => {
+      session.removeLeg(leg.id);
+      blocks.splice(blocks.findIndex((block) => block.legId === leg.id), 1);
+      node.remove();
+      ui.dirty = true;
+      updatePlanning();
+    }, "button secondary small", { "aria-describedby": removalHelp.id });
+    node.append(remove, removalHelp);
+    blocks.push({ legId: leg.id, node, legend, instrument, plan, explanation, sizingDetails, sizing, priceFields, quantity, budget, rate, source, destination, remove, removalHelp, planning });
     legArea.append(node);
   }
   function updatePlanExplanation() {
@@ -378,7 +375,10 @@ export function tradeEditor(ui, session) {
     combined.setUnit(input.accountCurrency);
     for (const [index, block] of blocks.entries()) {
       block.legend.textContent = `Leg ${index + 1}`;
-      if (block.remove) block.remove.disabled = blocks.length === 1;
+      const removalReason = session.removalReason(block.legId);
+      block.remove.disabled = !!removalReason;
+      block.removalHelp.textContent = removalReason || "";
+      block.removalHelp.hidden = !removalReason;
       const leg = input.legs.find((record) => record.id === block.legId);
       const instrument = leg.snapshot;
       block.instrument.setError(session.instrumentUnavailable(leg.id) ? "Choose an available instrument before saving" : null);
