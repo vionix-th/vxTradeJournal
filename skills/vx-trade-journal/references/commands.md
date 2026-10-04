@@ -14,8 +14,8 @@ This inventory is generated from the executable catalogue. Required options are 
 | `version` | Application, CLI, schema and calculation versions | None |
 | `ids` | Generate stable IDs before submitting creates | None |
 | `doctor` | Check runtime, project and saved authentication | `--profile` |
-| `auth login` | login a Firebase user session | `--profile` |
-| `auth register` | register a Firebase user session | `--profile` |
+| `auth login` | login a Firebase user session using stdin or a hidden terminal prompt | `--profile` |
+| `auth register` | register a Firebase user session using stdin or a hidden terminal prompt | `--profile` |
 | `auth reset` | reset a Firebase user session | `--profile` |
 | `auth status` | status the selected profile session | `--profile` |
 | `auth verify` | verify the selected profile session | `--profile` |

@@ -6,12 +6,13 @@ import { spawn } from "node:child_process";
 import { beforeAll, afterAll, it, expect } from "vitest";
 import { initializeTestEnvironment } from "@firebase/rules-unit-testing";
 import { Repository } from "../../src/persistence/repository.js";
+import { SessionStore } from "../../src/cli/session-store.js";
 
 let env, root, email, uid;
 const project = "demo-vxjournal-auto";
 const executable = process.env.VXJ_CLI_EXECUTABLE || resolve("src/cli/index.js");
-async function cli(command, input, extra = {}, directory = root) {
-  const args = [...command.split(" "), "--profile", "auto"];
+async function cli(command, input, extra = {}, directory = root, profile = "auto") {
+  const args = [...command.split(" "), "--profile", profile];
   for (const [key, value] of Object.entries(extra)) { args.push(`--${key}`); if (value !== true) args.push(String(value)); }
   if (input !== undefined) args.push("--input", "-");
   return new Promise((done, reject) => {
@@ -74,6 +75,7 @@ it("records trades, calculations and corrections with revision and retry guarant
   expect((await cli("export")).body.data.trades.find((trade) => trade.id === "t").openedAt).toBe(createdDate);
   const retry = await cli("trades create", input, { "operation-id": "create" });
   expect(retry.body.data.replayed).toBe(true);
+  expect((await cli("operations get", undefined, { trade: "t", "operation-id": "create" })).body.data.revision).toBe(1);
   expect((await cli("trades create", { ...input, review: "Changed" }, { "operation-id": "create" })).code).toBe(5);
   expect((await cli("calculate size", undefined, { trade: "t", leg: "t-leg-1" })).body.data.quantity).toBe("250");
   const entry = { id: "e1", legId: "t-leg-1", kind: "entry", quantity: "2", price: "10", fees: "1", timestamp: "2026-01-01T00:00:00Z" };
@@ -85,6 +87,9 @@ it("records trades, calculations and corrections with revision and retry guarant
   const correction = { pointValue: "2" };
   const preview = await cli("legs correct-snapshot", correction, { trade: "t", id: "t-leg-1", revision: 3, preview: true });
   expect(preview.body.data.calculation.accountNet).toBe("7");
+  const mismatched = await cli("legs correct-snapshot", { pointValue: "3" }, { trade: "t", id: "t-leg-1", revision: 3, "operation-id": "wrong-preview", "accept-preview": preview.body.data.previewFingerprint });
+  expect(mismatched.body.error.code).toBe("PREVIEW_MISMATCH");
+  expect((await cli("trades get", undefined, { id: "t" })).body.data.trade.revision).toBe(3);
   const corrected = await cli("legs correct-snapshot", correction, { trade: "t", id: "t-leg-1", revision: 3, "operation-id": "correct", "accept-preview": preview.body.data.previewFingerprint });
   expect(corrected.code).toBe(0);
   expect(corrected.body.data.trade.summary.accountNet).toBe("7");
@@ -208,6 +213,66 @@ it("rejects invalid supplied Entry result rates and accepts corrected retained r
   const saved = await cli("executions add", { ...entry, resultRate: "0.8" }, { trade: "rates", revision: 1, "operation-id": "valid-rate" });
   expect(saved.body.data.trade.executions[0].resultRate).toBe("0.8");
 }, 60000);
+
+it.each(["auth login", "auth register"])("rejects %s credential-file input before accessing a path", async (command) => {
+  const rejected = await cli(command, undefined, { input: join(root, "nonexistent-credentials.json") });
+  expect(rejected.code).toBe(2);
+  expect(rejected.body.error.code).toBe("INVALID_INPUT");
+  expect(rejected.body.error.message).toMatch(/stdin|prompt/);
+  expect(rejected.stderr).toBe("");
+  expect(JSON.stringify(rejected.body)).not.toMatch(/Synthetic-test|password|nonexistent-credentials/);
+});
+
+it("rejects sessions copied into another Firebase profile before token refresh", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "vxj-profile-"));
+  try {
+    const saved = JSON.parse(await readFile(join(root, "auto.json"), "utf8"));
+    const store = new SessionStore(directory);
+    for (const profile of ["dev", "test"]) {
+      await store.write(profile, saved);
+      const rejected = await cli("auth status", undefined, {}, directory, profile);
+      expect(rejected.body.error).toMatchObject({ code: "AUTH_REQUIRED", message: "Saved session belongs to another project. Sign in for this profile." });
+      expect(rejected.code).toBe(3);
+    }
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+it("reproduces PRD sizing and scaled-fill fixtures through the CLI", async () => {
+  expect((await cli("accounts create", { id: "acceptance-account", name: "Acceptance", currency: "USD" })).code).toBe(0);
+  for (const instrument of [
+    { id: "contracts", name: "Contracts", symbol: "CONTRACT", pointValue: "50", quantityIncrement: "1", currency: "USD" },
+    { id: "fractional", name: "Fractional FX", symbol: "FXROUND", pointValue: "1", quantityIncrement: "0.1", currency: "EUR" },
+    { id: "scaled", name: "Scaled equity", symbol: "SCALE", pointValue: "1", quantityIncrement: "1", currency: "USD" },
+  ]) expect((await cli("instruments create", { ...instrument, preset: "equity" })).code).toBe(0);
+  for (const [instrumentId, planning, quantity] of [
+    ["contracts", { entry: "10", stop: "8", riskBudget: "500" }, "5"],
+    ["fractional", { entry: "10", stop: "7", riskBudget: "1", rate: "0.8" }, "0.4"],
+  ]) {
+    const id = `sizing-${instrumentId}`;
+    expect((await cli("trades create", { id, accountId: "acceptance-account", legs: [{ id: "sizing-leg", instrumentId, direction: "long", planning }] }, { "operation-id": id })).code).toBe(0);
+    expect((await cli("calculate size", undefined, { trade: id, leg: "sizing-leg" })).body.data.quantity).toBe(quantity);
+  }
+  let saved = await cli("trades create", { id: "scaled-fixture", accountId: "acceptance-account", legs: [{ id: "scaled-leg", instrumentId: "scaled", direction: "long" }] }, { "operation-id": "scaled-create" });
+  const fills = [["entry", "100", "10"], ["entry", "100", "12"], ["exit", "50", "13"], ["entry", "50", "10"], ["exit", "200", "12"]];
+  for (const [index, [kind, quantity, price]] of fills.entries()) {
+    saved = await cli("executions add", { id: `scaled-${index}`, legId: "scaled-leg", kind, quantity, price, timestamp: `2026-01-0${index + 1}T00:00:00Z` }, { trade: "scaled-fixture", revision: saved.body.data.trade.revision, "operation-id": `scaled-${index}` });
+    expect(saved.code).toBe(0);
+    if (index === 2) expect(saved.body.data.trade.summary.legs[0]).toMatchObject({ remaining: "150", averageEntry: "11", gross: "100" });
+    if (index === 3) expect(saved.body.data.trade.summary.legs[0]).toMatchObject({ remaining: "200", averageEntry: "10.75", gross: "100" });
+  }
+  expect(saved.body.data.trade.summary).toMatchObject({ status: "closed", accountNet: "350" });
+  expect((await cli("calculate trade", undefined, { id: "scaled-fixture" })).body.data.calculation.accountNet).toBe("350");
+  expect((await cli("export")).body.data.trades.find((trade) => trade.id === "scaled-fixture").summary.accountNet).toBe("350");
+}, 90000);
+
+it("blocks draft catalogue definitions from starting trades through the CLI", async () => {
+  const definition = { id: "draft-definition", name: "Draft", symbol: "DRAFT", preset: "equity", draft: true };
+  expect((await cli("instruments create", definition)).code).toBe(0);
+  expect((await cli("instruments preview", { name: definition.name, symbol: definition.symbol, preset: definition.preset, draft: true })).body.data.availableForNewTrades).toBe(false);
+  const rejected = await cli("trades create", { id: "draft-blocked", accountId: "a", legs: [{ instrumentId: definition.id, direction: "long" }] }, { "operation-id": "draft-blocked" });
+  expect(rejected.code).toBe(2);
+  expect((await cli("trades get", undefined, { id: "draft-blocked" })).code).toBe(4);
+});
 
 it("covers archives, settings, multi-leg manual results and retained incomplete FX", async () => {
   expect((await cli("accounts create", { id: "eur", name: "Euro", currency: "EUR" })).code).toBe(0);

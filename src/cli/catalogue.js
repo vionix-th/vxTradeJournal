@@ -35,7 +35,7 @@ add("schema", "schema", "Machine-readable command contracts", { offline: true, o
 add("version", "version", "Application, CLI, schema and calculation versions", { offline: true });
 add("ids", "ids", "Generate stable IDs before submitting creates", { offline: true, options: ["count"] });
 add("doctor", "doctor", "Check runtime, project and saved authentication");
-for (const action of ["login", "register", "reset"]) add(`auth ${action}`, "auth", `${action} a Firebase user session`, {
+for (const action of ["login", "register", "reset"]) add(`auth ${action}`, "auth", `${action} a Firebase user session${action === "reset" ? "" : " using stdin or a hidden terminal prompt"}`, {
   action, options: ["input", "email"], input: object({ email: string(), ...(action === "reset" ? {} : { password: string() }) }),
 });
 for (const action of ["status", "verify", "logout"]) add(`auth ${action}`, "auth", `${action} the selected profile session`, { action });

@@ -102,6 +102,8 @@ export async function run(args = process.argv.slice(2)) {
     const { command, spec, options } = parsed;
     const [major, minor] = process.versions.node.split(".").map(Number);
     if (major < 22 || major === 22 && minor < 13) throw new CliError("UNSUPPORTED_RUNTIME", "Node.js 22.13 or newer is required.");
+    if (credentialsCommands.has(command) && options.input && options.input !== "-")
+      throw new CliError("INVALID_INPUT", "Credentials require stdin (--input -) or a hidden terminal prompt.");
     let input = options.input ? validateInput(command, await inputJson(options.input)) : {};
     let data;
     if (spec.offline) {

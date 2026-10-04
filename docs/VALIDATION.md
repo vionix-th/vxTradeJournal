@@ -1,5 +1,7 @@
 # Local prototype validation
 
+Historical validation journal through 4 October 2026. Dated counts and unresolved observations below describe those runs, not the current remediation state. The 5 October acceptance mapping, final gates and verification limits are maintained in [ACCEPTANCE.md](ACCEPTANCE.md); final command outcomes identify the delivered source revision.
+
 Validated through 4 October 2026. Application version: `0.1.0`. Hosted deployment and release publication remain separate work after prototype review, as specified in [PRD delivery defaults](PRD.md#5-delivery-and-release-defaults).
 
 ## Code quality audit fixes — 4 October 2026

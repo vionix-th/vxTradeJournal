@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-05 — Restrict credential input and complete acceptance evidence
+
+Reject login/registration credential paths before filesystem access with the existing INVALID_INPUT contract. Preserve stdin and hidden prompts, journal JSON file input and refresh-only session storage. Command summaries and generated skill guidance expose the restriction without changing JSON shapes. Close concrete acceptance evidence gaps with CLI receipt reads, preview mismatch rejection, profile/project session isolation, draft readiness, independently specified sizing/scaled fills, and browser short partial covers. These are tests of established behavior, not new product features. [ACCEPTANCE.md](ACCEPTANCE.md) records requirements, evidence and verification limits; final check/build and remote synchronization complete the bounded remediation.
+
 ## 2026-10-05 — Use the current planning component contract
 
 Remove the unused alternate field collection and optional-method fallback. Every leg block owns its planning fields, and shared field components provide setError. Existing planning-validation and component-contract tests verify unchanged behavior; no compatibility layer or implementation-mirroring test is added.

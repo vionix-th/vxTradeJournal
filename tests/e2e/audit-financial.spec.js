@@ -1,5 +1,27 @@
 import { test, expect } from "@playwright/test";
 import { setup } from "./fixtures.js";
+import { openTradeDraft } from "./audit-editor-fixtures.js";
+
+test("short partial covers reproduce the PRD gross result and reload", async ({ page, request }) => {
+  await setup(page, request);
+  await openTradeDraft(page);
+  await page.getByLabel("Direction", { exact: true }).selectOption("short");
+  await page.getByRole("button", { name: "Save trade", exact: true }).click();
+  for (const [index, [kind, quantity, price]] of [["entry", "100", "20"], ["exit", "40", "22"], ["exit", "60", "18"]].entries()) {
+    await page.getByRole("button", { name: "Add execution", exact: true }).click();
+    await page.getByLabel("Record type", { exact: true }).selectOption(kind);
+    await page.getByLabel("Quantity", { exact: true }).fill(quantity);
+    await page.getByLabel("Price", { exact: true }).fill(price);
+    await page.getByLabel("Timestamp (UTC)", { exact: true }).fill(`2026-01-0${index + 1}T00:00`);
+    await page.getByRole("button", { name: "Save execution", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Edit trade", exact: true })).toBeVisible();
+  }
+  await expect(page.getByTestId("trade-result")).toContainText("40.00 USD");
+  await expect(page.getByTestId("trade-status")).toHaveText("Closed");
+  await page.reload();
+  await page.getByRole("button", { name: "Open trade", exact: true }).filter({ visible: true }).click();
+  await expect(page.getByTestId("trade-result")).toContainText("40.00 USD");
+});
 
 test("snapshot currency correction clears obsolete result and planning conversion", async ({ page, request }) => {
   await setup(page, request);

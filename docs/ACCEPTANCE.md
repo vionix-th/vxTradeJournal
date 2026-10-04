@@ -5,16 +5,16 @@ This ledger maps the PRD acceptance criteria to permanent evidence. Test names d
 | PRD area | Permanent evidence |
 |---|---|
 | User isolation | `tests/integration/security.test.js`: denies anonymous and cross-user access including children; CLI: does not expose another user's records and rejects unsafe saved sessions |
-| Catalogue | Domain: validates instrument readiness and snapshots remain independent; browser workflow configuration; CLI instrument create/preview contracts |
+| Catalogue | Domain: validates instrument readiness and snapshots remain independent; browser configuration in `workflows.spec.js`; CLI: blocks draft catalogue definitions from starting trades; instrument preview contracts |
 | Historical settings | Repository: persists source records, snapshots, historical edits and export-ready reload; CLI correction workflow; browser snapshot currency correction |
-| Quantity sizing | Domain: sizes five contracts and floors fractional increments; uses conversion direction and adverse stop; browser trade-plan; CLI calculate size |
-| Partial fills | Domain scaled-entry fixture; browser scaled-trade workflow; CLI records trades, calculations and corrections with revision and retry guarantees |
-| Scaling | Domain: reproduces scaled entry fixture independently; browser complete workflow and reload |
-| Short positions | Domain: uses short direction; browser short workflow |
+| Quantity sizing | Domain: sizes five contracts and floors fractional increments; uses conversion direction and adverse stop; browser `trade-plan.spec.js`; CLI: reproduces PRD sizing and scaled-fill fixtures (five contracts; fractional FX quantity 0.4) |
+| Partial fills | Domain scaled-entry fixture; browser complete journal workflow; CLI: reproduces PRD sizing and scaled-fill fixtures (remaining 150, average 11, gross 100) |
+| Scaling | Domain: reproduces scaled entry fixture independently; browser complete journal workflow and reload; CLI: reproduces PRD sizing and scaled-fill fixtures (final gross 350, replay/export agreement) |
+| Short positions | Domain: uses short direction; browser `audit-financial.spec.js`: short partial covers reproduce the PRD gross result and reload (40 USD); CLI multi-leg workflow verifies short gross 4 USD → 3.2 EUR |
 | Multi-leg trades | Domain: closes multi-leg only after every leg closes and supports settlement; browser trade-capacity/workflows; CLI multi-leg manual-results workflow |
 | Manual results | Domain: keeps missing manual result unknown and charges fees once; browser manual results, historical FX, retained validation and snapshot preview; CLI manual/incomplete FX |
 | Currencies | Domain: preserves fees, signed adjustments, separate historical conversion rates; browser audit-financial; CLI invalidates snapshot FX in correction previews and saved records |
-| Corrections | Domain: rejects correction causing later excess exit; repository invalid earlier corrections; browser/CLI correction preview and save |
+| Corrections | Domain: rejects correction causing later excess exit; repository invalid earlier corrections; browser/CLI correction preview and save; CLI rejects a changed proposal with an earlier preview fingerprint without changing the revision |
 | Reliability | Repository idempotent retry/stale revisions; CLI receipt/retry guarantees; browser concurrent edits and lifecycle/history regressions |
 | Mobile/desktop | Browser workflows, layout and component-contracts; affected remediation states reviewed at 375/800/1280 px |
 | Export | Application: exports reconstructible source records without auth secrets; browser workflow download/reload; CLI complete export and packaged skill |
@@ -30,10 +30,21 @@ This ledger maps the PRD acceptance criteria to permanent evidence. Test names d
 | Existing leg removal | Session: removable-leg prerequisites for persisted/oversized records; browser `final-removal.spec.js` at 375/800/1280 verifies disabled descriptions and eligible save; CLI: removes eligible persisted legs and preserves executed legs and the final leg |
 | Reachable execution validation | Browser `final-validation.spec.js` at 375/800/1280: visible invalid rate, associated error, rejected save and keyboard correction; CLI: rejects invalid supplied Entry result rates and accepts corrected retained rates |
 | Current component contract | Existing planning-errors and component-contracts regressions |
-| Credential input sources | Pending issue 8 |
+| Credential input sources | CLI: rejects auth login/register credential-file input before accessing a path; renewable-session and registration/login workflows verify stdin, absence of secret output and private refresh-only storage |
+
+## CLI and distribution acceptance
+
+- Identity and profiles: CLI `uses renewable sessions across processes and protects credentials`, cross-user explicit record lookup, and `rejects sessions copied into another Firebase profile before token refresh`; `session-store.test.js` verifies private profile isolation, locking and unsafe-file rejection; `firebase-config.test.js` verifies isolated demo projects and production configuration boundaries.
+- Contracts and reliability: `cli-contract.test.js` verifies command options, JSON decimal inputs, stable IDs, revisions and operation IDs. CLI integration exercises dry runs, receipt reads, identical retries, changed-input rejection, stale revisions, preview fingerprint rejection and complete source export. `cli-auth.test.js` verifies renewable-session identity checks and redacted service errors.
+- Portable installation: `scripts/test-skill.js` extracts the generated ZIP, installs locked dependencies in a temporary directory, runs schema/version/error checks from an unrelated directory and reruns CLI integration against emulators. Unit archive/docs checks verify contents, references and generated inventory.
+- Website distribution: `skill-download.spec.js` verifies downloads before/after sign-in at 375/996/1280 px, keyboard operation and archive metadata. Archive unit tests verify hosted/local copies match generated bytes.
+
+## Rendered and accessibility evidence
+
+`final-recovery`, `final-removal` and `final-validation` produce full-page screenshots at 375/800/1280 px for long recovery messages, dense multi-leg forms and invalid-rate states. Functional checks assert recovery/write counts and save outcomes. Separate accessibility assertions cover associated errors/prerequisite descriptions, keyboard correction/refresh and nested focus restoration. Root reviews rendered spacing, control visibility and overflow; automated layout/component tests provide additional contract evidence.
 
 ## Final gate
 
 Run `npm run check` and `npm run build:prod` from the final committed revision. The check includes lint, skill documentation contracts, unit/integration/browser acceptance, local build and portable packaged-skill acceptance. Verify generated application and skill metadata match the clean source revision; inspect affected rendered states and record functional, accessibility and visual evidence separately.
 
-Known limits: automated browser coverage uses Chromium; classic History fallback preserves drafts and usable navigation but cannot guarantee the original physical cursor for unindexed entries. Production services are not exercised or deployed by this remediation. Disposable test records require no retained-data conversion.
+Known limits: automated browser coverage uses Chromium; classic History fallback preserves drafts and usable navigation but cannot guarantee the original physical cursor for unindexed entries. Automated authentication exercises stdin; the existing interactive hidden terminal prompt is unchanged and not exercised by this gate. Production services are not exercised or deployed by this remediation. Disposable test records require no retained-data conversion. Earlier dated results in VALIDATION.md are historical observations, not current acceptance status.
