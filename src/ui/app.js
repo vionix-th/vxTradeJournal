@@ -77,6 +77,9 @@ class JournalUI {
       el("div", { class: "auth-shell" }, notice("Loading private journal…")),
     );
     try {
+      // Refresh the verification claim used by Firestore rules when a user
+      // completed verification outside this tab.
+      await getIdToken(user, true);
       const data = await this.repo.load();
       if (generation !== this.loadGeneration) return;
       this.data = data;
