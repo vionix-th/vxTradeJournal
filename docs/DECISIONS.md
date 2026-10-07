@@ -1,5 +1,13 @@
 # Development decisions
 
+## 2026-10-07 — Publish the initial development release
+
+Publish the existing `0.1.0` application as the initial development release on Firebase Hosting project `vionixtradejournal`, together with the current ownership rules and downloadable skill from the same clean source commit. Retain the development version because this is the first numbered publication; production deployment does not establish stable `1.0.0` acceptance. Require complete worker-m verification and a hosted build before publication, then create an immutable annotated `v0.1.0` tag. No schema conversion is required. Verify public hosted assets after deployment; emulator coverage does not establish real email delivery or authenticated hosted persistence.
+
+## 2026-10-07 — Keep skill installation guidance outside the sidebar
+
+Revise the [website distribution decision](#2026-10-02--distribute-the-skill-through-the-website): keep the signed-in Session skill panel limited to its ZIP download link. Retain runtime and installation guidance on the sign-in screen and in the existing installation documentation. This removes documentation from routine workspace navigation without changing the skill archive, download contract or CLI behavior.
+
 ## 2026-10-05 — Reduce routine test workload
 
 Revise the [website/CLI/skill maintenance decision](#2026-10-02--maintain-website-cli-and-skill-together) and acceptance-gate frequency: keep worker-m delegation, but use focused failing/passing checks and affected final coverage, reusing results while tested inputs remain unchanged. Complete checks run before integrating an accumulated batch into main and for releases; fresh skill installation is required for packaging, runtime dependencies and installation guidance, not every shared behavior edit. Preserve independent financial expectations, interface parity and release coverage. Forward integration/CLI filters, reject zero executed tests and make CLI scenarios self-contained. This reduces routine execution while accepting that unrelated regressions may be discovered at the next integration gate. Browser fixture migration, emulator reuse, dependency caching and concurrency tuning remain separate work. [PRD verification selection](PRD.md#verification-selection-and-checkpoints) defines the command matrix and escalation rules.

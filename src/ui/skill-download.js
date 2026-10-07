@@ -9,6 +9,6 @@ export function skillDownloadPanel({ compact = false } = {}) {
       href: `${import.meta.env.BASE_URL}${download.path}`,
       download: download.filename,
     }, "Download agent skill (ZIP)"),
-    el("p", { class: "help" }, "Requires Node.js 22.13+. Extract into the agent’s skill directory, then run ",
+    compact ? null : el("p", { class: "help" }, "Requires Node.js 22.13+. Extract into the agent’s skill directory, then run ",
       el("code", {}, "npm ci --omit=dev"), " inside vx-trade-journal."));
 }
