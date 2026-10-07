@@ -36,6 +36,7 @@ try {
     assert.match(path, /^vx-trade-journal\//);
     assert.ok(!path.split("/").includes(".."));
     assert.ok(!path.includes("node_modules") && !path.includes(".env"));
+    assert.ok(!path.includes("database/") && !path.endsWith("database.js"), "Operator tooling must not enter the installed skill");
     const destination = join(temporary, path);
     await mkdir(dirname(destination), { recursive: true });
     await writeFile(destination, contents);
@@ -57,6 +58,7 @@ try {
   assert.match(skill, /^---\nname: vx-trade-journal\ndescription: .+\n---/);
   for (const reference of skill.matchAll(/\]\((references\/[^)]+)\)/g)) await readFile(join(installed, reference[1]));
   const manifest = JSON.parse(await readFile(join(installed, "package.json")));
+  assert.ok(!String(await readFile(executable, "utf8")).includes("firebase-admin"), "Bundled CLI must remain user-scoped");
   assert.deepEqual(Object.keys(manifest.dependencies).sort(), ["decimal.js", "firebase"]);
   await command(process.execPath, [join(root, "scripts/test.js"), "cli"], { env: { ...process.env, VXJ_CLI_EXECUTABLE: executable } });
   console.log("Portable skill ZIP extraction, contracts, fresh dependency install, references and emulator workflows passed.");

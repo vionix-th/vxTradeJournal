@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("firebase/firestore", () => ({
   doc: (_db, ...parts) => parts.join("/"),
   collection: (_db, ...parts) => parts.join("/"),
+  getDocFromServer: async () => ({ exists: () => true, data: () => ({ metadataVersion: 1, schemaVersion: 1, status: "ready" }) }),
   getDoc: async () => ({ exists: () => false }),
   getDocs: async () => ({ docs: [] }),
   runTransaction: vi.fn(),

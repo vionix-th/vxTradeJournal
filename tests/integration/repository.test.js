@@ -1,3 +1,4 @@
+import { readyDatabase } from "../helpers/database.js";
 import { readFileSync } from "node:fs";
 import { beforeAll, afterAll, beforeEach, describe, it, expect } from "vitest";
 import { initializeTestEnvironment } from "@firebase/rules-unit-testing";
@@ -20,6 +21,7 @@ afterAll(async () => {
 });
 beforeEach(async () => {
   await env.clearFirestore();
+  await readyDatabase(env);
   repo = new Repository(
     env.authenticatedContext("alice", { email_verified: true }).firestore(),
     "alice",

@@ -13,7 +13,7 @@ This inventory is generated from the executable catalogue. Required options are 
 | `schema` | Machine-readable command contracts | None |
 | `version` | Application, CLI, schema and calculation versions | None |
 | `ids` | Generate stable IDs before submitting creates | None |
-| `doctor` | Check runtime, project and saved authentication | `--profile` |
+| `doctor` | Check runtime, project, saved authentication and database compatibility | `--profile` |
 | `auth login` | login a Firebase user session using stdin or a hidden terminal prompt | `--profile` |
 | `auth register` | register a Firebase user session using stdin or a hidden terminal prompt | `--profile` |
 | `auth reset` | reset a Firebase user session | `--profile` |

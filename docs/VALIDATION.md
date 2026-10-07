@@ -1,5 +1,36 @@
 # Local prototype validation
 
+
+## Main-branch integration gate — 8 October 2026
+
+Before committing the accumulated database evolution and startup repair, worker-m executed `npm run check`. Lint, generated skill documentation, 199 unit tests and 40 isolated integration tests passed. The browser stage had 64 passes, one instrument-save failure in the inline-editor lifecycle scenario and three dependent tests not run. The failed request contained valid instrument fields, matching ownership and verified authentication; its emulator permission denial remains unexplained.
+
+The exact browser scenario passed focused reproduction, and the subsequent full browser suite passed all 68 tests without retries or assertion changes. Separate `npm run build` passed with the existing bundle advisory. `npm run test:skill` passed after retrying a transient dependency-install `ECONNRESET`. All gate components therefore passed against unchanged runtime inputs in separate executions; the original composite command itself failed. This recurrence extends the earlier intermittent instrument-save observation below and does not establish a deterministic cause or production behavior.
+
+## Development startup recovery — 8 October 2026
+
+Retained development Firestore data without the newly required database metadata caused `npm run dev` to stop both services. Startup now leaves services running with explicit baseline guidance while journal access remains blocked. Unrelated initialization failures preserve their nonzero exit status. Repeated interrupts no longer terminate wrappers before Firebase can export retained data.
+
+Worker-m confirmed the initial startup and exit-status regressions failed, then confirmed both repeated-interrupt regressions failed before the signal fix. Final focused startup/test-runner coverage passed 26 tests; database integration passed 4 tests, including actual missing-metadata detection without modifying retained records and explicit snapshot-backed initialization. Lint, skill documentation checks, Markdown references and whitespace checks passed.
+
+A real retained-data development smoke returned HTTP 200 from Vite, Firestore and Auth while baseline guidance remained visible. One Ctrl-C completed Firebase export and shutdown; all development ports closed and no emulator processes remained. No baseline initialization, data reset, seed, journal operation or production action was performed. These focused checks supplement the earlier complete verification; the full suite was not repeated for this startup repair.
+
+## Database evolution and guarded deployment — 8 October 2026
+
+Schema and calculation versions remain `1`; application version remains `0.1.0` pending release preparation. Governance now requires immutable adjacent schema transitions, deployment-driven composition, explicit baseline registration, maintenance and local recovery. Production bootstrap, deployment and destructive restore were not executed.
+
+Worker-m confirmed the initial security regression failed because absent metadata still allowed a journal write. After implementation, focused unit and security checks passed, followed by complete persistence/CLI integration. A later ownership regression proved privileged transforms could move records across users; owner-scoped input chunks and output validation then passed that regression and related coverage. Independent decimal-string expectations verify source preservation across adjacent conversions and restoration.
+
+Final worker-m `npm run check` passed lint, generated skill documentation checks, 194 unit tests, 40 isolated-emulator integration tests, 68 Chromium browser tests, local build and freshly installed portable-skill verification. `npm run build:prod` also passed. Packaging confirms admin tooling/dependencies remain outside the installed skill. Markdown references resolve and `git diff --check` passes. The existing large-bundle advisory remains.
+
+Recovery coverage includes missing-parent descendants and receipts, typed values, private/integrity-checked snapshots, exclusive publication, interrupted bootstrap/rules publication, fenced leases, cross-owner rejection, mid-step 205-document conversion recovery and repeated partial 205-document restore. Maintenance prevents observing partial records; restoring data leaves maintenance active until matching rules/release are verified. CLI mismatch prevents journal handler execution and export-file creation while authentication/diagnostics remain available.
+
+Maintenance loading, draft retention, schema mismatch and keyboard retry passed at 375, 800 and 1280 pixels. Representative rendered draft and unavailable screens were visually reviewed without clipping or unreadable controls. Screenshots do not independently establish contrast ratios. Database browser cases execute in a separate serial project after ordinary coverage because control metadata is global.
+
+An earlier composite run encountered one instrument-creation permission denial in the concurrent-edit browser scenario. Trace fields and verified authentication claim were valid; no deterministic cause was established. The exact scenario passed focused reproduction and two subsequent complete browser runs, including the final successful composite gate. No unrelated functional workaround was introduced.
+
+Production ADC authorization, real rule propagation and hosted publication/recovery remain unverified live operations. Follow [database operations](DATABASE.md) for first baseline rollout, interrupted-run resume, durable backup handling and explicit recovery.
+
 Historical validation journal through 4 October 2026. Dated counts and unresolved observations below describe those runs, not the current remediation state. The 5 October acceptance mapping, final gates and verification limits are maintained in [ACCEPTANCE.md](ACCEPTANCE.md); final command outcomes identify the delivered source revision.
 
 Validated through 4 October 2026. Application version: `0.1.0`. Hosted deployment and release publication remain separate work after prototype review, as specified in [PRD delivery defaults](PRD.md#5-delivery-and-release-defaults).

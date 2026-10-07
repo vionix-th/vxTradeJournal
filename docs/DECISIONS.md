@@ -1,5 +1,13 @@
 # Development decisions
 
+## 2026-10-08 — Preserve development startup for retained uninitialized data
+
+Follow the database evolution decision: missing metadata still requires explicit, snapshot-backed baseline initialization. Treat this state as recoverable during development startup rather than terminating Firebase and Vite. Keep operator services available and print the profile-specific command while persistence guards block journal access. Propagate other initialization failures as nonzero exits after graceful emulator export. Keep shutdown idempotent under repeated interrupts and await child completion, so wrappers cannot exit before Firebase exports retained state. This preserves retained data and removes the manual Firebase startup workaround without automatically assigning a schema.
+
+## 2026-10-08 — Govern live schema evolution through deployment
+
+Extend the [initial production release](#2026-10-07--publish-the-initial-development-release) with an explicit schema-1 baseline and immutable adjacent database migrations, independent of application releases. Require schema equality for installed skills and persistence-enforced maintenance for conversion; retain authentication/diagnostics access. Compose transitions rather than maintain direct migrations from every old version. Keep Spark through private local snapshots and privileged ADC operator tooling, including fenced resume and exact journal restore. Failed deployments stay unavailable until verified recovery. The initial change supplies infrastructure and synthetic migration tests, not a new production schema. Existing installed skills must be replaced before the first schema transition because old binaries cannot gain this guard retroactively. Accept local backup responsibility and a ten-minute propagation barrier for changed rules in exchange for avoiding billing services and browser compatibility infrastructure.
+
 ## 2026-10-07 — Publish the initial development release
 
 Publish the existing `0.1.0` application as the initial development release on Firebase Hosting project `vionixtradejournal`, together with the current ownership rules and downloadable skill from the same clean source commit. Retain the development version because this is the first numbered publication; production deployment does not establish stable `1.0.0` acceptance. Require complete worker-m verification and a hosted build before publication, then create an immutable annotated `v0.1.0` tag. No schema conversion is required. Verify public hosted assets after deployment; emulator coverage does not establish real email delivery or authenticated hosted persistence.

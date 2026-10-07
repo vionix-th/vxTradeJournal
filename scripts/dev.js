@@ -22,7 +22,7 @@ function stop(signal = 'SIGTERM', failedCode = 0) {
     resolveShutdown();
   });
 }
-for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => stop(signal));
+for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => stop(signal));
 for (const child of children) child.once('exit', (code, signal) => {
   if (!stopping) stop('SIGTERM', code ?? (signal ? 1 : 0));
 });

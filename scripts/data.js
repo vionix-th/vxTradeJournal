@@ -1,3 +1,4 @@
+import { initializeEmptyDatabase } from "./database/initialize.js";
 import { getProfile, parseProfileArg } from './profiles.js';
 import { normalizeAccount, normalizeInstrument, normalizeStrategy, createTrade, calculateTrade } from '../src/domain/journal.js';
 
@@ -16,6 +17,7 @@ if (action === 'reset') {
   if (failures.length) throw new Error('Could not reset emulator data. Is `npm run emulators` running?');
   console.log('Development emulator data cleared; restoring synthetic records.');
 }
+await initializeEmptyDatabase(profile.name);
 {
   const now = new Date().toISOString();
   const email = 'demo@example.test';

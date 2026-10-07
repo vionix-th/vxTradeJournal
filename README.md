@@ -18,6 +18,8 @@ Requirements: Node.js 22.13+ and Java 21+ (Firestore emulator runtime). Install 
 
 The `dev` and `emulators` scripts accept `-- --profile dev|test|auto`; for example, `npm run dev -- --profile auto`. `VXJ_PROFILE` is also supported. Firebase demo project IDs prevent accidental access to hosted projects. Profile configuration lives in `firebase.dev.json`, `firebase.test.json`, and `firebase.auto.json`.
 
+Existing emulator data without database metadata requires one-time explicit initialization. Start `npm run dev`, keep it running, then execute `npm run database:initialize -- --profile dev --bootstrap-schema 1` in another terminal. Initialization creates a private snapshot, validates retained records and registers schema 1 without changing journal values. Retry the website afterward. Startup prints this guidance and keeps operator services available; it never resets data or assumes a schema. See [database operations](docs/DATABASE.md).
+
 Build embeds package version and current Git commit in `__APP_VERSION__` and `__BUILD_COMMIT__`. Runtime Firebase metadata is exposed as `import.meta.env.VITE_PROFILE`, `VITE_FIREBASE_PROJECT_ID`, `VITE_AUTH_EMULATOR_PORT`, and `VITE_FIRESTORE_EMULATOR_PORT`.
 
 ## Application workflow
@@ -50,8 +52,9 @@ The Firebase CLI is installed locally by `npm install`. Use `npx firebase login`
 
 - `npm run build:prod` creates `dist-prod/` using hosted Auth and Firestore.
 - `npm run preview:prod` serves that build locally on port `4173` and uses real production accounts and data.
-- `npm run deploy:prod` builds production and deploys Hosting and `firestore.rules` to `vionixtradejournal` using `firebase.json`.
-- `npm run deploy:rules` deploys only Firestore rules.
+- `npm run deploy:prod` builds production and the skill, preflights database schema, runs adjacent migrations with private backup and enforced maintenance, publishes matching rules/Hosting, then verifies hosted release inputs before reopening. First rollout requires `-- --bootstrap-schema 1`; use `-- --dry-run` for preflight and `-- --resume <run-id>` for interrupted work.
+- `npm run deploy:rules` routes through the same guarded complete deployment; it no longer publishes rules independently.
+- `npm run database:status -- --profile prod` inspects operator metadata. Database tools require Application Default Credentials separately from Firebase CLI login. See [database operations](docs/DATABASE.md) for private snapshots, retained emulator initialization and explicit restore.
 
 Local `npm run build` still creates an emulator-backed `dist/`; production Hosting serves only `dist-prod/`. Development/test commands and seed/reset keep their separate demo projects. No composite indexes are currently required because repository reads query per-user collections without compound Firestore filters.
 

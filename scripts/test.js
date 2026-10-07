@@ -114,7 +114,10 @@ async function main() {
     emulator = launch(process.execPath, ['scripts/emulators.js', '--profile', 'auto']);
     await waitForService(emulator, `http://127.0.0.1:${profile.auth}`);
     await waitForService(emulator, `http://127.0.0.1:${profile.firestore}`);
+    const { initializeEmptyDatabase, readySyntheticDatabase } = await import("./database/initialize.js");
+    await initializeEmptyDatabase("auto");
     for (const command of commands[selected]) {
+      if (command[0] === "playwright") await readySyntheticDatabase("auto");
       const code = await run(command, forwarded);
       if (code !== 0) { process.exitCode ||= code; break; }
     }

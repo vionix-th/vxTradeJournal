@@ -12,6 +12,7 @@ import { SCHEMA_VERSION, CALCULATION_VERSION } from "../domain/journal.js";
 import { parseArguments, validateInput, catalogue } from "./catalogue.js";
 import { handlers } from "./commands.js";
 import { UserSession } from "./auth.js";
+import { assertDatabaseReady, databaseStatus } from "../persistence/availability.js";
 import { connectJournal } from "./firebase.js";
 import { CliError, publicError } from "./errors.js";
 
@@ -132,12 +133,15 @@ export async function run(args = process.argv.slice(2)) {
       } else if (spec.handler === "doctor") {
         const saved = await session.store.read(options.profile);
         const user = saved ? await session.token() : null;
-        data = { node: process.versions.node, version, commit, useEmulators: config.useEmulators, sessionDirectory: session.store.root, session: user ? { uid: user.uid, email: user.email, emailVerified: user.emailVerified } : null };
+        let database = { compatible: null, status: "unchecked" };
+        if (user) { connection = await connectJournal(config, user); database = await databaseStatus(connection.repo.db); }
+        data = { database, node: process.versions.node, version, commit, useEmulators: config.useEmulators, sessionDirectory: session.store.root, session: user ? { uid: user.uid, email: user.email, emailVerified: user.emailVerified } : null };
       } else {
         const user = await session.token();
         const writing = ["tradeWrite", "tradeDelete"].includes(spec.handler) || spec.handler === "entity" && !["list", "get"].includes(spec.action) || spec.handler === "settings" && spec.action === "update";
         if (writing && !user.emailVerified) throw new CliError("EMAIL_UNVERIFIED", "Verify email before saving journal records. Open the verification email and run auth status.", 3);
         connection = await connectJournal(config, user);
+        await assertDatabaseReady(connection.repo.db);
         data = await handlers[spec.handler]({ command, spec, options, input, repo: connection.repo });
         if (spec.handler === "export" && options.output) data = await exportFile(options.output, data, options.overwrite);
       }

@@ -27,7 +27,8 @@ if (kind === 'emulator') {
 async function fixture(extraEnv = {}) {
   const directory = await mkdtemp(join(tmpdir(), "vxj-runner-test-"));
   fixtures.push(directory);
-  await mkdir(join(directory, "scripts"));
+  await mkdir(join(directory, "scripts/database"), { recursive: true });
+  await writeFile(join(directory, "scripts/database/initialize.js"), "export async function initializeEmptyDatabase() {} export async function readySyntheticDatabase() {}\n");
   await mkdir(join(directory, "node_modules/.bin"), { recursive: true });
   await writeFile(join(directory, "package.json"), '{"type":"module"}');
   await copyFile(resolve("scripts/test.js"), join(directory, "scripts/test.js"));

@@ -1,3 +1,4 @@
+import { readyDatabase } from "../helpers/database.js";
 import { readFileSync } from "node:fs";
 import { beforeAll, afterAll, beforeEach, describe, it } from "vitest";
 import {
@@ -37,6 +38,7 @@ afterAll(async () => {
 });
 beforeEach(async () => {
   await env.clearFirestore();
+  await readyDatabase(env);
 });
 const db = (uid = "alice", verified = true) =>
   env.authenticatedContext(uid, { email_verified: verified }).firestore();
@@ -357,5 +359,29 @@ describe("quotation-unit persistence boundary", () => {
     for (const priceUnit of ["x".repeat(81), 123, null])
       await assertFails(setDoc(ref, { ...instrument, revision: 2, priceUnit }));
     await assertSucceeds(setDoc(ref, { ...instrument, revision: 2 }));
+  });
+});
+
+
+describe("database availability", () => {
+  it("blocks journal access during maintenance and protects control metadata", async () => {
+    await env.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), "_system/database"), { metadataVersion: 1, schemaVersion: 1, status: "maintenance" });
+      await setDoc(doc(context.firestore(), "users/alice/accounts/a"), account);
+    });
+    await assertFails(getDoc(doc(db(), "users/alice/accounts/a")));
+    await assertFails(setDoc(doc(db(), "users/alice/accounts/a"), { ...account, revision: 2 }));
+    await assertFails(deleteDoc(doc(db(), "users/alice/trades/t")));
+    await assertSucceeds(getDoc(doc(db(), "_system/database")));
+    await assertFails(setDoc(doc(db(), "_system/database"), { metadataVersion: 1, schemaVersion: 1, status: "ready" }));
+  });
+  it("blocks absent and mismatched database schemas", async () => {
+    await env.withSecurityRulesDisabled(async (context) => deleteDoc(doc(context.firestore(), "_system/database")));
+    await assertFails(setDoc(doc(db(), "users/alice/accounts/a"), account));
+    await env.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), "_system/database"), { metadataVersion: 1, schemaVersion: 2, status: "ready" });
+    });
+    await assertFails(getDoc(doc(db(), "users/alice/accounts/a")));
+    await assertFails(setDoc(doc(db(), "users/alice/accounts/a"), account));
   });
 });

@@ -1,3 +1,4 @@
+import { assertDatabaseReady } from "./availability.js";
 import {
   collection,
   doc,
@@ -36,40 +37,58 @@ export class Repository {
     this.uid = uid;
     this.verified = verified;
   }
+  async guard(operation) {
+    await assertDatabaseReady(this.db);
+    try { return await operation(); }
+    catch (error) {
+      if (String(error.code).includes("permission-denied")) await assertDatabaseReady(this.db);
+      throw error;
+    }
+  }
+  async list(...args) { return this.guard(() => this._list(...args)); }
+  async listChildren(...args) { return this.guard(() => this._listChildren(...args)); }
+  async getEntity(...args) { return this.guard(() => this._getEntity(...args)); }
+  async getOperation(...args) { return this.guard(() => this._getOperation(...args)); }
+  async getSettings(...args) { return this.guard(() => this._getSettings(...args)); }
+  async getTrade(...args) { return this.guard(() => this._getTrade(...args)); }
+  async load(...args) { return this.guard(() => this._load(...args)); }
+  async saveEntity(...args) { return this.guard(() => this._saveEntity(...args)); }
+  async saveTrade(...args) { return this.guard(() => this._saveTrade(...args)); }
+  async deleteTrade(...args) { return this.guard(() => this._deleteTrade(...args)); }
   ref(type, id) {
     return doc(this.db, "users", this.uid, type, id);
   }
   child(tid, type, id) {
     return doc(this.db, "users", this.uid, "trades", tid, type, id);
   }
-  async list(type) {
+  async _list(type) {
     return (
       await getDocs(collection(this.db, "users", this.uid, type))
     ).docs.map((d) => d.data());
   }
-  async listChildren(tid, type) {
+  async _listChildren(tid, type) {
     return (
       await getDocs(collection(this.db, "users", this.uid, "trades", tid, type))
     ).docs.map((d) => d.data());
   }
-  async getEntity(type, id) {
+  async _getEntity(type, id) {
     const result = await getDoc(this.ref(type, id));
     return result.exists() ? result.data() : null;
   }
-  async getOperation(tid, operationId) {
+  async _getOperation(tid, operationId) {
     const result = await getDoc(this.child(tid, "operations", operationId));
     return result.exists() ? result.data() : null;
   }
-  async getSettings() {
-    return (await this.getEntity("settings", "preferences")) || defaultSettings();
+  async _getSettings() {
+    return (await this._getEntity("settings", "preferences")) || defaultSettings();
   }
-  async getTrade(id) {
+  async _getTrade(id) {
     for (let attempt = 0; attempt < 3; attempt++) {
       const before = await getDoc(this.ref("trades", id));
       if (!before.exists()) return null;
       const [legs, executions, adjustments] = await Promise.all(
         ["legs", "executions", "adjustments"].map((type) =>
-          this.listChildren(id, type),
+          this._listChildren(id, type),
         ),
       );
       const after = await getDoc(this.ref("trades", id));
@@ -81,14 +100,14 @@ export class Repository {
     throw new ConflictError();
   }
 
-  async load() {
+  async _load() {
     const [accounts, instruments, strategies, parents, settings] =
       await Promise.all(
         ["accounts", "instruments", "strategies", "trades", "settings"].map(
-          (type) => this.list(type),
+          (type) => this._list(type),
         ),
       );
-    const trades = await Promise.all(parents.map((t) => this.getTrade(t.id)));
+    const trades = await Promise.all(parents.map((t) => this._getTrade(t.id)));
     return {
       accounts,
       instruments,
@@ -109,7 +128,7 @@ export class Repository {
       updatedAt: now,
     };
   }
-  async saveEntity(type, input) {
+  async _saveEntity(type, input) {
     requireValue(this.verified(), "Verify email before saving");
     requireValue(normalize[type], "Unknown entity type");
     const value = normalize[type](clean(input));
@@ -138,10 +157,10 @@ export class Repository {
       return saved;
     });
   }
-  async saveTrade(input, operationId = crypto.randomUUID(), requestFingerprint = null) {
+  async _saveTrade(input, operationId = crypto.randomUUID(), requestFingerprint = null) {
     requireValue(this.verified(), "Verify email before saving");
     const requestHash = requestFingerprint || await fingerprint(input);
-    const previous = await this.getTrade(input.id);
+    const previous = await this._getTrade(input.id);
     const receipt = this.child(input.id, "operations", operationId);
     const ref = this.ref("trades", input.id);
     const result = await runTransaction(this.db, async (tx) => {
@@ -233,13 +252,13 @@ export class Repository {
       return saved;
     });
     // Reading after either commit or a durable receipt returns current state; retries never recreate records.
-    return (await this.getTrade(input.id)) || result;
+    return (await this._getTrade(input.id)) || result;
   }
-  async deleteTrade(input) {
+  async _deleteTrade(input) {
     requireValue(this.verified(), "Verify email before deleting");
-    const previous = await this.getTrade(input.id);
+    const previous = await this._getTrade(input.id);
     if (!previous) return;
-    const operations = await this.listChildren(input.id, "operations");
+    const operations = await this._listChildren(input.id, "operations");
     await runTransaction(this.db, async (tx) => {
       const s = await tx.get(this.ref("trades", input.id));
       if (!s.exists()) return;

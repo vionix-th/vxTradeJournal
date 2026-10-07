@@ -1,3 +1,4 @@
+import { readyDatabase } from "../helpers/database.js";
 import { readFileSync } from "node:fs";
 import { mkdtemp, rm, chmod, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -30,6 +31,7 @@ beforeAll(async () => {
   root = await mkdtemp(join(tmpdir(), "vxj-cli-"));
   env = await initializeTestEnvironment({ projectId: project, firestore: { host: "127.0.0.1", port: 8280, rules: readFileSync("firestore.rules", "utf8") } });
   await env.clearFirestore();
+  await readyDatabase(env);
   email = `cli-${crypto.randomUUID()}@example.test`;
   const registered = await cli("auth register", { email, password: "Synthetic-test-123" });
   expect(registered.code).toBe(0);
@@ -44,6 +46,7 @@ beforeAll(async () => {
 }, 30000);
 beforeEach(async () => {
   await env.clearFirestore();
+  await readyDatabase(env);
   await new SessionStore(root).write("auto", verifiedSession);
 });
 afterAll(async () => { await env?.cleanup(); await rm(root, { recursive: true, force: true }); });
@@ -338,3 +341,27 @@ it("covers archives, settings, multi-leg manual results and retained incomplete 
   expect((await cli("auth status")).code).toBe(3);
   expect((await cli("auth login", { email, password: "Synthetic-test-123" })).code).toBe(0);
 }, 90000);
+
+it("blocks incompatible schemas before reads, writes and export output while doctor remains available", async () => {
+  const output = join(root, "blocked-export.json");
+  try {
+    await readyDatabase(env, { schemaVersion: 2 });
+    for (const [command, input, extra] of [["accounts list", undefined, {}], ["accounts create", { id: "blocked", name: "Blocked", currency: "USD" }, {}], ["export", undefined, { output }]]) {
+      const result = await cli(command, input, extra);
+      expect(result.code).toBe(6);
+      expect(result.body.error).toMatchObject({ code: "SCHEMA_VERSION_MISMATCH", expectedSchema: 1, actualSchema: 2 });
+    }
+    await expect(readFile(output)).rejects.toMatchObject({ code: "ENOENT" });
+    const diagnostic = await cli("doctor");
+    expect(diagnostic.code).toBe(0);
+    expect(diagnostic.body.data.database).toMatchObject({ compatible: false, schemaVersion: 2 });
+    expect((await cli("auth status")).code).toBe(0);
+    await readyDatabase(env, { status: "maintenance" });
+    expect((await cli("accounts list")).body.error.code).toBe("DATABASE_MAINTENANCE");
+    await env.withSecurityRulesDisabled(async (context) => {
+      const { deleteDoc, doc } = await import("firebase/firestore");
+      await deleteDoc(doc(context.firestore(), "_system/database"));
+    });
+    expect((await cli("accounts list")).body.error.code).toBe("DATABASE_NOT_INITIALIZED");
+  } finally { await readyDatabase(env); }
+});
