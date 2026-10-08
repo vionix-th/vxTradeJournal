@@ -1,4 +1,4 @@
-import { initializeEmptyDatabase } from './database/initialize.js';
+import { ensureDevelopmentDatabase } from './database/development.js';
 import { spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { getProfile, parseProfileArg } from './profiles.js';
@@ -16,6 +16,9 @@ const child = spawn('firebase', args, { detached: true, stdio: 'inherit', env: {
 let stopping = false;
 let exited = false;
 let failureCode = 0;
+let preparing = false;
+let stopSignal;
+const preparation = new AbortController();
 const completion = new Promise(resolve => {
   child.once('error', error => {
     console.error(error.message);
@@ -26,16 +29,21 @@ const completion = new Promise(resolve => {
     resolve(failureCode || code || (signal && !stopping ? 1 : 0));
   });
 });
+const finishShutdown = () => {
+  if (stopping && !preparing && !exited && !child.killed) child.kill(stopSignal);
+};
 const stop = signal => {
   if (stopping) return;
   stopping = true;
-  if (!exited && !child.killed) child.kill(signal);
+  stopSignal = signal;
+  preparation.abort();
+  finishShutdown();
 };
 process.on('SIGINT', () => stop('SIGINT'));
 process.on('SIGTERM', () => stop('SIGTERM'));
 
-// Retained databases stay available to operator tooling, but journal clients remain
-// blocked by their missing metadata until an explicit, snapshot-backed baseline.
+// Startup preserves retained records and handles schema evolution automatically.
+// Journal clients stay guarded until validation and adjacent migrations complete.
 try {
   for (let attempt = 0; !stopping && !exited && attempt < 180; attempt++) {
     try {
@@ -47,16 +55,17 @@ try {
     }
     if (stopping || exited) break;
     try {
-      await initializeEmptyDatabase(profile.name);
+      preparing = true;
+      await ensureDevelopmentDatabase(profile.name, { signal: preparation.signal });
     } catch (error) {
-      if (error.code === 'DATABASE_BASELINE_REQUIRED') {
-        console.error(`${error.message}\nServices remain running; journal access is blocked. In another terminal, run:\nnpm run database:initialize -- --profile ${profile.name} --bootstrap-schema 1`);
-        break;
-      }
+      if (stopping && error.name === 'AbortError') break;
       // Firestore can accept HTTP requests before its admin transport is ready.
-      if (error.code !== 14 || attempt === 179) throw error;
+      if (![14, 'DATABASE_PREFLIGHT_CHANGED'].includes(error.code) || attempt === 179) throw error;
       await new Promise(done => setTimeout(done, 500));
       continue;
+    } finally {
+      preparing = false;
+      finishShutdown();
     }
     break;
   }

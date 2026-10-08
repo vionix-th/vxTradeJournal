@@ -68,20 +68,62 @@ it("recovers partial real migrations and restores missing-parent journal records
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
-it("explicitly initializes retained emulator data without changing journal values", async () => {
+it("automatically registers retained emulator data after backup under enforced maintenance", async () => {
   const directory = await mkdtemp(join(tmpdir(), "vxj-baseline-"));
   try {
     const client = env.authenticatedContext("alice", { email_verified: true }).firestore();
     const repo = new Repository(client, "alice");
     const account = await repo.saveEntity("accounts", { id: "a", name: "Retained", currency: "USD" });
+    await admin.db.doc("users/alice/unknown/missing/children/c").set({ exact: "123456789.123456789123456789" });
     await admin.db.doc("_system/database").delete();
-    const { initializeBaseline, initializeEmptyDatabase } = await import("../../scripts/database/initialize.js");
-    await expect(initializeEmptyDatabase("auto")).rejects.toMatchObject({ code: "DATABASE_BASELINE_REQUIRED" });
-    expect((await admin.db.doc("_system/database").get()).exists).toBe(false);
+    const { prepareDevelopmentDatabase } = await import("../../scripts/database/development.js");
+    const registry = { target: 1, migrations: [], validators: new Map([[1, async documents => {
+      expect((await admin.db.doc("_system/database").get()).data().status).toBe("maintenance");
+      await assertFails(getDoc(doc(client, "users/alice/accounts/a")));
+      const runId = (await admin.db.doc("_system/lock").get()).data().runId;
+      const recovery = (await admin.db.doc(`_system/runs/history/${runId}`).get()).data().snapshot;
+      expect((await readSnapshot(recovery, admin.projectId)).count).toBe(2);
+      validateSchema1(documents);
+    }]]) };
+    const result = await prepareDevelopmentDatabase(admin.db, { profile: "auto", projectId: admin.projectId, directory, registry, log: () => {} });
+    expect((await readSnapshot(result.snapshot, admin.projectId)).count).toBe(2);
     expect((await admin.db.doc("users/alice/accounts/a").get()).data()).toEqual(account);
-    const lease = new Lease(admin.db, "baseline", { schemaVersion: 1 }); await lease.acquire();
-    await initializeBaseline(admin.db, lease, admin.projectId, directory);
-    expect((await admin.db.doc("users/alice/accounts/a").get()).data()).toEqual(account);
+    expect((await admin.db.doc("users/alice/unknown/missing/children/c").get()).data().exact).toBe("123456789.123456789123456789");
     expect((await admin.db.doc("_system/database").get()).data()).toEqual(metadata());
+    expect(await repo.getEntity("accounts", "a")).toEqual(account);
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+it("automatically resumes a real failed adjacent upgrade with the same backup and completion ledger", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "vxj-dev-resume-"));
+  try {
+    const client = env.authenticatedContext("alice", { email_verified: true }).firestore();
+    const repo = new Repository(client, "alice");
+    await repo.saveEntity("accounts", { id: "a", name: "Retained", currency: "USD" });
+    await admin.db.doc("users/alice/unknown/missing/children/c").set({ exact: "123456789.123456789123456789", schemaVersion: 1 });
+    const { prepareDevelopmentDatabase } = await import("../../scripts/database/development.js");
+    let fail = true;
+    const calls = [];
+    const migrations = [1, 2].map(from => ({ id: `dev-${from}`, from, to: from + 1, checksum: hash(`dev-${from}`), validateSource: () => {}, validateTarget: () => {}, transform: records => {
+      calls.push(from);
+      if (from === 2 && fail) throw new Error("Injected automatic upgrade failure");
+      return records.map(item => ({ ...item, data: { ...item.data, schemaVersion: from + 1 } }));
+    } }));
+    const registry = { target: 3, migrations, validators: new Map([1, 2, 3].map(version => [version, documents => { for (const item of documents) expect(item.data.schemaVersion).toBe(version); }])) };
+    const options = { profile: "auto", projectId: admin.projectId, directory, registry, log: () => {} };
+    await expect(prepareDevelopmentDatabase(admin.db, options)).rejects.toThrow("Injected");
+    expect((await admin.db.doc("_system/database").get()).data()).toEqual(metadata(2, "maintenance"));
+    await assertFails(getDoc(doc(client, "users/alice/accounts/a")));
+    const runId = (await admin.db.doc("_system/lock").get()).data().runId;
+    const snapshot = (await admin.db.doc(`_system/runs/history/${runId}`).get()).data().snapshot;
+    fail = false;
+    const result = await prepareDevelopmentDatabase(admin.db, options);
+    expect(result.runId).toBe(runId);
+    expect(result.snapshot).toBe(snapshot);
+    expect(calls).toEqual([1, 2, 2]);
+    expect((await readSnapshot(snapshot, admin.projectId)).schemaVersion).toBe(1);
+    expect((await admin.db.doc("_system/database").get()).data()).toEqual(metadata(3));
+    expect((await admin.db.doc("users/alice/unknown/missing/children/c").get()).data().exact).toBe("123456789.123456789123456789");
+    expect((await admin.db.doc("_system/evolution").get()).data().applied).toHaveLength(2);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });

@@ -1,6 +1,6 @@
 {
   "name": "vx-trade-journal",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -35,7 +35,7 @@
     "check": "npm run lint && npm run skill:docs:check && npm test && npm run build && npm run test:skill",
     "database:status": "node scripts/database.js status",
     "database:restore": "node scripts/database.js restore",
-    "database:initialize": "node scripts/database.js initialize"
+    "database:upgrade": "node scripts/database.js upgrade"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",

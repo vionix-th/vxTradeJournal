@@ -16,7 +16,7 @@ Engineering standards for consistent development across models and sessions.
 - Choose tools and abstractions according to the PRD's technology criteria and demonstrated implementation needs.
 - Preserve financial precision, historical integrity and reproducible results throughout data handling.
 - Validate external inputs and enforce domain invariants; internal code relies on established contracts. Error handling addresses concrete failure and recovery requirements.
-- Runtime code targets the current schema. Disposable emulator data may be reset; retained and production data evolve through immutable adjacent schema migrations executed by guarded deployment. Each schema increment supplies exactly one transition from the preceding schema. Never infer a baseline from missing metadata or bypass maintenance, validation, checkpoints or recovery safeguards.
+- Runtime code targets the current schema. Disposable emulator data may be reset; retained and production data evolve through immutable adjacent schema migrations executed by guarded startup or deployment orchestration. Each schema increment supplies exactly one transition from the preceding schema. Missing metadata never implies the current schema: retained emulator data must pass schema-1 validation before automatic baseline registration, while production requires explicit registration during deployment. Development startup automatically backs up retained data and composes adjacent migrations; it never resets records. Preserve maintenance, validation, checkpoints and recovery safeguards.
 - Backup, migration and compatibility tooling serve concrete preservation or recovery requirements and remain proportional to current application scale.
 
 ## Interface design

@@ -32,7 +32,7 @@ describe("database evolution contracts", () => {
   it("preflight never writes and requires explicit baseline", async () => {
     const db = new MemoryDatabase();
     const registry = { target: 1, migrations: [], validators: new Map([[1, () => {}]]) };
-    await expect(deploymentPlan(db, registry, { rulesHash: "rules" })).rejects.toThrow("bootstrap");
+    await expect(deploymentPlan(db, registry, { rulesHash: "rules" })).rejects.toThrow("register-existing-schema");
     expect(await deploymentPlan(db, registry, { rulesHash: "rules" }, 1)).toMatchObject({ bootstrap: true, maintenance: true });
     expect(db.records.size).toBe(0);
   });

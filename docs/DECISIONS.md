@@ -1,5 +1,19 @@
 # Development decisions
 
+## 2026-10-08 — Release guarded database operations as 0.2.0
+
+Release database availability guards, preserving development upgrades and guarded production deployment as `0.2.0`. Persistence impact is a rules change plus compatible control-metadata additions; journal schema and calculation versions remain `1`, with no source-record conversion. The first production rollout explicitly registers validated existing schema-1 data under maintenance with a private recovery snapshot and the rules propagation barrier. Build the website and portable skill from the same tested clean commit; publish an immutable annotated `v0.2.0` tag after successful deployment. Installed skills require replacement and locked dependency installation to receive the new availability guards.
+
+## 2026-10-08 — Trial authored text sizing on iOS Safari
+
+Set `-webkit-text-size-adjust: 100%` and `text-size-adjust: 100%` on the existing HTML root as a reversible trial for the reported enlarged appearance on fresh iOS Safari loads. Normalize automatic text inflation without changing authored font sizes, viewport configuration or focus behavior; retain user zoom. The root cause and actual iOS effect remain unverified. This presentation-only trial leaves CLI behavior and application versions unchanged.
+
+## 2026-10-08 — Automate preserving development schema evolution
+
+Supersede the development-startup recovery decision below: requiring a second-terminal initialization step is unnecessary friction for retained emulator data. Development startup automatically captures private recovery snapshots, validates schema-1 legacy records and composes adjacent migrations under fenced maintenance. Empty databases receive the required schema; missing metadata never implies current compatibility. Matching expired emulator upgrade runs resume automatically, while production retains explicit resume/build identity checks. Handled emulator failures expire their own lease without clearing checkpoints or reopening data; shutdown checkpoints conversion before export.
+
+Rename the optional operator action to `database:upgrade` and production baseline flag to `--register-existing-schema 1`. Both preserve existing journal data. Reject the ambiguous legacy spellings with guidance rather than interpreting them as reset instructions. Destructive clearing remains explicit `data:reset`; restore continues to replace journal contents only through snapshot verification and `--yes`. Application, schema and calculation versions remain unchanged.
+
 ## 2026-10-08 — Preserve development startup for retained uninitialized data
 
 Follow the database evolution decision: missing metadata still requires explicit, snapshot-backed baseline initialization. Treat this state as recoverable during development startup rather than terminating Firebase and Vite. Keep operator services available and print the profile-specific command while persistence guards block journal access. Propagate other initialization failures as nonzero exits after graceful emulator export. Keep shutdown idempotent under repeated interrupts and await child completion, so wrappers cannot exit before Firebase exports retained state. This preserves retained data and removes the manual Firebase startup workaround without automatically assigning a schema.

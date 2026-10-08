@@ -18,7 +18,7 @@ Requirements: Node.js 22.13+ and Java 21+ (Firestore emulator runtime). Install 
 
 The `dev` and `emulators` scripts accept `-- --profile dev|test|auto`; for example, `npm run dev -- --profile auto`. `VXJ_PROFILE` is also supported. Firebase demo project IDs prevent accidental access to hosted projects. Profile configuration lives in `firebase.dev.json`, `firebase.test.json`, and `firebase.auto.json`.
 
-Existing emulator data without database metadata requires one-time explicit initialization. Start `npm run dev`, keep it running, then execute `npm run database:initialize -- --profile dev --bootstrap-schema 1` in another terminal. Initialization creates a private snapshot, validates retained records and registers schema 1 without changing journal values. Retry the website afterward. Startup prints this guidance and keeps operator services available; it never resets data or assumes a schema. See [database operations](docs/DATABASE.md).
+Development startup handles schema evolution automatically. `npm run dev`, `npm run dev:test` and `npm run emulators` preserve records, create a private recovery snapshot when needed, validate the existing schema and apply adjacent migrations. Retained data without metadata receives schema-1 registration only after validation; it is never treated as disposable. Interrupted matching upgrades resume on the next startup after their lease expires. Unknown schemas or invalid data stop safely. No separate initialization command is required. `npm run database:upgrade -- --profile dev` runs the same preserving operation manually; add `--dry-run` to inspect it. `data:reset` explicitly deletes development Firestore records and Auth users before reseeding. See [database operations](docs/DATABASE.md).
 
 Build embeds package version and current Git commit in `__APP_VERSION__` and `__BUILD_COMMIT__`. Runtime Firebase metadata is exposed as `import.meta.env.VITE_PROFILE`, `VITE_FIREBASE_PROJECT_ID`, `VITE_AUTH_EMULATOR_PORT`, and `VITE_FIRESTORE_EMULATOR_PORT`.
 
@@ -52,7 +52,7 @@ The Firebase CLI is installed locally by `npm install`. Use `npx firebase login`
 
 - `npm run build:prod` creates `dist-prod/` using hosted Auth and Firestore.
 - `npm run preview:prod` serves that build locally on port `4173` and uses real production accounts and data.
-- `npm run deploy:prod` builds production and the skill, preflights database schema, runs adjacent migrations with private backup and enforced maintenance, publishes matching rules/Hosting, then verifies hosted release inputs before reopening. First rollout requires `-- --bootstrap-schema 1`; use `-- --dry-run` for preflight and `-- --resume <run-id>` for interrupted work.
+- `npm run deploy:prod` builds production and the skill, preflights database schema, runs adjacent migrations with private backup and enforced maintenance, publishes matching rules/Hosting, then verifies hosted release inputs before reopening. First rollout requires `-- --register-existing-schema 1`; use `-- --dry-run` for preflight and `-- --resume <run-id>` for interrupted work.
 - `npm run deploy:rules` routes through the same guarded complete deployment; it no longer publishes rules independently.
 - `npm run database:status -- --profile prod` inspects operator metadata. Database tools require Application Default Credentials separately from Firebase CLI login. See [database operations](docs/DATABASE.md) for private snapshots, retained emulator initialization and explicit restore.
 

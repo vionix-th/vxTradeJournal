@@ -1,6 +1,14 @@
 # Local prototype validation
 
 
+## Automatic preserving development upgrades — 8 October 2026
+
+Development/emulator startup now registers validated legacy schema-1 data and applies adjacent migrations automatically, using private snapshots and fenced maintenance. Current ready databases need no backup or conversion; failed matching upgrades retain their original recovery file and checkpoints for automatic expired-lease resume. Optional administration is named `database:upgrade`; production baseline registration uses `--register-existing-schema 1`. Destructive `data:reset` and snapshot restore remain separate explicit operations.
+
+Worker-m confirmed seven missing-module contract failures plus the existing manual-startup guidance regression before implementation. A later concurrency regression showed stale preflight metadata could overwrite a newer installed schema; it failed before the acquired-lease recheck and typed startup retry were added. Final focused coverage passed 52 unit tests across five files and 41 integration tests across four files, including real backup-before-validation, enforced maintenance, lossless unknown descendants, two-step automatic failure/resume, checksum drift, interrupted upgrade-before-export and concurrent schema advancement. Three browser availability cases passed at 375/800/1280 px; their unchanged guard coverage was reused after the race fix.
+
+Lint, generated skill inventory/examples, documentation references and whitespace checks passed. Application, schema and calculation versions remain unchanged. Production was not accessed. A read-only status inspection confirmed the already-running development database is schema 1 and ready; its processes and journal values were not changed by this implementation work. Complete release verification remains a later integration/release gate.
+
 ## Main-branch integration gate — 8 October 2026
 
 Before committing the accumulated database evolution and startup repair, worker-m executed `npm run check`. Lint, generated skill documentation, 199 unit tests and 40 isolated integration tests passed. The browser stage had 64 passes, one instrument-save failure in the inline-editor lifecycle scenario and three dependent tests not run. The failed request contained valid instrument fields, matching ownership and verified authentication; its emulator permission denial remains unexplained.

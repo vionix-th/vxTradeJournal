@@ -5,9 +5,9 @@ import { migrate } from "./migrate.js";
 
 export async function deploymentPlan(db, registry, identity, bootstrap) {
   const current = (await db.doc("_system/database").get()).data();
-  if (!current && bootstrap !== 1) throw new Error("Missing metadata requires explicit --bootstrap-schema 1.");
+  if (!current && bootstrap !== 1) throw new Error("Missing metadata requires explicit --register-existing-schema 1.");
   if (current && (current.metadataVersion !== 1 || !["ready", "maintenance"].includes(current.status))) throw new Error("Unsupported database control metadata.");
-  if (bootstrap !== undefined && bootstrap !== 1) throw new Error("Only schema-1 bootstrap is supported.");
+  if (bootstrap !== undefined && bootstrap !== 1) throw new Error("Only existing schema 1 can be registered; records are preserved.");
   const from = current?.schemaVersion ?? 1;
   if (!registry.validators.has(from) || !registry.validators.has(registry.target)) throw new Error("Unknown installed or target schema.");
   const applied = (await db.doc("_system/evolution").get()).data()?.applied || [];

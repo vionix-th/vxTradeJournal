@@ -19,6 +19,17 @@ async function fixture(mode, script = "dev.js", stopDelay = 0) {
     error.code = process.env.STARTUP_MODE === 'baseline' ? 'DATABASE_BASELINE_REQUIRED' : 'INVALID_DATABASE';
     throw error;
   }`);
+  await writeFile(join(directory, "scripts/database/development.js"), `import { appendFileSync } from 'node:fs'; export async function ensureDevelopmentDatabase(_profile, { signal } = {}) {
+    if (process.env.STARTUP_MODE === 'slow') {
+      console.log('Preparing development schema.');
+      await new Promise((_resolve, reject) => signal.addEventListener('abort', () => setTimeout(() => {
+        appendFileSync(process.env.STARTUP_EVENTS, JSON.stringify({ name: 'preparation', event: 'finished' }) + '\\n');
+        reject(Object.assign(new Error('Upgrade interrupted'), { name: 'AbortError' }));
+      }, 150), { once: true }));
+    }
+    if (process.env.STARTUP_MODE === 'invalid') throw new Error('Invalid retained schema.');
+    console.log('Development database ready; existing records preserved.');
+  }`);
   await writeFile(join(directory, "ready.mjs"), `import { readFileSync } from 'node:fs'; globalThis.fetch = async () => {
     if (!readFileSync(process.env.STARTUP_EVENTS, 'utf8').includes('firebase')) throw new Error('Not ready');
     await new Promise(resolve => setTimeout(resolve, 20)); return {};
@@ -57,17 +68,18 @@ afterEach(async () => {
     if (f.child.exitCode === null) f.child.kill("SIGTERM");
     await f.done;
     const events = (await readFile(f.events, "utf8")).trim().split("\n").filter(Boolean).map(line => JSON.parse(line));
-    for (const { pid } of events) { try { process.kill(pid, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; } }
+    for (const { pid } of events.filter(event => event.pid)) { try { process.kill(pid, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; } }
     await rm(f.directory, { recursive: true, force: true });
   }
 });
 
-it("keeps dev services available for explicit retained database baseline initialization", async () => {
+it("automatically prepares retained development data without an operator command", async () => {
   const f = await fixture("baseline");
-  await until(() => f.output().includes("Nonempty"));
+  await until(() => f.output().includes("Nonempty") || f.output().includes("Development database ready"));
   await new Promise(resolve => setTimeout(resolve, 150));
   expect(f.child.exitCode).toBeNull();
-  expect(f.output()).toContain("npm run database:initialize -- --profile dev --bootstrap-schema 1");
+  expect(f.output()).toContain("Development database ready; existing records preserved.");
+  expect(f.output()).not.toContain("database:initialize");
   const events = await f.events();
   expect(events.filter(event => event.event === "start").map(event => event.name).sort()).toEqual(["firebase", "vite"]);
   expect(events.some(event => event.event === "stop")).toBe(false);
@@ -100,4 +112,13 @@ it.each(["dev.js", "emulators.js"])("awaits graceful export when %s receives rep
   f.child.kill("SIGINT");
   expect((await f.done).code).toBe(0);
   expect((await f.events()).some(event => event.name === "firebase" && event.event === "exported")).toBe(true);
+});
+
+it("stops the automatic upgrade before asking Firebase to export retained state", async () => {
+  const f = await fixture("slow");
+  await until(() => f.output().includes("Preparing development schema"));
+  f.child.kill("SIGINT");
+  expect((await f.done).code).toBe(0);
+  const events = await f.events();
+  expect(events.findIndex(event => event.name === "preparation" && event.event === "finished")).toBeLessThan(events.findIndex(event => event.name === "firebase" && event.event === "stop"));
 });

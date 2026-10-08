@@ -12,11 +12,11 @@ The installed skill requires only its own locked runtime dependencies. It includ
 
 ```sh
 npm run database:status -- --profile prod
-npm run deploy:prod -- --dry-run --bootstrap-schema 1
-npm run deploy:prod -- --bootstrap-schema 1
+npm run deploy:prod -- --dry-run --register-existing-schema 1
+npm run deploy:prod -- --register-existing-schema 1
 ```
 
-The bootstrap flag is required only when existing production metadata is absent. It validates retained schema-1 records after enforced maintenance and backup. It does not relabel an unknown installation as the target schema. Snapshot/restore covers Firestore journal data, not Auth users or credential material.
+The `--register-existing-schema 1` flag is required only when existing production metadata is absent. It means register verified existing data; it never means erase or reset. It validates retained schema-1 records after enforced maintenance and backup. It does not relabel an unknown installation as the target schema. Snapshot/restore covers Firestore journal data, not Auth users or credential material.
 
 Subsequent deployments use `npm run deploy:prod`; dry run uses `--dry-run`. Optional `--backup-dir /private/path` overrides `~/.local/share/vx-trade-journal/backups`. Use a private owned directory (0700); recovery files are owned regular files (0600). Copy completed recovery files to operator-managed durable storage, preserving confidentiality. Snapshots are not automatically removed or overwritten.
 
@@ -24,17 +24,22 @@ Deployment builds website and skill before maintenance, creates `dist-prod/relea
 
 Hosting manifest and downloadable skill hashes must match prepared inputs before database reopening. Schema version advances after each verified step; availability is restored only after deployment verification. A partially migrated schema remains in maintenance.
 
-For retained emulator data lacking metadata, `npm run dev` and `npm run emulators` keep services running and print the required initialization command. Journal access remains blocked. Start development normally, then initialize explicitly in a second terminal:
+## Automatic development evolution
+
+Run `npm run dev`, `npm run dev:test` or `npm run emulators` normally. Startup preserves retained records, temporarily guards journal access, captures a private snapshot when registration/conversion is needed, validates the source and applies the same adjacent migration registry used for production. It prints readiness and the recovery-file path. No separate setup command or website data reset is required.
+
+A genuinely empty Firestore database receives the required current schema. Retained records without metadata must validate as the known legacy schema 1 before automatic registration. Missing metadata never implies the newest schema. Known older schemas migrate one step at a time. Invalid records, unknown/newer schemas, missing migration paths and changed checksums stop safely, preserving data and recovery evidence.
+
+Interrupted development upgrades retain maintenance, run identity, original backup and atomic checkpoints. Startup automatically resumes the same recorded upgrade after its lease expires and only with matching project, target schema and migration checksums. Handled failures expire their own fenced lease immediately; hard termination may require waiting for the two-minute lease expiry. Competing live runs are refused. Other operator operations require explicit recovery rather than automatic takeover. A shutdown signal stops the upgrade at a bounded checkpoint before asking Firebase to export; repeated interrupts still wait for export completion.
+
+The optional manual operation has an explicit preserving name:
 
 ```sh
-# Terminal 1: keep services running
-npm run dev
-
-# Terminal 2: snapshot, validate and register the retained baseline
-npm run database:initialize -- --profile dev --bootstrap-schema 1
+npm run database:upgrade -- --profile dev --dry-run
+npm run database:upgrade -- --profile dev
 ```
 
-Initialization snapshots and validates schema 1 before reopening; it rejects production. Ordinary emulator startup only auto-initializes genuinely empty data. Retry the website after initialization completes. Use `--profile test` for retained interactive test data. Never reset retained emulator data to bypass missing metadata. Other initialization failures stop development services and return a nonzero exit code. Interrupt handlers forward shutdown once and await Firebase completion even if another interrupt arrives, preserving export-on-exit.
+Use `--profile test` for the interactive test installation. `--backup-dir /private/path` overrides the private default directory for manual upgrades. This tooling rejects production; production uses deployment with explicit `--register-existing-schema 1` for its first baseline. Normal development startup never calls `data:reset`. That separate destructive command clears development Firestore records and Auth users before restoring synthetic sample records. Snapshot restore also explicitly replaces journal records and requires `--yes`.
 
 ## Interrupted deployment
 

@@ -19,7 +19,7 @@ The mappings identify available permanent coverage, not a per-change execution c
 | Corrections | Domain: rejects correction causing later excess exit; repository invalid earlier corrections; browser/CLI correction preview and save; CLI rejects a changed proposal with an earlier preview fingerprint without changing the revision |
 | Reliability | Repository idempotent retry/stale revisions; CLI receipt/retry guarantees; browser concurrent edits and lifecycle/history regressions |
 | Mobile/desktop | Browser workflows, layout and component-contracts; affected remediation states reviewed at 375/800/1280 px |
-| Database evolution | Unit database-evolution/snapshot and dev-startup lifecycle coverage; integration database/security/CLI availability, isolation, leases and recovery; isolated browser database project at 375/800/1280 px; packaged CLI guard and dependency exclusion |
+| Database evolution | Unit database-evolution/snapshot, automatic development-database preservation/resume and dev-startup lifecycle coverage; integration database/security/CLI availability, isolation, leases and recovery; isolated browser database project at 375/800/1280 px; packaged CLI guard and dependency exclusion |
 | Export | Application: exports reconstructible source records without auth secrets; browser workflow download/reload; CLI complete export and packaged skill |
 
 ## Final remediation regressions
