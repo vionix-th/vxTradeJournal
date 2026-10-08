@@ -215,3 +215,7 @@ Give field and checkbox labels optional tooltip content owned by the shared form
 ## 2026-10-08 — Publisher attribution
 
 Keep product identity separate from the Vionix publisher link. Expose About through native disclosure on sign-in and in the workspace so reading project information does not navigate away from an editor or discard a draft. Bundle the publisher logo locally. Target `vionix-th/vxTradeJournal` for planned public GitHub access; publication and license selection remain separate from attribution. Keep current palette and financial/CLI contracts.
+
+## 2026-10-08 — Optional Ko-fi support
+
+Use a native app-themed dialog for the official vionixconsulting Tip Panel, loaded only on explicit support actions and removed on close. Keep a persistent new-tab fallback; provider failures and frame events never establish payment completion. No vendor script runs in the parent page, no journal data is passed to the frame, and the referrer is suppressed. One-time/monthly contributions do not grant privileges. This is website-only presentation; CLI and persisted/financial contracts remain unchanged. No shared hosted page, webhook or new runtime dependency is needed. Ko-fi form styling and account configuration remain provider-owned; automated live probing currently receives HTTP403, so actual monthly/payment entry remains unverified.

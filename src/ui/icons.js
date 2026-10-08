@@ -1,6 +1,7 @@
 import { el } from './components.js';
 import { skillDownloadPanel } from './skill-download.js';
 import { publisherCredit, projectInformation } from './branding.js';
+import { supportButton } from './support.js';
 const paths = {
   journal: ['M5 4h14v16H5z', 'M9 4v16', 'M12 8h4M12 12h4'],
   instruments: ['M6 3v18M18 3v18M3 8h6v7H3zM15 6h6v10h-6z'],
@@ -27,7 +28,7 @@ export function icon(name, size = 20) {
   return svg;
 }
 export function brand() {
-  return el('div', {class:'brand'}, el('span', {class:'brand-mark'}, icon('activity', 23)), el('div', {}, el('strong', {}, 'vxTradeJournal'), publisherCredit()));
+  return el('div', {class:'brand'}, el('span', {class:'brand-mark'}, icon('activity', 23)), el('div', {}, el('strong', {}, 'vxTradeJournal'), publisherCredit(), supportButton()));
 }
 export function authFrame(card) {
   return el('main', {class:'auth-shell auth-layout'},

@@ -1,4 +1,5 @@
 import { el } from './components.js';
+import { supportButton } from './support.js';
 
 export const VIONIX_URL = 'https://vionix.cloud';
 export const REPOSITORY_URL = 'https://github.com/vionix-th/vxTradeJournal';
@@ -27,5 +28,6 @@ export function projectInformation() {
         externalLink('Project on GitHub', REPOSITORY_URL),
         externalLink('Report an issue', `${REPOSITORY_URL}/issues`),
         externalLink('Contact Vionix', `${VIONIX_URL}/#contact`)),
-      el('p', { class: 'help' }, `App v${typeof __APP_VERSION__ === 'undefined' ? '0.2.0' : __APP_VERSION__}`)));
+      el('p', { class: 'help' }, `App v${typeof __APP_VERSION__ === 'undefined' ? '0.2.0' : __APP_VERSION__}`),
+      supportButton()));
 }

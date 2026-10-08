@@ -446,3 +446,37 @@ tbody tr:hover { background: var(--raised); }
 .sidebar .project-information { border-color: #30354b; }
 .sidebar .project-links { display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .sidebar .project-links a { color: #d2caff; }
+
+/* Support is a presentation-only overlay and never changes journal routes. */
+.brand .support-trigger {
+  display: block;
+  padding: 4px 0;
+  min-height: 44px;
+  background: transparent;
+  border-color: transparent;
+  color: #c6cadd;
+  font-size: 11px;
+  text-decoration: underline;
+}
+.brand .support-trigger:hover { color: #fff; }
+.project-information .support-trigger { justify-self: start; }
+.sidebar .project-information .support-trigger { background: transparent; border-color: #30354b; color: #d2caff; }
+.support-dialog {
+  width: min(560px, calc(100% - 16px));
+  max-height: calc(100dvh - 16px);
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--text);
+  overflow: hidden;
+}
+.support-dialog[open] { display: flex; flex-direction: column; }
+.support-dialog::backdrop { background: rgba(10, 14, 24, .6); }
+.support-header { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; border-bottom: 1px solid var(--border); }
+.support-header h2 { margin: 0; font-size: 20px; overflow-wrap: anywhere; }
+.support-header button { flex-shrink: 0; min-height: 44px; }
+.support-body { min-height: 0; overflow: auto; padding: 16px; }
+.support-body p { line-height: 1.6; }
+.support-body a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent); }
+.support-body iframe { display: block; width: 100%; height: 712px; margin-top: 16px; border: 0; background: #f9f9f9; color-scheme: light; }
