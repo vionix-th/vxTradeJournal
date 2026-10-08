@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { setup } from './fixtures.js';
 
 async function checkAttribution(page, area) {
-  const publisher = area.getByRole('link', { name: /By Vionix Consulting/ });
+  const publisher = area.locator('a.brand');
   await expect(publisher).toBeVisible();
   await expect(publisher).toHaveAttribute('href', 'https://vionix.cloud');
   await expect(publisher).toHaveAttribute('rel', 'noopener noreferrer');
@@ -12,7 +12,16 @@ async function checkAttribution(page, area) {
   const about = page.getByRole('dialog', { name: 'About vxTradeJournal' });
   await expect(about).toBeVisible();
   await expect(area.locator('details.project-information')).toHaveCount(0);
-  await expect(area.locator('.brand img')).toHaveCount(0);
+  await expect(publisher.locator('img')).toHaveAttribute('src', /vionix-logo\.png$/);
+  await expect.poll(() => publisher.locator('img').evaluate((image) => image.complete && image.naturalWidth > 0)).toBe(true);
+  await expect.poll(() => about.locator('.brand-logo').evaluate((image) => image.complete && image.naturalWidth > 0)).toBe(true);
+  await expect(publisher.locator('strong')).toHaveText('vxTradeJournal');
+  const logo = await publisher.locator('img').boundingBox();
+  const copy = await publisher.locator('.brand-copy').boundingBox();
+  expect(Math.abs(logo.y + logo.height / 2 - copy.y - copy.height / 2)).toBeLessThanOrEqual(2);
+  await expect(area.locator('.project-actions > button svg')).toHaveCount(2);
+  await expect(about.locator('.project-resource')).toHaveCount(3);
+  await expect(about.locator('.about-footer')).toContainText('App v0.2.0');
   await expect(about.getByRole('link', { name: 'Project on GitHub' })).toHaveAttribute('href', 'https://github.com/vionix-th/vxTradeJournal');
   await expect(about.getByRole('link', { name: 'Report an issue' })).toHaveAttribute('href', 'https://github.com/vionix-th/vxTradeJournal/issues');
   await expect(about).toContainText('App v0.2.0');
@@ -24,7 +33,7 @@ async function checkAttribution(page, area) {
 }
 
 test('publisher and project links work before sign-in', async ({ page }) => {
-  for (const width of [390, 768, 1440]) {
+  for (const width of [320, 390, 768, 949, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
     await checkAttribution(page, page.locator('.auth-shell'));
@@ -33,7 +42,7 @@ test('publisher and project links work before sign-in', async ({ page }) => {
 
 test('workspace attribution stays available in light and dark themes', async ({ page, request }) => {
   await setup(page, request);
-  for (const width of [390, 768, 1440]) {
+  for (const width of [320, 390, 768, 949, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await page.evaluate((theme) => document.documentElement.dataset.theme = theme, width === 768 ? 'dark' : 'light');
     const route = page.url();

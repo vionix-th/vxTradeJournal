@@ -1,4 +1,5 @@
 import { el, button } from './components.js';
+import { icon } from './icons.js';
 
 export const SUPPORT_URL = 'https://ko-fi.com/vionixconsulting';
 export const SUPPORT_EMBED_URL = `${SUPPORT_URL}/?hidefeed=true&widget=true&embed=true&preview=true`;
@@ -17,7 +18,7 @@ export function openSupportDialog(opener) {
   const close = button(el('span', { 'aria-hidden': 'true' }, '×'), () => dialog.close(), 'modal-close', { autofocus: true, 'aria-label': 'Close' });
   const dialog = el('dialog', { class: 'support-dialog', 'aria-labelledby': titleId },
     el('header', { class: 'support-header' }, el('h2', { id: titleId }, 'Support vxTradeJournal'), close),
-    el('div', { class: 'support-body' }, feedback, frame));
+    el('div', { class: 'support-body' }, feedback, el('div', { class: 'support-panel' }, frame)));
   const timer = setTimeout(() => {
     status.textContent = 'Taking longer than expected.';
     fallback.hidden = false;
@@ -37,5 +38,5 @@ export function openSupportDialog(opener) {
 }
 
 export function supportButton(onClick = (event) => openSupportDialog(event.currentTarget)) {
-  return button('Support', onClick, 'button secondary support-trigger', { 'aria-label': 'Support this project' });
+  return button([icon('heart', 16), el('span', {}, 'Support')], onClick, 'button secondary support-trigger', { 'aria-label': 'Support this project' });
 }

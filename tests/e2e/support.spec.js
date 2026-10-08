@@ -25,8 +25,16 @@ async function checkSupport(page, area, width) {
   await expect(dialog.getByRole('link', { name: 'Open Ko-fi in new tab' })).toBeHidden();
   await expect(dialog).not.toContainText('Optional one-time');
   const panelBounds = await dialog.locator('iframe').boundingBox();
-  const headerBounds = await dialog.locator('.support-header').boundingBox();
-  expect(panelBounds.y - (headerBounds.y + headerBounds.height)).toBeLessThanOrEqual(2);
+  const panel = await dialog.locator('.support-panel').boundingBox();
+  const left = panelBounds.x - panel.x;
+  const right = panel.x + panel.width - panelBounds.x - panelBounds.width;
+  const top = panelBounds.y - panel.y;
+  const bottom = panel.y + panel.height - panelBounds.y - panelBounds.height;
+  expect(left).toBeGreaterThanOrEqual(12);
+  expect(top).toBeGreaterThanOrEqual(12);
+  expect(Math.abs(left - right)).toBeLessThanOrEqual(2);
+  expect(Math.abs(top - bottom)).toBeLessThanOrEqual(2);
+  expect(panelBounds.height).toBeLessThanOrEqual(600);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: `/tmp/vionix-support-trade-${width}.png` });
   await page.mouse.click(1, 1);
@@ -46,7 +54,7 @@ test('support preserves sign-in input', async ({ page }) => {
   await page.getByLabel('Email', { exact: true }).fill('support-smoke@example.test');
   expect(calls).toHaveLength(0);
   await expect(page.locator('iframe')).toHaveCount(0);
-  for (const width of [320, 390, 768, 1440]) {
+  for (const width of [320, 390, 768, 949, 1440]) {
     await checkSupport(page, page.locator('.auth-shell'), width);
     await expect(page.getByLabel('Email', { exact: true })).toHaveValue('support-smoke@example.test');
   }
@@ -58,7 +66,7 @@ test('support preserves an unsaved trade in light and dark themes', async ({ pag
   await page.getByRole('button', { name: 'New trade', exact: true }).click();
   await page.getByLabel('Entry rationale', { exact: true }).fill('Support must preserve this unsaved rationale.');
   expect(calls).toHaveLength(0);
-  for (const width of [320, 390, 768, 1440]) {
+  for (const width of [320, 390, 768, 949, 1440]) {
     await page.evaluate((theme) => document.documentElement.dataset.theme = theme, width === 768 ? 'dark' : 'light');
     await checkSupport(page, page.locator('.sidebar'), width);
     await expect(page.getByLabel('Entry rationale', { exact: true })).toHaveValue('Support must preserve this unsaved rationale.');

@@ -1,6 +1,3 @@
-import { el } from './components.js';
-import { skillDownloadPanel } from './skill-download.js';
-import { publisherCredit, projectInformation } from './branding.js';
 const paths = {
   journal: ['M5 4h14v16H5z', 'M9 4v16', 'M12 8h4M12 12h4'],
   instruments: ['M6 3v18M18 3v18M3 8h6v7H3zM15 6h6v10h-6z'],
@@ -15,6 +12,12 @@ const paths = {
   logout: ['M9 4H4v16h5M9 12h12m-4-4 4 4-4 4'],
   activity: ['M3 12h4l3-7 4 14 3-7h4'],
   check: ['m5 12 4 4L19 6'],
+  info: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z', 'M12 11v6M12 7h.01'],
+  heart: ['M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z'],
+  github: ['M9 19c-4.5 1.4-4.5-2.3-6.3-2.8M15 22v-3.8a3.3 3.3 0 0 0-.9-2.5c3-.3 6.1-1.5 6.1-6.9A5.4 5.4 0 0 0 18.7 5a5 5 0 0 0-.1-3.7S17.4.9 15 2.6a13 13 0 0 0-6 0C6.6.9 5.4 1.3 5.4 1.3A5 5 0 0 0 5.3 5a5.4 5.4 0 0 0-1.5 3.8c0 5.4 3.1 6.6 6.1 6.9A3.3 3.3 0 0 0 9 18.2V22'],
+  message: ['M21 11a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l2.4-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z'],
+  mail: ['M3 5h18v14H3z', 'm3 5 9 7 9-7'],
+  external: ['M15 3h6v6M21 3l-9 9', 'M10 3H3v18h18v-7'],
 };
 export function icon(name, size = 20) {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -25,12 +28,4 @@ export function icon(name, size = 20) {
     svg.append(path);
   }
   return svg;
-}
-export function brand() {
-  return el('div', {class:'brand'}, el('span', {class:'brand-mark'}, icon('activity', 23)), el('div', {}, el('strong', {}, 'vxTradeJournal'), publisherCredit()));
-}
-export function authFrame(card) {
-  return el('main', {class:'auth-shell auth-layout'},
-    el('aside', {class:'auth-story'}, brand(), el('div', {class:'auth-intro'}, el('span', {class:'eyebrow'}, 'A record behind every decision'), el('h2', {}, 'Trade with intention.\nReview with clarity.'), el('p', {}, 'One private workspace for your instruments, executions and trading decisions.'), el('div', {class:'auth-features'}, ...[['journal','Every execution, in context'],['accounts','Precise results, by account'],['lock','A journal that stays yours']].map(([name,text])=>el('div', {}, icon(name), text)))), el('p', {class:'auth-story-footer'}, 'vxTradeJournal · A clearer trading record')),
-    el('div', {class:'auth-form-area'}, card, el('p', {class:'auth-footnote'}, 'Your process. Your record. Your perspective.'), skillDownloadPanel(), projectInformation()));
 }
