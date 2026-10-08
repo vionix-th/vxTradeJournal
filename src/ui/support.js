@@ -1,3 +1,4 @@
+import { supportReminders } from './support-reminder-policy.js';
 import { el, button } from './components.js';
 import { icon } from './icons.js';
 
@@ -6,6 +7,9 @@ export const SUPPORT_EMBED_URL = `${SUPPORT_URL}/?hidefeed=true&widget=true&embe
 let nextId = 0;
 
 export function openSupportDialog(opener) {
+  if (document.querySelector('dialog[open]')) return;
+  void supportReminders.postpone();
+  window.dispatchEvent(new Event('support-dialog-open'));
   const titleId = `support-title-${++nextId}`;
   const status = el('p', { role: 'status' }, 'Loading Ko-fi…');
   const fallback = el('a', { href: SUPPORT_URL, target: '_blank', rel: 'noopener noreferrer', hidden: true }, 'Open Ko-fi in new tab');

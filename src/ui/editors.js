@@ -130,6 +130,7 @@ export function instrumentEditor(
         const next = correctSnapshot(correction.trade, correction.legId, i);
         await ui.commit(
           () => ui.repo.saveTrade(next, form.operationId),
+          null, { countsUsage: true },
         );
       } else
         await ui.commit(
@@ -266,6 +267,7 @@ export function tradeEditor(ui, session) {
         : newTrade(input, ui.data);
       await ui.commit(
         () => ui.repo.saveTrade(trade, session.operationId),
+        null, { countsUsage: true },
       );
     },
     { operationId: session.operationId },
@@ -475,6 +477,7 @@ export function executionEditor(ui, trade, legId, existing = null) {
       const next = putExecution(trade, e, !!existing);
       await ui.commit(
         () => ui.repo.saveTrade(next, form.operationId),
+          null, { countsUsage: true },
       );
     },
   );
@@ -578,6 +581,7 @@ export function adjustmentEditor(ui, trade, existing = null) {
       const next = putAdjustment(trade, a, !!existing);
       await ui.commit(
         () => ui.repo.saveTrade(next, form.operationId),
+          null, { countsUsage: true },
       );
     },
   );

@@ -3,6 +3,10 @@ import "@fontsource/inter/latin-500.css";
 import "@fontsource/inter/latin-600.css";
 import "@fontsource/inter/latin-700.css";
 import "./styles.css";
+import { createSupportReminderController } from './support-reminder-controller.js';
+import { supportReminders } from './support-reminder-policy.js';
+import { openSupportDialog } from './support.js';
+import { supportReminderNotice } from './support-reminder-notice.js';
 import { icon } from "./icons.js";
 import { brand, authFrame, projectInformation } from "./branding.js";
 import { skillDownloadPanel } from "./skill-download.js";
@@ -35,6 +39,18 @@ class JournalUI {
     this.data = null;
     this.repo = null;
     this.loadGeneration = 0;
+    this.reminders = createSupportReminderController({
+      store: supportReminders,
+      safe: () => document.visibilityState === 'visible' && document.hasFocus() &&
+        !!this.user?.emailVerified && !!this.data && !!this.repo &&
+        !this.dirty && !this.lifecycle.busy && !this.pendingCompletion &&
+        !routePolicies[this.lifecycle.current?.route]?.complete &&
+        !document.querySelector('dialog[open], .notice.error, .notice.warning') &&
+        !document.activeElement?.matches('input, textarea, select, [contenteditable="true"]'),
+      getSupport: () => [...root.querySelectorAll('.support-trigger')].find((control) => control.getClientRects().length),
+      openSupport: openSupportDialog,
+      show: supportReminderNotice,
+    });
     this.desktopMedia = window.matchMedia("(min-width: 701px)");
     this.desktopMedia.addEventListener("change", (event) => {
       const session = root.querySelector(".session-details");
@@ -262,10 +278,11 @@ class JournalUI {
     });
     return state;
   }
-  async commit(action, after = null) {
+  async commit(action, after = null, { countsUsage = false } = {}) {
     const generation = this.loadGeneration;
     return this.lifecycle.run(action, async (saved) => {
       if (generation !== this.loadGeneration) return;
+      if (countsUsage) void supportReminders.recordUsage();
       const completion = { saved, after, generation, repo: this.repo, entry: this.lifecycle.current };
       this.pendingCompletion = completion;
       this.dirty = false;

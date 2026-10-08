@@ -47,6 +47,9 @@ test("a retained trade draft completes one write after inline reconstruction and
   await expect(page.getByRole("alert")).toContainText("Synthetic reload failure after committed trade");
   await page.getByRole("button", { name: "Retry refresh", exact: true }).click();
   await expect.poll(() => page.evaluate(() => window.sessionAuditOperations.length)).toBe(1);
+  await expect.poll(() => page.evaluate(() =>
+    JSON.parse(localStorage.getItem('vxTradeJournal.support-reminders'))?.count ?? 0,
+  )).toBe(1);
   const operations = await page.evaluate(() => window.sessionAuditOperations);
   await expect(page.getByRole("button", { name: "Edit trade", exact: true })).toBeVisible();
   const persisted = await page.evaluate(async () => {
