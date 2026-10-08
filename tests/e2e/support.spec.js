@@ -22,7 +22,11 @@ async function checkSupport(page, area, width) {
   await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
   await expect(dialog.locator('iframe')).toHaveAttribute('src', 'https://ko-fi.com/vionixconsulting/?hidefeed=true&widget=true&embed=true&preview=true');
   await expect(dialog.locator('iframe')).toHaveAttribute('referrerpolicy', 'no-referrer');
-  await expect(dialog.getByRole('link', { name: 'Open Ko-fi in new tab' })).toHaveAttribute('rel', 'noopener noreferrer');
+  await expect(dialog.getByRole('link', { name: 'Open Ko-fi in new tab' })).toBeHidden();
+  await expect(dialog).not.toContainText('Optional one-time');
+  const panelBounds = await dialog.locator('iframe').boundingBox();
+  const headerBounds = await dialog.locator('.support-header').boundingBox();
+  expect(panelBounds.y - (headerBounds.y + headerBounds.height)).toBeLessThanOrEqual(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: `/tmp/vionix-support-trade-${width}.png` });
   await page.mouse.click(1, 1);
@@ -71,8 +75,9 @@ test('About support action and delayed loading keep an external fallback', async
   });
   try {
     await page.goto('/');
-    const about = page.locator('.project-information');
-    await about.locator('summary').click();
+    const aboutTrigger = page.getByRole('button', { name: 'About vxTradeJournal', exact: true });
+    await aboutTrigger.click();
+    const about = page.getByRole('dialog', { name: 'About vxTradeJournal' });
     const trigger = about.getByRole('button', { name: 'Support this project', exact: true });
     await trigger.click();
     const dialog = page.getByRole('dialog', { name: 'Support vxTradeJournal' });
@@ -82,7 +87,7 @@ test('About support action and delayed loading keep an external fallback', async
     await expect(dialog.getByRole('status')).toContainText('Taking longer than expected');
     await expect(dialog.getByRole('link', { name: 'Open Ko-fi in new tab' })).toBeVisible();
     await dialog.getByRole('button', { name: 'Close', exact: true }).click();
-    await expect(trigger).toBeFocused();
+    await expect(aboutTrigger).toBeFocused();
     await expect(page.locator('iframe')).toHaveCount(0);
   } finally { release(); }
 });

@@ -137,7 +137,6 @@ class JournalUI {
       brand(),
       el("span", { class: "nav-label" }, "Workspace"),
       nav,
-      projectInformation(),
       el(
         "details",
         {
@@ -170,6 +169,7 @@ class JournalUI {
           `v${typeof __APP_VERSION__ === "undefined" ? "0.1.0" : __APP_VERSION__} · ${typeof __BUILD_COMMIT__ === "undefined" ? "local" : __BUILD_COMMIT__}`,
         ),
       ),
+      projectInformation(),
     );
     root.replaceChildren(
       el("a", { class: "skip-link", href: "#main", onClick: (event) => {

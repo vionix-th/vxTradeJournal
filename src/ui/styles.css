@@ -89,7 +89,7 @@ svg { flex-shrink: 0; vertical-align: middle; }
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand-mark { display: grid; place-items: center; flex-shrink: 0; width: 34px; height: 34px; color: #fff; background: #7566eb; border-radius: 9px; }
 .brand strong { display: block; color: #fff; font-size: 16px; font-weight: 600; letter-spacing: -.65px; white-space: nowrap; }
-.sidebar .brand { margin: 0 4px 40px; }
+.sidebar .brand { margin: 0 4px 28px; }
 .nav-label { padding: 0 13px; margin-bottom: 12px; color: #9199b4; font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; }
 .sidebar nav { display: grid; gap: 6px; }
 .nav-item { display: flex; align-items: center; gap: 13px; min-height: 46px; width: 100%; padding: 10px 13px; border: 0; border-radius: 7px; background: transparent; color: #b2bad1; text-align: left; font-size: 13px; font-weight: 500; }
@@ -407,76 +407,32 @@ tbody tr:hover { background: var(--raised); }
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
 
-/* Publisher attribution is separate from product identity and journal routes. */
-.publisher-credit {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 44px;
-  color: #c6cadd;
-  font-size: 11px;
-  line-height: 1.4;
-  text-decoration: underline;
-}
-.publisher-credit img {
-  flex-shrink: 0;
-  padding: 3px;
-  background: #fff;
-  border-radius: 5px;
-  object-fit: contain;
-}
-.publisher-credit:hover { color: #fff; }
-.project-information {
-  width: min(100%, 440px);
-  margin-top: 16px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
-  font-size: 12px;
-}
-.project-information summary {
-  display: list-item;
-  min-height: 44px;
-  padding-block: 12px;
-  cursor: pointer;
-}
-.project-information-body { display: grid; gap: 12px; padding-block: 8px; }
-.project-information-body p { margin: 0; }
-.project-links { display: flex; flex-wrap: wrap; gap: 4px 12px; }
-.project-links a { display: inline-flex; align-items: center; min-height: 44px; }
-.sidebar .project-information { border-color: #30354b; }
-.sidebar .project-links { display: flex; flex-wrap: wrap; gap: 4px 12px; }
-.sidebar .project-links a { color: #d2caff; }
-
-/* Support is a presentation-only overlay and never changes journal routes. */
-.brand .support-trigger {
-  display: block;
-  padding: 4px 0;
-  min-height: 44px;
-  background: transparent;
-  border-color: transparent;
-  color: #c6cadd;
-  font-size: 11px;
-  text-decoration: underline;
-}
-.brand .support-trigger:hover { color: #fff; }
-.project-information .support-trigger { justify-self: start; }
-.sidebar .project-information .support-trigger { background: transparent; border-color: #30354b; color: #d2caff; }
-.support-dialog {
-  width: min(560px, calc(100% - 16px));
-  max-height: calc(100dvh - 16px);
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--panel);
-  color: var(--text);
-  overflow: hidden;
-}
-.support-dialog[open] { display: flex; flex-direction: column; }
-.support-dialog::backdrop { background: rgba(10, 14, 24, .6); }
-.support-header { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; border-bottom: 1px solid var(--border); }
-.support-header h2 { margin: 0; font-size: 20px; overflow-wrap: anywhere; }
-.support-header button { flex-shrink: 0; min-height: 44px; }
-.support-body { min-height: 0; overflow: auto; padding: 16px; }
-.support-body p { line-height: 1.6; }
-.support-body a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent); }
-.support-body iframe { display: block; width: 100%; height: 712px; margin-top: 16px; border: 0; background: #f9f9f9; color-scheme: light; }
+/* Product identity and secondary project actions have separate hierarchy. */
+.brand { align-items: flex-start; }
+.brand > div { min-width: 0; }
+.brand-mark { margin-top: 3px; }
+.publisher-credit { display: inline-flex; align-items: center; min-height: 32px; color: #b2bad1; font-size: 10px; line-height: 1.4; text-decoration: none; white-space: nowrap; }
+.publisher-credit:hover { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+.project-actions { display: flex; align-items: center; gap: 4px; margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--border); }
+.project-action, .project-actions .support-trigger { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 500; text-decoration: none; }
+.project-action:hover, .project-actions .support-trigger:hover { background: var(--raised); color: var(--text); }
+.sidebar > .project-actions { border-color: #30354b; }
+.sidebar .project-action, .sidebar .project-actions .support-trigger { color: #b2bad1; }
+.sidebar .project-action:hover, .sidebar .project-actions .support-trigger:hover { color: #fff; background: #242940; }
+.project-information-body { display: grid; gap: 16px; padding: 24px; overflow: auto; min-height: 0; }
+.project-information-body p { margin: 0; line-height: 1.6; }
+.project-information-body > .support-trigger { justify-self: start; }
+.project-links { display: grid; gap: 4px; }
+.project-links a, .project-information-body > a { display: inline-flex; align-items: center; min-height: 44px; }
+.about-dialog, .support-dialog { width: min(480px, calc(100% - 16px)); max-height: calc(100dvh - 16px); padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); color: var(--text); overflow: hidden; }
+.about-dialog[open], .support-dialog[open] { display: flex; flex-direction: column; }
+.about-dialog::backdrop, .support-dialog::backdrop { background: rgba(10, 14, 24, .6); }
+.support-header { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+.support-header h2 { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
+.modal-close { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; color: var(--muted); background: transparent; font-size: 28px; }
+.modal-close:hover { background: var(--raised); color: var(--text); }
+.support-body { position: relative; min-height: 0; overflow: auto; padding: 0; background: #f9f9f9; }
+.support-feedback { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; background: #f9f9f9; color: #343444; text-align: center; }
+.support-feedback p { margin: 0; line-height: 1.6; }
+.support-feedback a { display: inline-flex; align-items: center; min-height: 44px; color: #343444; text-underline-offset: 3px; }
+.support-body iframe { display: block; width: 100%; height: 712px; border: 0; background: #f9f9f9; color-scheme: light; }

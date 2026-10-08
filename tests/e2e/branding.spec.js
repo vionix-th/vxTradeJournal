@@ -6,18 +6,21 @@ async function checkAttribution(page, area) {
   await expect(publisher).toBeVisible();
   await expect(publisher).toHaveAttribute('href', 'https://vionix.cloud');
   await expect(publisher).toHaveAttribute('rel', 'noopener noreferrer');
-  const summary = area.locator('summary').filter({ hasText: 'About vxTradeJournal' });
+  const summary = area.getByRole('button', { name: 'About vxTradeJournal', exact: true });
   await summary.focus();
   await page.keyboard.press('Enter');
-  const about = area.locator('.project-information');
-  await expect(about).toHaveAttribute('open', '');
+  const about = page.getByRole('dialog', { name: 'About vxTradeJournal' });
+  await expect(about).toBeVisible();
+  await expect(area.locator('details.project-information')).toHaveCount(0);
+  await expect(area.locator('.brand img')).toHaveCount(0);
   await expect(about.getByRole('link', { name: 'Project on GitHub' })).toHaveAttribute('href', 'https://github.com/vionix-th/vxTradeJournal');
   await expect(about.getByRole('link', { name: 'Report an issue' })).toHaveAttribute('href', 'https://github.com/vionix-th/vxTradeJournal/issues');
   await expect(about).toContainText('App v0.2.0');
   await page.screenshot({ path: `/tmp/vionix-attribution-trade-${page.viewportSize().width}-${await page.locator('.sidebar').count() ? 'workspace' : 'signin'}.png`, fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.keyboard.press('Space');
-  await expect(about).not.toHaveAttribute('open', '');
+  await page.keyboard.press('Escape');
+  await expect(about).toHaveCount(0);
+  await expect(summary).toBeFocused();
 }
 
 test('publisher and project links work before sign-in', async ({ page }) => {

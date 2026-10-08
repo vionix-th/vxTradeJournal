@@ -219,3 +219,7 @@ Keep product identity separate from the Vionix publisher link. Expose About thro
 ## 2026-10-08 — Optional Ko-fi support
 
 Use a native app-themed dialog for the official vionixconsulting Tip Panel, loaded only on explicit support actions and removed on close. Keep a persistent new-tab fallback; provider failures and frame events never establish payment completion. No vendor script runs in the parent page, no journal data is passed to the frame, and the referrer is suppressed. One-time/monthly contributions do not grant privileges. This is website-only presentation; CLI and persisted/financial contracts remain unchanged. No shared hosted page, webhook or new runtime dependency is needed. Ko-fi form styling and account configuration remain provider-owned; automated live probing currently receives HTTP403, so actual monthly/payment entry remains unverified.
+
+## 2026-10-08 — Integrated project actions and checkout
+
+Supersedes the disclosure layout and persistent fallback in the preceding publisher/support decisions. Keep one product mark with a text publisher credit; group About and Support in a compact footer action row rather than expanding sidebar navigation. About uses a native modal and closes before Support opens, restoring focus to the persistent About trigger. The payment panel sits flush beneath a compact app-themed header, without duplicate explanatory copy. Show the external recovery link only after a ten-second loading delay. Ko-fi content remains provider-owned; no account, financial, CLI or persistence contract changes.
