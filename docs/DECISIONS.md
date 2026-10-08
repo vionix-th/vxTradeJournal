@@ -211,3 +211,7 @@ Preparation does not publish a release or change deployed Firestore rules. Produ
 ### 2026-10-01 — Add accessible label explanations to instrument and trade editors
 
 Give field and checkbox labels optional tooltip content owned by the shared form primitive. Instrument and trade editors supply concise explanations of quotation conventions, increments, calculation models and planning inputs. Hovering the label, focusing its help button or tapping it exposes the same text; Escape dismisses help, and pointer entry into the tooltip keeps it readable. Tooltip positioning stays within the viewport. Preserve existing accessible labels, visible units, field values and persistence/calculation behavior. Native title-only help was rejected because it does not provide consistent keyboard or touch access.
+
+## 2026-10-08 — Publisher attribution
+
+Keep product identity separate from the Vionix publisher link. Expose About through native disclosure on sign-in and in the workspace so reading project information does not navigate away from an editor or discard a draft. Bundle the publisher logo locally. Target `vionix-th/vxTradeJournal` for planned public GitHub access; publication and license selection remain separate from attribution. Keep current palette and financial/CLI contracts.

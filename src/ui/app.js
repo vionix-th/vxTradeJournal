@@ -4,6 +4,7 @@ import "@fontsource/inter/latin-600.css";
 import "@fontsource/inter/latin-700.css";
 import "./styles.css";
 import { icon, brand, authFrame } from "./icons.js";
+import { projectInformation } from "./branding.js";
 import { skillDownloadPanel } from "./skill-download.js";
 import { EditorLifecycle } from "./editor-lifecycle.js";
 import { routePolicies } from "./route-policy.js";
@@ -136,6 +137,7 @@ class JournalUI {
       brand(),
       el("span", { class: "nav-label" }, "Workspace"),
       nav,
+      projectInformation(),
       el(
         "details",
         {

@@ -188,6 +188,7 @@ Journal is home screen.
 ### Design requirements
 
 - Modern, restrained visual style; neutral surfaces, one accent colour, clear numeric hierarchy.
+- Product identity remains vxTradeJournal. Sign-in and authenticated workspace show a separate “By Vionix Consulting” publisher link and locally bundled logo. Native About disclosure provides purpose, package version, the intended `vionix-th/vxTradeJournal` GitHub project and issue tracker, and Vionix contact. Links open a new tab with `noopener noreferrer`; publisher attribution does not change the app palette. Public GitHub access depends on repository publication. The repository currently has no declared license; attribution does not invent one or claim open-source licensing. This disclosure is website-only presentation; CLI operations and contracts are unchanged. Donation controls require a working destination and belong to a separate step.
 - Light and dark themes; system preference default.
 - Mobile cards and full-page editors; desktop tables and wider detail views.
 - Core workflows usable from 320 CSS pixels upward without horizontal page scrolling.

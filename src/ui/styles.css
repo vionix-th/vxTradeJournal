@@ -89,7 +89,6 @@ svg { flex-shrink: 0; vertical-align: middle; }
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand-mark { display: grid; place-items: center; flex-shrink: 0; width: 34px; height: 34px; color: #fff; background: #7566eb; border-radius: 9px; }
 .brand strong { display: block; color: #fff; font-size: 16px; font-weight: 600; letter-spacing: -.65px; white-space: nowrap; }
-.brand-caption { display: block; margin-top: 2px; color: #969db7; font-size: 10px; letter-spacing: .05px; }
 .sidebar .brand { margin: 0 4px 40px; }
 .nav-label { padding: 0 13px; margin-bottom: 12px; color: #9199b4; font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; }
 .sidebar nav { display: grid; gap: 6px; }
@@ -338,7 +337,6 @@ tbody tr:hover { background: var(--raised); }
   .shell { display: block; }
   .sidebar { position: relative; height: auto; overflow: visible; padding: 18px 16px 12px; }
   .sidebar .brand { margin: 0 0 18px; padding-right: 64px; }
-  .brand-caption { font-size: 9px; }
   .brand strong { font-size: 15px; }
   .brand-mark { width: 30px; height: 30px; border-radius: 8px; }
   .nav-label { display: none; }
@@ -408,3 +406,43 @@ tbody tr:hover { background: var(--raised); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* Publisher attribution is separate from product identity and journal routes. */
+.publisher-credit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: #c6cadd;
+  font-size: 11px;
+  line-height: 1.4;
+  text-decoration: underline;
+}
+.publisher-credit img {
+  flex-shrink: 0;
+  padding: 3px;
+  background: #fff;
+  border-radius: 5px;
+  object-fit: contain;
+}
+.publisher-credit:hover { color: #fff; }
+.project-information {
+  width: min(100%, 440px);
+  margin-top: 16px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+.project-information summary {
+  display: list-item;
+  min-height: 44px;
+  padding-block: 12px;
+  cursor: pointer;
+}
+.project-information-body { display: grid; gap: 12px; padding-block: 8px; }
+.project-information-body p { margin: 0; }
+.project-links { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.project-links a { display: inline-flex; align-items: center; min-height: 44px; }
+.sidebar .project-information { border-color: #30354b; }
+.sidebar .project-links { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.sidebar .project-links a { color: #d2caff; }
