@@ -246,7 +246,7 @@ Install tooling as project dependencies and expose routine tasks through `packag
 | `npm run database:upgrade` | Operator-only emulator schema upgrade preserving retained records; startup runs it automatically |
 | `npm run check` | Complete integration/release gate: source/documentation checks, test suite, build and packaged-skill verification |
 
-Test commands follow the worker-m execution policy in AGENTS.md. Local profiles connect explicitly to emulated services. Production uses project `vionixtradejournal` (display name `vionix-trade-journal`, number `389058969816`) on Spark with email/password Auth, default Firestore in `asia-east1`, and static Firebase Hosting. `npm run build:prod` produces a separate `dist-prod/` artifact with hosted Firebase configuration and no emulator connections. `npm run preview:prod` previews that artifact using online services; `npm run deploy:prod` builds and verifies release inputs, checks database compatibility, runs required adjacent migrations under guarded maintenance and publishes matching Hosting/rules to the explicit production project. Production preparation and publication are separate operations. Local seed/reset scripts never target production. No server-side or billing-required services are added by this setup.
+Verification follows the risk-based selection and execution policy in [AGENTS.md](../AGENTS.md#quality). Local profiles connect explicitly to emulated services. Production uses project `vionixtradejournal` (display name `vionix-trade-journal`, number `389058969816`) on Spark with email/password Auth, default Firestore in `asia-east1`, and static Firebase Hosting. `npm run build:prod` produces a separate `dist-prod/` artifact with hosted Firebase configuration and no emulator connections. `npm run preview:prod` previews that artifact using online services; `npm run deploy:prod` builds and verifies release inputs, checks database compatibility, runs required adjacent migrations under guarded maintenance and publishes matching Hosting/rules to the explicit production project. Production preparation and publication are separate operations. Local seed/reset scripts never target production. No server-side or billing-required services are added by this setup.
 
 ### Agent CLI and skill
 
@@ -303,9 +303,9 @@ Application releases, persisted schema versions and calculation versions are ind
 
 See [database operations](DATABASE.md) for authentication, commands, deployment failures and recovery. Release acceptance covers synthetic adjacent chains, malformed metadata, maintenance/isolation, interruption/fencing, snapshot integrity/restore, CLI no-write/no-output failure and website draft/retry behavior. Production records are never automated fixtures.
 
-## 4. TDD and acceptance criteria
+## 4. Verification and acceptance criteria
 
-Write failing behavior test before implementation, then implement and refactor.
+Use risk-based verification under [project governance](../AGENTS.md#quality) and the selection rules below. Acceptance requirements remain unchanged.
 
 Permanent acceptance mapping and verification limits are recorded in [ACCEPTANCE.md](ACCEPTANCE.md).
 
@@ -344,7 +344,7 @@ For each affected capability, verify website and CLI outcomes against the same i
 
 ### Verification selection and checkpoints
 
-Retain worker-m test execution at failing, passing and regression stages. The orchestrator selects explicit commands and explains their coverage; selection does not use an automatic Git-based algorithm or persistent result cache.
+Execute focused unit and documentation checks directly. A `worker-m` executes emulator, browser, packaged-skill and complete verification; reuse one worker across related sequential runs. The orchestrator retains command selection, test design, implementation and result evaluation. Select explicit commands and explain their coverage; selection does not use an automatic Git-based algorithm or persistent result cache.
 
 | Change | Required routine verification |
 |---|---|
@@ -357,9 +357,11 @@ Retain worker-m test execution at failing, passing and regression stages. The or
 | CLI behavior/contracts | Related unit and source CLI integration tests; documentation-contract checks |
 | Packaging/runtime dependencies/install guidance | Complete packaged-skill verification |
 
-Execute the new regression at the failing stage and confirm failure for the intended reason. At the passing stage, execute that regression and directly related coverage. At completion, execute affected coverage against the final implementation and reuse passing results whose tested inputs remain unchanged. Subsequent edits invalidate only affected checks. Expand to the affected suite when impact cannot be bounded confidently; use complete verification for unresolved impact across suites. The acceptance ledger maps permanent evidence, not a requirement to execute every mapped test for every change.
+For bug fixes, execute the smallest regression against unfixed behavior and confirm the intended failure. Before implementing changes to financial calculations, ownership enforcement or migration invariants, establish focused failing coverage. Syntax, fixture and environment failures do not establish failure proof. Other features, mechanical refactors, documentation, copy and styling do not require pre-implementation tests. Reuse existing coverage and add tests only for observable coverage gaps; verify affected outcomes after implementation.
 
-Run `npm run check` once before merging an accumulated batch into the main branch. Releases require complete verification and a production build against release inputs. Integration results may be reused only when source, tests, configuration, dependencies and packaged artifacts remain unchanged; regenerate commit-bearing build metadata when the release revision changes. This policy does not reduce financial precision, ownership, persistence, interface-parity or release acceptance requirements.
+Verify focused affected coverage against the final implementation. An existing passing run covering that implementation satisfies completion; no separate completion rerun is required. Subsequent edits invalidate only checks whose tested inputs are affected. Start with named tests or affected files; expand when dependencies, failures or identified unknowns show wider impact, stating the concrete reason and coverage boundary. Change size alone does not determine risk. The acceptance ledger maps permanent evidence, not a requirement to execute every mapped test for every change.
+
+Run `npm run check` once before merging an accumulated batch into the main branch and for releases. Routine changes require complete verification only when identified impact spans suites and narrower checks cannot establish acceptance. Releases also require a production build against release inputs. Integration results may be reused only when source, tests, configuration, dependencies and packaged artifacts remain unchanged; regenerate commit-bearing build metadata when the release revision changes. This policy does not reduce financial precision, ownership, persistence, interface-parity or release acceptance requirements.
 
 Focused commands forward native runner options without changing the automated profile or suite boundary. CLI selection remains restricted to its integration file; conflicting config/project/root overrides and non-executing options are rejected. Zero executed tests are unsuccessful verification, even when a native runner reports a successful exit. Test processes and emulators stop on failure or interruption; integration files remain sequential because they clear shared Firestore data. CLI scenarios reset Firestore and restore a private authenticated session, and prepare their own prerequisite records without depending on earlier scenarios.
 
@@ -370,7 +372,7 @@ Representative command plans:
 - Packaging change: related archive/docs tests and `npm run test:skill`.
 - Persistence correction: `npm run test:integration -- tests/integration/repository.test.js -t "opening dates"`, plus affected unit/interface checks.
 
-These examples illustrate selection, not universal per-change commands. Do not repeat a passing command unless an intervening edit affects its tested inputs. Report commands, test counts, elapsed time and omitted required checks; retain full output in worker context. Wall-clock measurements do not establish an account-allowance reduction percentage.
+These examples illustrate selection, not universal per-change commands. Do not repeat a passing command unless an intervening edit affects its tested inputs. Report commands, executed-test counts, outcomes, elapsed time, material omissions and expected-failure confirmation where required. Cap routine output and retain actionable failure excerpts; full delegated test output stays in worker context. Shorter logs or faster execution do not establish measured token savings or an account-allowance reduction percentage.
 
 Skill distribution acceptance verifies archive contents and version, byte-for-byte inclusion of the generated ZIP in each local and hosted website artifact, downloads before and after sign-in at mobile/intermediate/desktop widths, keyboard operation and no page overflow. Extract the ZIP for portable-install acceptance rather than copying its unarchived source folder.
 

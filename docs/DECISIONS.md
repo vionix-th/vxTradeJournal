@@ -1,5 +1,11 @@
 # Development decisions
 
+## 2026-10-09 — Make verification proportional to risk
+
+Supersede the mandatory stage and delegation rules in [Reduce routine test workload](#2026-10-05--reduce-routine-test-workload). Require the smallest intended failing regression for bug fixes and focused failing coverage before changes to financial calculations, ownership enforcement or migration invariants; syntax, fixture and environment failures do not qualify. Other changes use focused post-implementation checks and add tests only for observable coverage gaps. A passing run covering the final implementation satisfies completion; rerun only checks affected by subsequent edits. Expand coverage for concrete dependencies, failures or identified unknowns, with a stated reason and boundary; retain complete batch-integration and release gates.
+
+Run focused unit and documentation checks directly; delegate emulator, browser, packaged-skill and complete verification to one reusable `worker-m` for related sequential runs. Keep selection, test design, implementation and evaluation with the orchestrator. Cap routine output and report counts, outcomes, elapsed time, material omissions and applicable failure proof without claiming measured token savings. Preserve independent financial expectations, interface parity and release safeguards. Focused verification defers unrelated regression discovery to integration gates. This changes governance only; command contracts, runtime behavior and historical validation records remain unchanged.
+
 ## 2026-10-09 — Place Reload records before project information
 
 Refine the compact More menu from the preceding Session merge: order Settings, Reload records, About and Support above session identity/sign-out/download. Move the existing Reload control between the compact action group and its original desktop session position so pointer and keyboard order agree. Preserve reload guards, dismissal and responsive focus restoration; website presentation only.
