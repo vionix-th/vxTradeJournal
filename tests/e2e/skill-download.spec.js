@@ -20,7 +20,7 @@ for (const width of [375, 996, 1280]) {
     expect(entries["vx-trade-journal/package-lock.json"]).toBeTruthy();
     await page.screenshot({ path: `test-results/skill-download-auth-${width}.png`, fullPage: true });
     await setup(page, request);
-    if (width <= 700) await page.locator(".session-details > summary").click();
+    if (width <= 700) await page.getByRole("button", { name: "More", exact: true }).click();
     await expect(link).toBeVisible();
     await expect(link).toHaveAttribute("download", download.suggestedFilename());
     await link.focus();
@@ -29,6 +29,12 @@ for (const width of [375, 996, 1280]) {
     await page.keyboard.press("Enter");
     expect((await keyboardDownload).suggestedFilename()).toBe(download.suggestedFilename());
     await expect(page.getByRole("heading", { name: "Journal", exact: true })).toBeVisible();
+    if (width <= 700) {
+      await expect(page.locator(".more-menu")).toBeHidden();
+      const more = page.getByRole("button", { name: "More", exact: true });
+      await expect(more).toBeFocused();
+      await more.click();
+    }
     const bounds = await link.boundingBox();
     expect(bounds.height).toBeGreaterThanOrEqual(44);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);

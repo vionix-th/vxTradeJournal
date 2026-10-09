@@ -7,6 +7,13 @@ async function checkAttribution(page, area) {
   await expect(publisher).toHaveAttribute('href', 'https://vionix.cloud');
   await expect(publisher).toHaveAttribute('rel', 'noopener noreferrer');
   const summary = area.getByRole('button', { name: 'About vxTradeJournal', exact: true });
+  const more = area.getByRole('button', { name: 'More', exact: true, includeHidden: true });
+  const compact = page.viewportSize().width <= 700 && await more.count() > 0;
+  if (await more.count()) {
+    if (compact) await expect(more).toBeVisible();
+    else await expect(more).toBeHidden();
+  }
+  if (compact) await more.click();
   await summary.focus();
   await page.keyboard.press('Enter');
   const about = page.getByRole('dialog', { name: 'About vxTradeJournal' });
@@ -29,7 +36,7 @@ async function checkAttribution(page, area) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.keyboard.press('Escape');
   await expect(about).toHaveCount(0);
-  await expect(summary).toBeFocused();
+  await expect(compact ? more : summary).toBeFocused();
 }
 
 test('publisher and project links work before sign-in', async ({ page }) => {

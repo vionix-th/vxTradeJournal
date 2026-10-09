@@ -6,6 +6,7 @@ export const SUPPORT_URL = 'https://ko-fi.com/vionixconsulting';
 export const SUPPORT_EMBED_URL = `${SUPPORT_URL}/?hidefeed=true&widget=true&embed=true&preview=true`;
 let nextId = 0;
 
+/** Resolve the return control at close so responsive navigation stays focusable. */
 export function openSupportDialog(opener) {
   if (document.querySelector('dialog[open]')) return;
   void supportReminders.postpone();
@@ -34,7 +35,8 @@ export function openSupportDialog(opener) {
   dialog.addEventListener('close', () => {
     clearTimeout(timer);
     dialog.remove();
-    if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
+    const control = typeof opener === 'function' ? opener() : opener;
+    if (control instanceof HTMLElement && control.isConnected) control.focus();
   });
   document.body.append(dialog);
   dialog.showModal();

@@ -8,7 +8,8 @@ import { supportReminders } from './support-reminder-policy.js';
 import { openSupportDialog } from './support.js';
 import { supportReminderNotice } from './support-reminder-notice.js';
 import { icon } from "./icons.js";
-import { brand, authFrame, projectInformation } from "./branding.js";
+import { brand, authFrame } from "./branding.js";
+import { workspaceNavigation } from "./workspace-navigation.js";
 import { skillDownloadPanel } from "./skill-download.js";
 import { EditorLifecycle } from "./editor-lifecycle.js";
 import { routePolicies } from "./route-policy.js";
@@ -39,6 +40,7 @@ class JournalUI {
     this.data = null;
     this.repo = null;
     this.loadGeneration = 0;
+    const getSupport = () => [...root.querySelectorAll('.support-trigger')].find((control) => control.getClientRects().length) || this.navigation?.more;
     this.reminders = createSupportReminderController({
       store: supportReminders,
       safe: () => document.visibilityState === 'visible' && document.hasFocus() &&
@@ -47,14 +49,13 @@ class JournalUI {
         !routePolicies[this.lifecycle.current?.route]?.complete &&
         !document.querySelector('dialog[open], .notice.error, .notice.warning') &&
         !document.activeElement?.matches('input, textarea, select, [contenteditable="true"]'),
-      getSupport: () => [...root.querySelectorAll('.support-trigger')].find((control) => control.getClientRects().length),
-      openSupport: openSupportDialog,
+      getSupport,
+      openSupport: () => openSupportDialog(getSupport),
       show: supportReminderNotice,
     });
     this.desktopMedia = window.matchMedia("(min-width: 701px)");
     this.desktopMedia.addEventListener("change", (event) => {
-      const session = root.querySelector(".session-details");
-      if (session) session.open = event.matches;
+      this.navigation?.setDesktop(event.matches);
     });
     window.addEventListener("beforeunload", (e) => {
       if (this.dirty || this.lifecycle.busy) {
@@ -134,58 +135,42 @@ class JournalUI {
       el("div", { class: "workspace-bar" },
         el("span", { class: "workspace-name" }, "Workspace", el("span", { class: "workspace-divider" }, "/"), "Trading journal"),
         el("span", { class: "privacy-label" }, icon("lock", 14), "Private workspace")), this.content);
-    const nav = el("nav", { "aria-label": "Main navigation" });
-    for (const [route, title] of Object.entries({
-      journal: "Journal",
-      instruments: "Instruments",
-      strategies: "Strategies",
-      accounts: "Accounts",
-      settings: "Settings",
-    }))
-      nav.append(
-        button([icon(route), el("span", {}, title)], () => this.go(route), "nav-item", {
-          "data-route": route,
-        }),
-      );
+    const reload = button(
+      [icon("refresh", 16), "Reload records"],
+      () => this.reloadCurrent(),
+      "session-action",
+    );
+    const session = el(
+      "section",
+      {
+        class: "sidebar-footer session-details",
+        "aria-label": "Session",
+      },
+      el("div", { class: "session-profile" },
+        el("span", { class: "avatar", "aria-hidden": "true" }, this.user.email.slice(0, 1).toUpperCase()),
+        el("div", {}, el("strong", {}, "Personal workspace"), el("p", {}, this.user.email))),
+      reload,
+      button(
+        [icon("logout", 16), "Sign out"],
+        () => {
+          if (this.canLeave()) {
+            this.dirty = false;
+            signOut(auth);
+          }
+        },
+        "session-action",
+      ),
+      skillDownloadPanel({ compact: true }),
+    );
+    this.navigation = workspaceNavigation((route) => this.go(route), this.desktopMedia.matches, session, reload);
     const sidebar = el(
       "aside",
       { class: "sidebar" },
       brand(),
       el("span", { class: "nav-label" }, "Workspace"),
-      nav,
-      el(
-        "details",
-        {
-          class: "sidebar-footer session-details",
-          open: this.desktopMedia.matches ? true : null,
-        },
-        el("summary", {}, "Session"),
-        el("div", { class: "session-profile" },
-          el("span", { class: "avatar", "aria-hidden": "true" }, this.user.email.slice(0, 1).toUpperCase()),
-          el("div", {}, el("strong", {}, "Personal workspace"), el("p", {}, this.user.email))),
-        button(
-          [icon("refresh", 16), "Reload records"],
-          () => this.reloadCurrent(),
-          "session-action",
-        ),
-        button(
-          [icon("logout", 16), "Sign out"],
-          () => {
-            if (this.canLeave()) {
-              this.dirty = false;
-              signOut(auth);
-            }
-          },
-          "session-action",
-        ),
-        skillDownloadPanel({ compact: true }),
-        el(
-          "p",
-          { class: "help" },
-          `v${typeof __APP_VERSION__ === "undefined" ? "0.1.0" : __APP_VERSION__} · ${typeof __BUILD_COMMIT__ === "undefined" ? "local" : __BUILD_COMMIT__}`,
-        ),
-      ),
-      projectInformation(),
+      this.navigation.nav,
+      this.navigation.sessionSlot,
+      this.navigation.projectActions,
     );
     root.replaceChildren(
       el("a", { class: "skip-link", href: "#main", onClick: (event) => {
@@ -206,8 +191,8 @@ class JournalUI {
   }
   renderRoute(route, arg) {
     const navRoute = routePolicies[route]?.navigationSection || route;
-    for (const n of root.querySelectorAll("[data-route]")) {
-      if (n.dataset.route === navRoute) n.setAttribute("aria-current", "page");
+    for (const n of root.querySelectorAll("[data-route], [data-navigation-section]")) {
+      if ((n.dataset.route || n.dataset.navigationSection) === navRoute) n.setAttribute("aria-current", "page");
       else n.removeAttribute("aria-current");
     }
     try {

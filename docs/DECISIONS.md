@@ -1,5 +1,21 @@
 # Development decisions
 
+## 2026-10-09 — Place Reload records before project information
+
+Refine the compact More menu from the preceding Session merge: order Settings, Reload records, About and Support above session identity/sign-out/download. Move the existing Reload control between the compact action group and its original desktop session position so pointer and keyboard order agree. Preserve reload guards, dismissal and responsive focus restoration; website presentation only.
+
+## 2026-10-08 — Merge compact Session controls into More
+
+Extend the compact workspace More decision below by grouping identity, reload, sign-out and skill download in the same disclosure after project actions. Remove the separate compact Session trigger and move the same session controls between More and the desktop footer; preserve action handlers and unsaved-draft guards. Bound the taller disclosure to the viewport with internal scrolling and restore visible focus across responsive moves. Desktop session controls remain directly accessible. This changes website navigation only, with no CLI, persistence or calculation contract changes.
+
+## 2026-10-08 — Compact workspace More menu
+
+At the existing 700px compact-navigation breakpoint, replace Settings with More and move Settings, About and Support into a native auto popover. Reuse the same action controls across responsive layouts, preserve Settings navigation guards, and return project-dialog focus to More on compact screens. Keep desktop footer actions and sign-in actions. This supersedes the always-visible workspace project-action row in the preceding project-dialog decisions for compact widths only; CLI, persistence and calculation contracts are unchanged.
+
+## 2026-10-08 — Keep application version in About
+
+Remove the version and commit paragraph from the signed-in Session sidebar to keep routine workspace controls focused. About retains the website application version. Preserve the skill ZIP link, project actions and build/CLI metadata; no schema or application version change is required.
+
 ## 2026-10-08 — Release guarded database operations as 0.2.0
 
 Release database availability guards, preserving development upgrades and guarded production deployment as `0.2.0`. Persistence impact is a rules change plus compatible control-metadata additions; journal schema and calculation versions remain `1`, with no source-record conversion. The first production rollout explicitly registers validated existing schema-1 data under maintenance with a private recovery snapshot and the rules propagation barrier. Build the website and portable skill from the same tested clean commit; publish an immutable annotated `v0.2.0` tag after successful deployment. Installed skills require replacement and locked dependency installation to receive the new availability guards.

@@ -14,6 +14,13 @@ async function checkSupport(page, area, width) {
   await page.setViewportSize({ width, height: 900 });
   const url = page.url();
   const trigger = area.getByRole('button', { name: 'Support this project', exact: true }).first();
+  const more = area.getByRole('button', { name: 'More', exact: true, includeHidden: true });
+  const compact = width <= 700 && await more.count() > 0;
+  if (await more.count()) {
+    if (compact) await expect(more).toBeVisible();
+    else await expect(more).toBeHidden();
+  }
+  if (compact) await more.click();
   await expect(trigger).toBeVisible();
   await trigger.focus();
   await page.keyboard.press('Enter');
@@ -41,8 +48,9 @@ async function checkSupport(page, area, width) {
   await expect(dialog).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
-  await expect(trigger).toBeFocused();
+  await expect(compact ? more : trigger).toBeFocused();
   expect(page.url()).toBe(url);
+  if (compact) await more.click();
   await trigger.click();
   await dialog.getByRole('button', { name: 'Close', exact: true }).click();
   await expect(page.locator('iframe')).toHaveCount(0);

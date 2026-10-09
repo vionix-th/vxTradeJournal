@@ -27,7 +27,7 @@ for (const width of [320, 390, 768, 1440]) {
     await card.getByRole('button', { name: 'Support', exact: true }).click();
     await expect(card).toHaveCount(0);
     await page.getByRole('dialog', { name: 'Support vxTradeJournal' }).getByRole('button', { name: 'Close', exact: true }).click();
-    await expect(page.locator('.sidebar .support-trigger')).toBeFocused();
+    await expect(width <= 700 ? page.getByRole('button', { name: 'More', exact: true }) : page.locator('.sidebar .support-trigger')).toBeFocused();
     expect(page.url()).toBe(url);
     await expect(page.locator('iframe')).toHaveCount(0);
     await page.reload();

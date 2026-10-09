@@ -21,9 +21,16 @@ export function brand() {
   return link;
 }
 
-export function projectInformation() {
-  const about = button([icon('info', 16), el('span', {}, 'About')], () => openAbout(about), 'project-action', { 'aria-label': 'About vxTradeJournal' });
-  return el('div', { class: 'project-actions' }, about, supportButton());
+export function projectInformation({ beforeOpen = () => {}, getOpener = (control) => control } = {}) {
+  const about = button([icon('info', 16), el('span', {}, 'About')], () => {
+    beforeOpen();
+    openAbout(() => getOpener(about));
+  }, 'project-action', { 'aria-label': 'About vxTradeJournal' });
+  const support = supportButton(() => {
+    beforeOpen();
+    openSupportDialog(() => getOpener(support));
+  });
+  return el('div', { class: 'project-actions' }, about, support);
 }
 
 function projectResource(name, caption, href, glyph) {
@@ -33,7 +40,7 @@ function projectResource(name, caption, href, glyph) {
     icon('external', 14));
 }
 
-function openAbout(opener) {
+function openAbout(getOpener) {
   const close = button(el('span', { 'aria-hidden': 'true' }, '×'), () => dialog.close(), 'modal-close', { autofocus: true, 'aria-label': 'Close' });
   const dialog = el('dialog', { class: 'about-dialog', 'aria-labelledby': 'project-about-title' },
     el('header', { class: 'support-header' }, el('h2', { id: 'project-about-title' }, 'About', el('span', { class: 'visually-hidden' }, ' vxTradeJournal')), close),
@@ -49,8 +56,9 @@ function openAbout(opener) {
         supportButton(() => dialog.close('support')))));
   dialog.addEventListener('close', () => {
     dialog.remove();
+    const opener = getOpener();
     if (opener.isConnected) opener.focus();
-    if (dialog.returnValue === 'support') openSupportDialog(opener);
+    if (dialog.returnValue === 'support') openSupportDialog(getOpener);
   });
   document.body.append(dialog);
   dialog.showModal();
