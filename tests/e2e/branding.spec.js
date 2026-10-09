@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { setup } from './fixtures.js';
+const { version } = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
 
 async function checkAttribution(page, area) {
   const publisher = area.locator('a.brand');
@@ -28,10 +30,10 @@ async function checkAttribution(page, area) {
   expect(Math.abs(logo.y + logo.height / 2 - copy.y - copy.height / 2)).toBeLessThanOrEqual(2);
   await expect(area.locator('.project-actions > button svg')).toHaveCount(2);
   await expect(about.locator('.project-resource')).toHaveCount(3);
-  await expect(about.locator('.about-footer')).toContainText('App v0.2.0');
+  await expect(about.locator('.about-footer')).toContainText(`App v${version}`);
   await expect(about.getByRole('link', { name: 'Project on GitHub' })).toHaveAttribute('href', 'https://github.com/vionix-th/vxTradeJournal');
   await expect(about.getByRole('link', { name: 'Report an issue' })).toHaveAttribute('href', 'https://github.com/vionix-th/vxTradeJournal/issues');
-  await expect(about).toContainText('App v0.2.0');
+  await expect(about).toContainText(`App v${version}`);
   await page.screenshot({ path: `/tmp/vionix-attribution-trade-${page.viewportSize().width}-${await page.locator('.sidebar').count() ? 'workspace' : 'signin'}.png`, fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.keyboard.press('Escape');

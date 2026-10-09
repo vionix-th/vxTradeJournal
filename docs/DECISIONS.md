@@ -2,7 +2,7 @@
 
 ## 2026-10-09 — Release portable import and recovery as 0.3.0
 
-Publish portable journal import/recovery, website navigation and project/support UI, and updated skill contracts as `0.3.0`. Persistence impact is compatible user-scoped transfer/recovery additions and changed rules; journal schema and calculation versions remain `1`, with no existing-record conversion. Use complete worker verification and a clean-commit hosted build, then guarded production deployment with enforced maintenance and rule propagation. Publish the website and portable skill from the same commit and immutable annotated `v0.3.0` tag. Installed skills require replacement and locked dependency installation to obtain import/recovery commands.
+Publish portable journal import/recovery, website navigation and project/support UI, and updated skill contracts as `0.3.0`. Persistence impact is compatible user-scoped transfer/recovery additions and changed rules; journal schema and calculation versions remain `1`, with no existing-record conversion. Use complete worker verification and a clean-commit hosted build, then guarded production deployment with enforced maintenance and rule propagation. Publish the website and portable skill from the same commit and immutable annotated `v0.3.0` tag. Installed skills require replacement and locked dependency installation to obtain import/recovery commands. Branding acceptance derives its expected application version from the package manifest so release increments do not invalidate the UI contract.
 
 ## 2026-10-09 — Make verification proportional to risk
 
