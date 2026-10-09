@@ -60,3 +60,11 @@ FX rates are reporting-currency units per source-currency unit. Read the account
 ## Export
 
 Run `export --profile dev --output <path>` after checking the profile. The export contains complete owned journal source data and version metadata; it excludes authentication secrets. If the path already exists, choose a different path or explicitly use `--overwrite` only when replacement is intended.
+
+## Import and recovery
+
+Inspect `schema --command "import preview"`. Preview with `import preview --profile dev --input <path> --mode add|replace`; optionally select `--include-settings`. Apply the identical file/options with the returned `--accept-preview`, a stable new `--operation-id`, and `--yes` for replacement. Add-only skips identical IDs and rejects conflicts. Replacement retains a private recovery backup until explicit deletion. Imported ownership becomes the authenticated destination; historical values and snapshots remain intact.
+
+For interruption, inspect `import status --profile dev --operation-id <id>`, then explicitly `import resume` or `import rollback --yes` with that ID/profile. A live competing run stops; wait for its owner to stop and lease to expire before takeover. Resume needs no source file after complete upload. Incomplete upload has not changed journal data and may be cancelled with rollback. Never change operation ID to bypass recovery.
+
+Use `backup list`, `backup export --operation-id <id> --output <path>`, and confirmed `backup delete --operation-id <id> --yes`, each with the explicit profile. Restore a completed backup by importing its downloaded JSON through a new replacement preview. These are user-scoped recovery commands, not administrator database restoration.

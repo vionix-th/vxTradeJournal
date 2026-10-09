@@ -12,7 +12,7 @@ describe("journal route policy", () => {
       strategies: "strategies", trade: "journal", accountEditor: "accounts",
       instrumentEditor: "instruments", strategyEditor: "strategies",
       tradeEditor: "journal", executionEditor: "journal",
-      adjustmentEditor: "journal", snapshotEditor: "journal", settings: "settings",
+      adjustmentEditor: "journal", snapshotEditor: "journal", settings: "settings", importEditor: "settings",
     };
     expect(Object.keys(routePolicies).sort()).toEqual(Object.keys(sections).sort());
     for (const [route, section] of Object.entries(sections)) {

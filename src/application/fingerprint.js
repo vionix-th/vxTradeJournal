@@ -1,5 +1,5 @@
 /** Canonical JSON fingerprints bind previews and durable receipts to their actual inputs. */
-function canonical(value) {
+export function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical);
   if (value && typeof value === "object") return Object.fromEntries(Object.keys(value).sort().filter((key) => value[key] !== undefined).map((key) => [key, canonical(value[key])]));
   return value;

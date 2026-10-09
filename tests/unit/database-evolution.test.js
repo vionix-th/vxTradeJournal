@@ -8,6 +8,12 @@ import { deploymentPlan, deployDatabase } from "../../scripts/database/deploy.js
 import { MemoryDatabase } from "../helpers/memory-database.js";
 const transitions = [1, 2, 3].map((from) => ({ id: `${from}-${from + 1}`, from, to: from + 1, checksum: hash(`step-${from}`) }));
 describe("database evolution contracts", () => {
+  it('rejects schema deployment while any user import remains active without writes', async () => {
+    const db = new MemoryDatabase({ '_system/database': metadata(1), 'users/alice/_journal/control': { state: 'import', operationId: 'restore' } });
+    const registry = { target: 2, migrations: [transitions[0]], validators: new Map([[1, () => {}], [2, () => {}]]) };
+    await expect(deploymentPlan(db, registry, { rulesHash: 'next' })).rejects.toThrow('Active journal imports');
+    expect(db.records.get('_system/database')).toEqual(metadata(1));
+  });
   it("uses adjacent schema steps independent of application versions", () => {
     expect(migrationChain(1, 4, transitions).map((step) => step.id)).toEqual(["1-2", "2-3", "3-4"]);
     expect(migrationChain(3, 4, transitions).map((step) => step.id)).toEqual(["3-4"]);

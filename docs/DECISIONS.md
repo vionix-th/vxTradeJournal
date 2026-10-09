@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-09 — Release portable import and recovery as 0.3.0
+
+Publish portable journal import/recovery, website navigation and project/support UI, and updated skill contracts as `0.3.0`. Persistence impact is compatible user-scoped transfer/recovery additions and changed rules; journal schema and calculation versions remain `1`, with no existing-record conversion. Use complete worker verification and a clean-commit hosted build, then guarded production deployment with enforced maintenance and rule propagation. Publish the website and portable skill from the same commit and immutable annotated `v0.3.0` tag. Installed skills require replacement and locked dependency installation to obtain import/recovery commands.
+
 ## 2026-10-09 — Make verification proportional to risk
 
 Supersede the mandatory stage and delegation rules in [Reduce routine test workload](#2026-10-05--reduce-routine-test-workload). Require the smallest intended failing regression for bug fixes and focused failing coverage before changes to financial calculations, ownership enforcement or migration invariants; syntax, fixture and environment failures do not qualify. Other changes use focused post-implementation checks and add tests only for observable coverage gaps. A passing run covering the final implementation satisfies completion; rerun only checks affected by subsequent edits. Expand coverage for concrete dependencies, failures or identified unknowns, with a stated reason and boundary; retain complete batch-integration and release gates.
@@ -9,6 +13,10 @@ Run focused unit and documentation checks directly; delegate emulator, browser, 
 ## 2026-10-09 — Place Reload records before project information
 
 Refine the compact More menu from the preceding Session merge: order Settings, Reload records, About and Support above session identity/sign-out/download. Move the existing Reload control between the compact action group and its original desktop session position so pointer and keyboard order agree. Preserve reload guards, dismissal and responsive focus restoration; website presentation only.
+
+## 2026-10-08 — Portable import with explicit add and replacement modes
+
+Offer identical website/CLI previews and recovery operations. Add-only skips identical IDs and rejects conflicts; replacement requires explicit confirmation and retains a private recovery snapshot until deletion. Source settings are opt-in and all ownership is rebound to the authenticated destination. Share pure schema validation and adjacent transformations, while keeping Admin deployment persistence separate. Durable source upload precedes user-scoped ownership; fenced checkpoints, target verification and rollback protect interrupted imports without requiring the original file. Apply one journal record per transaction after emulator evidence showed combined record validation exceeded the Firestore expression budget. Persisted schema/calculation remain 1; administrative records and rule changes require guarded publication but no financial conversion.
 
 ## 2026-10-08 — Merge compact Session controls into More
 

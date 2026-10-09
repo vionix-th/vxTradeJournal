@@ -5,6 +5,8 @@ import { firebaseConfiguration } from "./src/config/firebase.js";
 import { profiles } from "./scripts/profiles.js";
 import { fileURLToPath } from "node:url";
 import { skillDistributionPlugin } from "./scripts/skill-distribution.js";
+import { verifyMigrationManifest } from './scripts/migration-manifest.js';
+await verifyMigrationManifest();
 
 function buildMetadata() {
   try {

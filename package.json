@@ -1,12 +1,14 @@
 {
   "name": "vx-trade-journal",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "engines": {
     "node": ">=22.13.0"
   },
   "scripts": {
+    "schema:manifest": "node scripts/migration-manifest.js",
+    "schema:manifest:check": "node scripts/migration-manifest.js --check",
     "dev": "node scripts/dev.js",
     "dev:test": "node scripts/dev.js --profile test",
     "emulators": "node scripts/emulators.js",

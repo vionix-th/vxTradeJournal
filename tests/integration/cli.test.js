@@ -60,6 +60,23 @@ async function prerequisites({ instrument = false } = {}) {
   }
   return repo;
 }
+it('supports import preview, conflict errors, replacement and recovery backup commands', async () => {
+  const repo = await prerequisites();
+  const exported = await cli('export'); expect(exported.code, JSON.stringify(exported.body)).toBe(0);
+  expect(exported.body.data.formatVersion).toBe(1); expect(exported.body.data.checksum).toMatch(/^[a-f0-9]{64}$/);
+  const add = await cli('import preview', exported.body.data, { mode: 'add' }); expect(add.body.data.skipped).toBe(1);
+  await repo.saveEntity('accounts', { ...(await repo.getEntity('accounts', 'a')), name: 'Changed' });
+  const conflict = await cli('import preview', exported.body.data, { mode: 'add' }); expect(conflict.body.data.canApply).toBe(false);
+  const rejected = await cli('import apply', exported.body.data, { mode: 'add', 'accept-preview': conflict.body.data.fingerprint, 'operation-id': 'conflict-import' });
+  expect(rejected.code).toBe(5); expect(rejected.body.error.code).toBe('IMPORT_CONFLICT');
+  const preview = await cli('import preview', exported.body.data, { mode: 'replace' });
+  const applied = await cli('import apply', exported.body.data, { mode: 'replace', yes: true, 'accept-preview': preview.body.data.fingerprint, 'operation-id': 'replace-import' });
+  expect(applied.code, JSON.stringify(applied.body)).toBe(0);
+  expect((await cli('import status', undefined, { 'operation-id': 'replace-import' })).body.data.status).toBe('complete');
+  expect((await cli('backup list')).body.data.map((b) => b.id)).toEqual(['replace-import']);
+  expect((await cli('backup export', undefined, { 'operation-id': 'replace-import' })).body.data.accounts[0].name).toBe('Changed');
+  expect((await cli('backup delete', undefined, { 'operation-id': 'replace-import', yes: true })).code).toBe(0);
+});
 
 it("uses renewable sessions across processes and protects credentials", async () => {
   const status = await cli("auth status");

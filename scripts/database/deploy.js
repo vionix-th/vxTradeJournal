@@ -3,6 +3,15 @@ import { metadata, migrationChain } from "./schema.js";
 import { writeSnapshot, readSnapshot } from "./snapshot.js";
 import { migrate } from "./migrate.js";
 
+export async function activeJournalImports(db) {
+  const active = [];
+  for (const user of await db.collection('users').listDocuments()) {
+    const control = (await db.doc(`${user.path}/_journal/control`).get()).data();
+    if (control?.state === 'import') active.push({ uid: user.path.split('/')[1], operationId: control.operationId });
+  }
+  return active;
+}
+
 export async function deploymentPlan(db, registry, identity, bootstrap) {
   const current = (await db.doc("_system/database").get()).data();
   if (!current && bootstrap !== 1) throw new Error("Missing metadata requires explicit --register-existing-schema 1.");
@@ -12,6 +21,7 @@ export async function deploymentPlan(db, registry, identity, bootstrap) {
   if (!registry.validators.has(from) || !registry.validators.has(registry.target)) throw new Error("Unknown installed or target schema.");
   const applied = (await db.doc("_system/evolution").get()).data()?.applied || [];
   const chain = migrationChain(from, registry.target, registry.migrations, applied);
+  if (from !== registry.target && (await activeJournalImports(db)).length) throw new Error('Active journal imports must be completed or rolled back before a schema transition.');
   const rules = (await db.doc("_system/rules").get()).data();
   const rulesChanged = rules?.status !== "published" || rules?.rulesHash !== identity.rulesHash;
   return { from, target: registry.target, bootstrap: !current, migrations: chain.map((step) => step.id), rulesChanged, maintenance: !current || from !== registry.target || rulesChanged || current?.status === "maintenance" };
@@ -21,6 +31,14 @@ export async function deployDatabase({ db, lease, registry, identity, bootstrap,
   const runRef = db.doc(`_system/runs/history/${lease.runId}`);
   const checkpoint = async (value) => lease.transaction(async (tx) => tx.set(runRef, value, { merge: true }));
   let state = (await runRef.get()).data();
+  if (plan.migrations.length) {
+    await lease.transaction(async (tx) => tx.set(db.doc('_system/database'), { importsBlocked: true }, { merge: true }));
+    if ((await activeJournalImports(db)).length) {
+      await lease.transaction(async (tx) => tx.set(db.doc('_system/database'), { importsBlocked: false }, { merge: true }));
+      await lease.release();
+      throw new Error('A journal import started during preflight; complete or roll it back before deployment. No conversion started.');
+    }
+  }
   if (plan.maintenance) {
     await lease.transaction(async (tx) => {
       tx.set(db.doc("_system/database"), metadata(plan.from, "maintenance"));

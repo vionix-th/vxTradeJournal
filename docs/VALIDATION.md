@@ -147,7 +147,7 @@ Instrument and trade editors now explain all field and checkbox labels through s
 
 Firebase Authentication/Firestore validation uses local demo emulators. Hosted configuration, real email delivery, production service behavior and release tags are outside this prototype phase. Browser automation used Chromium; Firefox and WebKit have not been checked. Vite reports a JavaScript chunk above its 500 kB advisory threshold (about 636 kB uncompressed); build succeeds.
 
-Development data persists only after graceful emulator shutdown. JSON export provides a portable source-record copy; import remains deferred. Architecture and implementation choices appear in [DECISIONS.md](DECISIONS.md); routine commands and synthetic login appear in [README.md](../README.md).
+Development data persists only after graceful emulator shutdown. At the initial prototype checkpoint, JSON export provided a portable source-record copy and import was deferred; the portable import verification below supersedes that limitation. Architecture and implementation choices appear in [DECISIONS.md](DECISIONS.md); routine commands and synthetic login appear in [README.md](../README.md).
 
 ## Production Firebase preparation — 1 October 2026
 
@@ -158,3 +158,13 @@ Authenticated CLI queries confirm `vionixtradejournal` / project number `3890589
 Lint, local build and production build pass. Bundle inspection confirms `vionixtradejournal` with emulators disabled in `dist-prod/`, and `demo-vxjournal-dev` with emulators enabled in `dist/`. An explicit local-profile override of a hosted build fails with “Hosted builds require the prod profile.” Firebase Hosting configuration parses successfully. Builds retain Vite's >500 kB chunk advisory.
 
 No Hosting release or Firestore rules deployment was performed. Real email delivery, production Authentication domain configuration and hosted persistence have not yet been exercised. Preparation does not establish release readiness or create a release tag.
+
+## Portable import and user recovery — 8 October 2026
+
+`worker-m` executed the completed `npm run check`: 226 unit tests in 30 files, 52 emulator integration tests in five files and 92 Chromium browser tests passed, with browser retries disabled. Lint, generated skill documentation, local build and packaged-skill acceptance also passed. The packaged CLI exercises the same authenticated import and backup contracts outside the repository. Separate hosted build, migration-manifest verification, whitespace checks and local documentation reference checks passed. The existing Vite bundle-size advisory remains. Source/configuration/test/skill checksums were unchanged across the final gate.
+
+Failing regressions exposed altered restoration checkpoints being accepted and rollback intent being lost during interrupted restoration staging. Separate restoration hashes and durable rollback preparation now reject corruption and resume the selected recovery action. Rejected import retries retain their original error code. Integration coverage also verifies complete source staging before journal changes, stale previews, expired ownership, stale fences, operation receipts, backup retention/download/deletion and owner rebinding. Independently derived historical results are 4.02 USD and 3.675 USD, including archived catalogue/strategy snapshots, foreign fees and signed adjustments.
+
+Full browser runs exposed intermittent rule-expression-limit failures during ordinary instrument creation. Ordinary and import authorization now share one instrument validation body, and browser concurrency is bounded to four workers for the shared emulator. The completed gate passed all 92 cases. Import preview/recovery screenshots were reviewed at 375, 800 and 1280 pixels; keyboard preview/apply/resume, replacement deletion and recovery downloads passed.
+
+Schema and calculation versions remain 1; application package version remains 0.2.0 pending release preparation. User recovery covers the managed journal graph and receipts; unknown administrator-created descendants remain the privileged database snapshot scope. No production bootstrap, deployment, destructive restore or release tag was performed.

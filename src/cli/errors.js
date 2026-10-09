@@ -8,6 +8,10 @@ export class CliError extends Error {
 }
 export function publicError(error) {
   if (error instanceof CliError) return error;
+  if (error.name === 'ImportError') {
+    const exitCode = ({ IMPORT_CONFLICT: 5, IMPORT_PREVIEW_CHANGED: 5, IMPORT_BUSY: 5, IMPORT_NOT_FOUND: 4, IMPORT_RECOVERY_REQUIRED: 6, EMAIL_UNVERIFIED: 3 })[error.code] || 2;
+    return new CliError(error.code, error.message, exitCode, error.details);
+  }
   if (error.name === "DatabaseError") return new CliError(error.code, error.message, 6, error.details);
   if (error.name === "ConflictError") return new CliError("CONFLICT", error.message, 5, { recovery: "Read current records and reconcile before submitting a new operation." });
   const code = String(error.code || "");

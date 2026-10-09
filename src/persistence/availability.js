@@ -28,3 +28,10 @@ export async function assertDatabaseReady(db) {
   const snapshot = await getDocFromServer(doc(db, "_system", "database"));
   return checkDatabase(snapshot.exists() ? snapshot.data() : null);
 }
+export async function assertJournalReady(db, uid, writing = false) {
+  await assertDatabaseReady(db);
+  const snapshot = await getDocFromServer(doc(db, 'users', uid, '_journal', 'control'));
+  const control = snapshot.data();
+  if (control?.state === 'import') throw new DatabaseError('JOURNAL_IMPORT_IN_PROGRESS', 'Journal import is incomplete. Open import recovery to resume or roll back.', { operationId: control.operationId });
+  if (writing && control?.state === 'snapshot' && control.expiresAt?.toMillis() > Date.now()) throw new DatabaseError('JOURNAL_SNAPSHOT_IN_PROGRESS', 'Journal export is capturing a consistent snapshot. Retry saving shortly.');
+}

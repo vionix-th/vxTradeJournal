@@ -14,24 +14,26 @@ import { handlers } from "./commands.js";
 import { UserSession } from "./auth.js";
 import { assertDatabaseReady, databaseStatus } from "../persistence/availability.js";
 import { connectJournal } from "./firebase.js";
+import { IMPORT_MAX_BYTES } from '../application/portable.js';
+import { JournalTransfer } from '../persistence/transfer.js';
 import { CliError, publicError } from "./errors.js";
 
 const version = typeof __CLI_VERSION__ === "undefined" ? pkg.version : __CLI_VERSION__;
 const commit = typeof __CLI_COMMIT__ === "undefined" ? "development" : __CLI_COMMIT__;
 const credentialsCommands = new Set(["auth login", "auth register"]);
-async function inputJson(path) {
+async function inputJson(path, limit = 1024 * 1024) {
   let text;
   if (path === "-") {
     const chunks = [];
     let size = 0;
     for await (const chunk of process.stdin) {
       size += Buffer.byteLength(chunk);
-      if (size > 1024 * 1024) throw new CliError("INVALID_INPUT", "JSON input exceeds 1 MiB.");
+      if (size > limit) throw new CliError("INVALID_INPUT", `JSON input exceeds ${limit / 1024 / 1024} MiB.`);
       chunks.push(chunk);
     }
     text = Buffer.concat(chunks.map((chunk) => Buffer.from(chunk))).toString("utf8");
   } else {
-    if ((await lstat(path)).size > 1024 * 1024) throw new CliError("INVALID_INPUT", "JSON input exceeds 1 MiB.");
+    if ((await lstat(path)).size > limit) throw new CliError("INVALID_INPUT", `JSON input exceeds ${limit / 1024 / 1024} MiB.`);
     text = await readFile(path, "utf8");
   }
   try { return JSON.parse(text); } catch { throw new CliError("INVALID_INPUT", "Invalid JSON input."); }
@@ -92,12 +94,12 @@ export async function run(args = process.argv.slice(2)) {
   let parsed, config, connection;
   const context = {};
   const emit = (body) => process.stdout.write(`${JSON.stringify({ cliContractVersion: 1, ...context, ...body })}\n`);
-  const timeout = setTimeout(() => {
+  const timeout = ['import', 'backup', 'export'].includes(args[0]) ? null : setTimeout(() => {
     if (process.stdin.isTTY && process.stdin.isRaw) process.stdin.setRawMode(false);
     emit({ ok: false, error: { code: "TIMEOUT", message: "Command timed out. A write may have committed; check its record or receipt before retrying." } });
     process.exit(7);
   }, 60000);
-  timeout.unref();
+  timeout?.unref();
   try {
     parsed = parseArguments(args);
     const { command, spec, options } = parsed;
@@ -105,7 +107,7 @@ export async function run(args = process.argv.slice(2)) {
     if (major < 22 || major === 22 && minor < 13) throw new CliError("UNSUPPORTED_RUNTIME", "Node.js 22.13 or newer is required.");
     if (credentialsCommands.has(command) && options.input && options.input !== "-")
       throw new CliError("INVALID_INPUT", "Credentials require stdin (--input -) or a hidden terminal prompt.");
-    let input = options.input ? validateInput(command, await inputJson(options.input)) : {};
+    let input = options.input ? validateInput(command, await inputJson(options.input, spec.handler === 'import' ? IMPORT_MAX_BYTES : 1024 * 1024)) : {};
     let data;
     if (spec.offline) {
       if (command === "version") data = { version, commit, cliContractVersion: 1, schemaVersion: SCHEMA_VERSION, calculationVersion: CALCULATION_VERSION };
@@ -135,15 +137,15 @@ export async function run(args = process.argv.slice(2)) {
         const user = saved ? await session.token() : null;
         let database = { compatible: null, status: "unchecked" };
         if (user) { connection = await connectJournal(config, user); database = await databaseStatus(connection.repo.db); }
-        data = { database, node: process.versions.node, version, commit, useEmulators: config.useEmulators, sessionDirectory: session.store.root, session: user ? { uid: user.uid, email: user.email, emailVerified: user.emailVerified } : null };
+        data = { database, journal: connection ? await new JournalTransfer(connection.repo).status() : { state: 'unchecked' }, node: process.versions.node, version, commit, useEmulators: config.useEmulators, sessionDirectory: session.store.root, session: user ? { uid: user.uid, email: user.email, emailVerified: user.emailVerified } : null };
       } else {
         const user = await session.token();
-        const writing = ["tradeWrite", "tradeDelete"].includes(spec.handler) || spec.handler === "entity" && !["list", "get"].includes(spec.action) || spec.handler === "settings" && spec.action === "update";
+        const writing = ["tradeWrite", "tradeDelete"].includes(spec.handler) || spec.handler === "entity" && !["list", "get"].includes(spec.action) || spec.handler === "settings" && spec.action === "update" || spec.handler === 'import' && ['apply', 'resume', 'rollback'].includes(spec.action) || spec.handler === 'backup' && spec.action === 'delete';
         if (writing && !user.emailVerified) throw new CliError("EMAIL_UNVERIFIED", "Verify email before saving journal records. Open the verification email and run auth status.", 3);
         connection = await connectJournal(config, user);
         await assertDatabaseReady(connection.repo.db);
         data = await handlers[spec.handler]({ command, spec, options, input, repo: connection.repo });
-        if (spec.handler === "export" && options.output) data = await exportFile(options.output, data, options.overwrite);
+        if ((spec.handler === "export" || spec.handler === 'backup' && spec.action === 'export') && options.output) data = await exportFile(options.output, data, options.overwrite);
       }
     }
     if (connection) { await connection.close(); connection = null; }
@@ -152,7 +154,7 @@ export async function run(args = process.argv.slice(2)) {
   } catch (error) {
     const safe = publicError(error);
     const options = parsed?.options;
-    emit({ ok: false, error: { code: safe.code, message: safe.message, ...safe.details, ...(options?.["operation-id"] ? { operationId: options["operation-id"], recovery: "Read the operation receipt and current trade before retrying or reconciling." } : {}) } });
+    emit({ ok: false, error: { code: safe.code, message: safe.message, ...safe.details, ...(options?.["operation-id"] ? { operationId: options["operation-id"], recovery: parsed?.spec.handler === 'import' ? 'Inspect import status, then explicitly resume or roll back the recorded operation.' : 'Read the operation receipt and current trade before retrying or reconciling.' } : {}) } });
     return safe.exitCode;
   } finally {
     clearTimeout(timeout);

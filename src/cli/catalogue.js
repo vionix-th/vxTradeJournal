@@ -78,8 +78,17 @@ add("calculate size", "size", "Compute single-leg linear sizing with decimal ari
 add("settings get", "settings", "Read display preferences", { action: "get" });
 add("settings update", "settings", "Update preferences and owned default account", { action: "update", options: ["revision", ...mutationOptions], requiredOptions: ["revision"], input: object({ theme: string({ enum: ["system", "light", "dark"] }), timezone: string(), defaultAccount: nullable(identifier) }), requiresInput: true });
 add("export", "export", "Export complete versioned journal source data", { options: ["output", "overwrite"] });
+const portableInput = { type: 'object', additionalProperties: true, properties: {} };
+for (const action of ['preview', 'apply']) add(`import ${action}`, 'import', `${action} portable journal JSON with add-only or replacement mode`, {
+  action, options: ['input', 'mode', 'include-settings', ...(action === 'apply' ? ['accept-preview', 'operation-id', 'yes'] : [])],
+  requiredOptions: ['mode', ...(action === 'apply' ? ['accept-preview', 'operation-id'] : [])], requiresInput: true, input: portableInput,
+});
+for (const action of ['status', 'resume', 'rollback']) add(`import ${action}`, 'import', `${action} a durable journal import`, { action, options: ['operation-id', ...(action === 'rollback' ? ['yes'] : [])], requiredOptions: action === 'status' ? [] : ['operation-id', ...(action === 'rollback' ? ['yes'] : [])] });
+add('backup list', 'backup', 'List private retained journal recovery backups', { action: 'list' });
+add('backup export', 'backup', 'Download recovery backup as portable journal JSON', { action: 'export', options: ['operation-id', 'output', 'overwrite'], requiredOptions: ['operation-id'] });
+add('backup delete', 'backup', 'Permanently delete a completed recovery backup', { action: 'delete', options: ['operation-id', 'yes'], requiredOptions: ['operation-id', 'yes'] });
 
-const flags = new Set(["dry-run", "yes", "preview", "overwrite"]);
+const flags = new Set(["dry-run", "yes", "preview", "overwrite", 'include-settings']);
 const numbers = new Set(["revision", "page", "page-size", "count"]);
 export function parseArguments(args) {
   const words = [], options = {};
@@ -111,6 +120,8 @@ export function parseArguments(args) {
   if (command === "legs correct-snapshot" && !options.preview && !options["dry-run"] && (!options["accept-preview"] || !options["operation-id"])) throw new Error("Snapshot correction requires --preview or --accept-preview and --operation-id");
   if (spec.requiresInput && !options.input) throw new Error("Required option --input");
   if (options["accept-preview"] && !/^[a-f0-9]{64}$/.test(options["accept-preview"])) throw new Error("Invalid preview fingerprint");
+  if (spec.handler === 'import' && ['preview', 'apply'].includes(spec.action) && !['add', 'replace'].includes(options.mode)) throw new Error('--mode must be add or replace');
+  if (command === 'import apply' && options.mode === 'replace' && !options.yes) throw new Error('Replacement requires --yes after reviewing the accepted preview');
   return { command, spec, options };
 }
 
@@ -127,7 +138,7 @@ function validate(value, schema, path) {
   if (schema.minimum !== undefined && value < schema.minimum) throw new Error(`${path} is below minimum`);
   if (type === "object") {
     for (const key of Object.keys(value)) {
-      if (!Object.hasOwn(schema.properties, key)) throw new Error(`Unknown input field ${path}.${key}`);
+      if (!Object.hasOwn(schema.properties, key)) { if (schema.additionalProperties === true) continue; throw new Error(`Unknown input field ${path}.${key}`); }
       validate(value[key], schema.properties[key], `${path}.${key}`);
     }
     for (const key of schema.required || []) if (!Object.hasOwn(value, key)) throw new Error(`${path}.${key} is required`);

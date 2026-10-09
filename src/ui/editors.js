@@ -11,7 +11,8 @@ import {
   decimal,
   money,
 } from "../domain/journal.js";
-import { exportJournal } from "../application/journal.js";
+import { JournalTransfer } from '../persistence/transfer.js';
+import { downloadJournal } from './import-editor.js';
 import { newTrade, editTrade, replaceLegs, putExecution, putAdjustment, correctSnapshot } from "../application/operations.js";
 import {
   el,
@@ -63,6 +64,7 @@ export function accountEditor(ui, account = null, first = false) {
     }),
     checkbox("Archived", "archived", account?.archived),
   );
+  if (first) form.node.append(section('Existing journal', el('p', {}, 'Restore a portable journal export instead of creating the first account.'), button('Import journal', () => ui.go('importEditor'), 'button secondary')));
   ui.show(form.node);
 }
 export function strategyEditor(ui, strategy = null) {
@@ -648,17 +650,7 @@ export function settingsEditor(ui) {
   );
   const exportButton = button("Export JSON", async () => {
     try {
-      const fresh = await ui.repo.load();
-      const blob = new Blob([JSON.stringify(exportJournal(fresh), null, 2)], {
-        type: "application/json",
-      });
-      const url = URL.createObjectURL(blob);
-      const a = el("a", {
-        href: url,
-        download: `vxTradeJournal-${new Date().toISOString().slice(0, 10)}.json`,
-      });
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      downloadJournal(await new JournalTransfer(ui.repo).export());
     } catch (e) {
       form.errors.replaceChildren(notice(e.message, "error"));
     }
@@ -672,6 +664,7 @@ export function settingsEditor(ui) {
         "Versioned JSON includes all accounts, instruments, strategies, snapshots, executions, cash adjustments and settings. Authentication secrets excluded.",
       ),
       exportButton,
+      button('Import journal and recovery', () => ui.go('importEditor'), 'button secondary'),
     ),
   );
   ui.show(form.node);

@@ -1,5 +1,6 @@
 import { PRESETS, normalizeAccount, normalizeInstrument, normalizeStrategy, validateSettings, calculateTrade, sizePosition, isCalendarDate } from "../domain/journal.js";
-import { prepareTradeResult, filterJournal, journalOverview, exportJournal } from "../application/journal.js";
+import { prepareTradeResult, filterJournal, journalOverview } from "../application/journal.js";
+import { JournalTransfer } from '../persistence/transfer.js';
 import { newTrade, editTrade, replaceLegs, editLeg, putExecution, putAdjustment, removeChild, correctSnapshot } from "../application/operations.js";
 import { fingerprint } from "../application/fingerprint.js";
 import { CliError } from "./errors.js";
@@ -162,5 +163,20 @@ export const handlers = {
     if (value.defaultAccount) required(await repo.getEntity("accounts", value.defaultAccount), "Default account");
     return options["dry-run"] ? { dryRun: true, record: value } : repo.saveEntity("settings", value);
   },
-  export: async ({ repo }) => exportJournal(await repo.load()),
+  export: async ({ repo }) => new JournalTransfer(repo).export(),
+  import: async ({ repo, spec, options, input }) => {
+    const transfer = new JournalTransfer(repo);
+    const choice = { mode: options.mode, includeSettings: !!options['include-settings'], acceptPreview: options['accept-preview'], operationId: options['operation-id'], yes: !!options.yes };
+    if (spec.action === 'preview') return transfer.preview(input, choice);
+    if (spec.action === 'apply') return transfer.apply(input, choice);
+    if (spec.action === 'status') return transfer.status(options['operation-id']);
+    if (spec.action === 'resume') return transfer.resume(options['operation-id']);
+    return transfer.rollback(options['operation-id'], options.yes);
+  },
+  backup: async ({ repo, spec, options }) => {
+    const transfer = new JournalTransfer(repo);
+    if (spec.action === 'list') return transfer.backups();
+    if (spec.action === 'export') return transfer.backupExport(options['operation-id']);
+    return transfer.deleteBackup(options['operation-id'], options.yes);
+  },
 };

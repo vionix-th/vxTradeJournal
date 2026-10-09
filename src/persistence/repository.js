@@ -1,4 +1,4 @@
-import { assertDatabaseReady } from "./availability.js";
+import { assertJournalReady } from "./availability.js";
 import {
   collection,
   doc,
@@ -37,11 +37,11 @@ export class Repository {
     this.uid = uid;
     this.verified = verified;
   }
-  async guard(operation) {
-    await assertDatabaseReady(this.db);
+  async guard(operation, writing = false) {
+    await assertJournalReady(this.db, this.uid, writing);
     try { return await operation(); }
     catch (error) {
-      if (String(error.code).includes("permission-denied")) await assertDatabaseReady(this.db);
+      if (String(error.code).includes("permission-denied")) await assertJournalReady(this.db, this.uid, writing);
       throw error;
     }
   }
@@ -52,9 +52,9 @@ export class Repository {
   async getSettings(...args) { return this.guard(() => this._getSettings(...args)); }
   async getTrade(...args) { return this.guard(() => this._getTrade(...args)); }
   async load(...args) { return this.guard(() => this._load(...args)); }
-  async saveEntity(...args) { return this.guard(() => this._saveEntity(...args)); }
-  async saveTrade(...args) { return this.guard(() => this._saveTrade(...args)); }
-  async deleteTrade(...args) { return this.guard(() => this._deleteTrade(...args)); }
+  async saveEntity(...args) { return this.guard(() => this._saveEntity(...args), true); }
+  async saveTrade(...args) { return this.guard(() => this._saveTrade(...args), true); }
+  async deleteTrade(...args) { return this.guard(() => this._deleteTrade(...args), true); }
   ref(type, id) {
     return doc(this.db, "users", this.uid, type, id);
   }

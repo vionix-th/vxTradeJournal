@@ -69,6 +69,14 @@ This inventory is generated from the executable catalogue. Required options are 
 | `settings get` | Read display preferences | `--profile` |
 | `settings update` | Update preferences and owned default account | `--profile`, `--revision`, `--input` |
 | `export` | Export complete versioned journal source data | `--profile` |
+| `import preview` | preview portable journal JSON with add-only or replacement mode | `--profile`, `--mode`, `--input` |
+| `import apply` | apply portable journal JSON with add-only or replacement mode | `--profile`, `--mode`, `--accept-preview`, `--operation-id`, `--input` |
+| `import status` | status a durable journal import | `--profile` |
+| `import resume` | resume a durable journal import | `--profile`, `--operation-id` |
+| `import rollback` | rollback a durable journal import | `--profile`, `--operation-id`, `--yes` |
+| `backup list` | List private retained journal recovery backups | `--profile` |
+| `backup export` | Download recovery backup as portable journal JSON | `--profile`, `--operation-id` |
+| `backup delete` | Permanently delete a completed recovery backup | `--profile`, `--operation-id`, `--yes` |
 <!-- command-inventory:end -->
 
 ## Input and safeguards

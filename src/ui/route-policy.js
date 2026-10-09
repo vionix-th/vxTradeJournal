@@ -4,6 +4,7 @@ import {
 } from "./editors.js";
 import { journalView, accountsView, instrumentsView, strategiesView, tradeView } from "./views.js";
 import { TradeEditorSession } from "./trade-editor-session.js";
+import { importEditor } from './import-editor.js';
 
 const destination = (route, arg = null) => ({ route, arg });
 const identity = (arg) => arg?.id || null;
@@ -24,6 +25,7 @@ const view = (navigationSection, route, render) => ({
 });
 
 export const routePolicies = {
+  importEditor: view('settings', 'importEditor', importEditor),
   journal: view("journal", "journal", journalView),
   accounts: view("accounts", "accounts", accountsView),
   instruments: view("instruments", "instruments", instrumentsView),

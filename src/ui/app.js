@@ -26,6 +26,8 @@ import {
 } from "firebase/auth";
 import { auth, db, useEmulators } from "../persistence/firebase.js";
 import { Repository } from "../persistence/repository.js";
+import { JournalTransfer } from '../persistence/transfer.js';
+import { recoveryPanel } from './import-editor.js';
 import { el, button, field, values, header, notice } from "./components.js";
 const root = document.getElementById("app");
 class JournalUI {
@@ -107,6 +109,13 @@ class JournalUI {
       else this.go("journal", null, true, { replace: true });
     } catch (e) {
       if (generation !== this.loadGeneration) return;
+      if (e.code === 'JOURNAL_IMPORT_IN_PROGRESS') {
+        root.replaceChildren(el('div', { class: 'auth-shell' }, el('div', { class: 'auth-card' },
+          el('h1', {}, 'Journal import incomplete'),
+          recoveryPanel({ transfer: new JournalTransfer(this.repo), operationId: e.details.operationId, complete: () => this.loadUser(auth.currentUser) }),
+          button('Sign out', () => signOut(auth), 'button secondary'))));
+        return;
+      }
       root.replaceChildren(
         el(
           "div",

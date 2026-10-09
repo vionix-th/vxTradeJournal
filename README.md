@@ -28,6 +28,8 @@ Sign in with the synthetic login above, or register and verify a new user using 
 
 Settings control display timezone/theme and export all owned journal source data as versioned JSON. Rates always mean reporting-currency units per one source-currency unit. Sizing excludes fees and slippage; multi-leg risk is entered manually.
 
+Settings and first-account onboarding also offer portable JSON import: add-only rejects conflicting IDs, while confirmed replacement captures a private retained recovery backup. Preview shows effects before applying; interrupted imports expose resume/rollback controls without requiring the uploaded file again. Website and CLI support equivalent modes, optional settings and backup downloads/deletion. See [import and recovery](docs/IMPORT.md).
+
 Implementation decisions: [docs/DECISIONS.md](docs/DECISIONS.md). Executed checks and acceptance coverage: [docs/VALIDATION.md](docs/VALIDATION.md). Initial delivery is a local prototype; hosting and release publication follow prototype review.
 
 ## Agent CLI and skill

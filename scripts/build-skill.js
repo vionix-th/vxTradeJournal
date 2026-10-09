@@ -7,9 +7,11 @@ import { build } from "esbuild";
 import { checkSkillDocumentation } from "./skill-docs.js";
 import { createSkillArchive } from "./skill-archive.js";
 import { skillDownload } from "../src/config/skill.js";
+import { verifyMigrationManifest } from './migration-manifest.js';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 await checkSkillDocumentation(root);
+await verifyMigrationManifest();
 const packageJson = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
 const packageLock = JSON.parse(await readFile(join(root, "package-lock.json"), "utf8"));
 const authoredSkill = join(root, "skills", "vx-trade-journal");
