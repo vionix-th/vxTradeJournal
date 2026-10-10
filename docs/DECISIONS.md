@@ -338,3 +338,7 @@ Label the provider-backed method Cash and retain Crypto as the second method. Gi
 ## 2026-10-10 — Native wallet address links
 
 Make the displayed receiving address a native Bitcoin, ERC-681 or Solana Pay link, retaining raw address text, clipboard contents and address-only QR payloads. Include the selected EVM chain ID to avoid inheriting the wallet's active network; omit amounts and token contracts. Link activation delegates native-asset payment entry to a compatible installed wallet without adding a wallet SDK or new dialog controls. Generic token donations retain the copy flow. Browser and wallet support determines whether the URI opens a payment screen.
+
+## 2026-10-10 — Zcash and Monero donations
+
+Append Zcash and Monero to the existing selector, with ZEC/XMR hints and the wallet owner's supplied addresses. Reuse the native URI helper for `zcash:` and `monero:` without amounts or payment IDs; keep clipboard and QR payloads address-only. Extend the themed outline icon set rather than adding assets or dependencies. Reserve enough wrapping lines for the 95-character Monero address at desktop and compact widths to preserve stable network switching.
