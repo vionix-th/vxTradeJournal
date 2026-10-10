@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-10 — Release crypto support as 0.5.0
+
+Publish the approved crypto donation selector, address QR and clipboard interaction as `0.5.0`. This is website-only support presentation; journal schema `2`, calculation version `1`, user records and persistence rules remain unchanged, with no conversion required. Verify the complete release and portable skill, then use guarded deployment with unchanged rules/schema. Publish website and skill from the same tested clean commit and annotated `v0.5.0` tag.
+
 ## 2026-10-10 — Release correction history and schema 2 as 0.4.0
 
 Publish proportional correction history, structured validation/write outcomes and portable verification as `0.4.0`. Persistence impact is the registered schema-1-to-2 transition and matching rules; calculation version remains `1`. The immutable transition updates managed record and embedded snapshot schema markers while preserving source values, identities, historical timestamps and receipts. Guard production conversion with exclusive maintenance, the rules propagation barrier, a verified private source snapshot and complete target validation. Publish website and skill from the same tested clean commit with annotated `v0.4.0`; replace installed skills and reinstall their locked dependencies before schema-2 workflows. A schema-1 application-only rollback is incompatible after conversion; recovery uses the retained source snapshot and guarded procedure.
