@@ -1,6 +1,7 @@
 import { supportReminders } from './support-reminder-policy.js';
 import { el, button } from './components.js';
 import { icon } from './icons.js';
+import { cryptoSupport } from './crypto-support.js';
 
 export const SUPPORT_URL = 'https://ko-fi.com/vionixconsulting';
 export const SUPPORT_EMBED_URL = `${SUPPORT_URL}/?hidefeed=true&widget=true&embed=true&preview=true`;
@@ -21,9 +22,39 @@ export function openSupportDialog(opener) {
     referrerpolicy: 'no-referrer',
   });
   const close = button(el('span', { 'aria-hidden': 'true' }, '×'), () => dialog.close(), 'modal-close', { autofocus: true, 'aria-label': 'Close' });
+  const kofiPanel = el('div', { id: `${titleId}-kofi-panel`, role: 'tabpanel', 'aria-labelledby': `${titleId}-kofi-tab`, class: 'support-kofi' },
+    feedback, el('div', { class: 'support-panel' }, frame));
+  const cryptoPanel = el('div', { id: `${titleId}-crypto-panel`, role: 'tabpanel', 'aria-labelledby': `${titleId}-crypto-tab`, hidden: true });
+  let crypto;
+  const tabs = ['Ko-fi', 'Crypto'].map((name, index) => button(name, () => selectMethod(index), 'support-method', {
+    id: `${titleId}-${index ? 'crypto' : 'kofi'}-tab`, role: 'tab',
+    'aria-controls': index ? cryptoPanel.id : kofiPanel.id,
+    'aria-selected': index === 0, tabindex: index === 0 ? '0' : '-1',
+  }));
+  function selectMethod(index) {
+    if (index === 1 && !crypto) {
+      crypto = cryptoSupport(titleId);
+      cryptoPanel.append(crypto.node);
+    }
+    tabs.forEach((tab, position) => {
+      tab.setAttribute('aria-selected', position === index);
+      tab.tabIndex = position === index ? 0 : -1;
+    });
+    kofiPanel.hidden = index !== 0;
+    cryptoPanel.hidden = index !== 1;
+  }
+  const methods = el('div', { class: 'support-methods', role: 'tablist', 'aria-label': 'Donation method' }, tabs);
+  methods.addEventListener('keydown', (event) => {
+    const current = tabs.indexOf(document.activeElement);
+    if (current < 0 || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? 1 : 1 - current;
+    selectMethod(next);
+    tabs[next].focus();
+  });
   const dialog = el('dialog', { class: 'support-dialog', 'aria-labelledby': titleId },
     el('header', { class: 'support-header' }, el('h2', { id: titleId }, 'Support vxTradeJournal'), close),
-    el('div', { class: 'support-body' }, feedback, el('div', { class: 'support-panel' }, frame)));
+    methods, el('div', { class: 'support-body' }, kofiPanel, cryptoPanel));
   const timer = setTimeout(() => {
     status.textContent = 'Taking longer than expected.';
     fallback.hidden = false;
@@ -34,6 +65,7 @@ export function openSupportDialog(opener) {
   });
   dialog.addEventListener('close', () => {
     clearTimeout(timer);
+    crypto?.dispose();
     dialog.remove();
     const control = typeof opener === 'function' ? opener() : opener;
     if (control instanceof HTMLElement && control.isConnected) control.focus();

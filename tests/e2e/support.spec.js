@@ -1,5 +1,45 @@
 import { test, expect } from '@playwright/test';
 import { setup } from './fixtures.js';
+import jsQR from 'jsqr';
+
+const addresses = {
+  Bitcoin: 'bc1qesd92qv7h3mlh4qqs4grz3e32phvxj6spwkcyz',
+  Ethereum: '0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2',
+  Solana: '7oLWWpSrEG6aDKVZDAyuAjF3kDKEgAmnG3Q7JAb9uUXy',
+};
+
+async function openCrypto(page) {
+  await page.getByRole('button', { name: 'Support this project', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Support vxTradeJournal' });
+  await dialog.getByRole('tab', { name: 'Crypto', exact: true }).click();
+  return dialog;
+}
+
+async function selectNetwork(dialog, name) {
+  await dialog.getByRole('combobox').click();
+  await dialog.getByRole('option', { name, exact: true }).click();
+  await expect(dialog.getByRole('combobox')).toHaveAttribute('aria-expanded', 'false');
+}
+
+async function decodeQR(qr) {
+  const screenshot = await qr.screenshot();
+  const { pixels, size } = await qr.evaluate(async (_svg, png) => {
+    const image = new Image();
+    const loaded = new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = reject;
+    });
+    image.src = `data:image/png;base64,${png}`;
+    await loaded;
+    const size = image.width;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size;
+    const context = canvas.getContext('2d');
+    context.drawImage(image, 0, 0, size, size);
+    return { pixels: Array.from(context.getImageData(0, 0, size, size).data), size };
+  }, screenshot.toString('base64'));
+  return jsQR(new Uint8ClampedArray(pixels), size, size)?.data;
+}
 
 async function mockPanel(page) {
   const calls = [];
@@ -67,6 +107,241 @@ test('support preserves sign-in input', async ({ page }) => {
     await expect(page.getByLabel('Email', { exact: true })).toHaveValue('support-smoke@example.test');
   }
 });
+
+test('icon selector lists all networks and QR codes decode to supplied addresses', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const calls = await mockPanel(page);
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  await page.goto('/');
+  const dialog = await openCrypto(page);
+  await expect(dialog.getByRole('tabpanel', { name: 'Ko-fi', exact: true })).toBeHidden();
+  const network = dialog.getByRole('combobox');
+  const networks = [
+    ['Bitcoin', 'BTC', addresses.Bitcoin],
+    ['Ethereum Mainnet', 'ETH, USDC, USDT and other tokens', addresses.Ethereum],
+    ['Solana', 'SOL, USDC, USDT and other tokens', addresses.Solana],
+    ['Base', 'ETH, USDC, USDT and other tokens', addresses.Ethereum],
+    ['Arbitrum One', 'ETH, USDC, USDT and other tokens', addresses.Ethereum],
+    ['Optimism', 'ETH, USDC, USDT and other tokens', addresses.Ethereum],
+    ['Polygon PoS', 'POL, USDC, USDT and other tokens', addresses.Ethereum],
+    ['BNB Smart Chain', 'BNB, USDC, USDT and other tokens', addresses.Ethereum],
+  ];
+  await network.click();
+  const options = dialog.getByRole('option');
+  await expect(options).toHaveText(networks.map(([name]) => name));
+  expect(await options.evaluateAll((rows) => rows.every((row) => row.querySelector('svg')?.getAttribute('aria-hidden') === 'true'))).toBe(true);
+  expect(await options.evaluateAll((rows) => rows.every((row) => getComputedStyle(row).borderTopWidth === '0px'))).toBe(true);
+  await dialog.getByRole('heading').click();
+  await expect(network).toHaveAttribute('aria-expanded', 'false');
+  await expect(network).toContainText('Bitcoin');
+  const initial = await dialog.boundingBox();
+  for (const [name, assets, address] of networks) {
+    await selectNetwork(dialog, name);
+    await expect(network).toContainText(name);
+    await expect(dialog.locator('.donation-network-icon svg')).toHaveCount(1);
+    await expect(dialog.getByRole('option', { name, exact: true, includeHidden: true })).toHaveAttribute('aria-selected', 'true');
+    await expect(dialog.locator('.donation-assets')).toHaveText(assets);
+    await expect(dialog.locator('.donation-address')).toHaveText(address);
+    expect(await decodeQR(dialog.getByRole('img', { name: `${name} receiving address QR code` }))).toBe(address);
+    expect(await dialog.boundingBox()).toEqual(initial);
+  }
+  await expect(dialog.locator('.donation-instruction')).toHaveCount(0);
+  await dialog.getByRole('tab', { name: 'Ko-fi', exact: true }).click();
+  await expect(dialog.locator('iframe')).toBeVisible();
+  await dialog.getByRole('tab', { name: 'Crypto', exact: true }).click();
+  await expect(network).toContainText('BNB Smart Chain');
+  expect(calls).toHaveLength(1);
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await page.getByRole('button', { name: 'Support this project', exact: true }).click();
+  await expect(dialog.getByRole('tab', { name: 'Ko-fi', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await dialog.getByRole('tab', { name: 'Crypto', exact: true }).click();
+  await expect(dialog.getByRole('combobox')).toContainText('Bitcoin');
+  expect(pageErrors).toEqual([]);
+});
+
+test('copy confirms clipboard success for two seconds without resizing and offers manual recovery', async ({ page, context }) => {
+  await mockPanel(page);
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/');
+  await page.clock.install();
+  const dialog = await openCrypto(page);
+  const initial = await dialog.boundingBox();
+  await dialog.getByRole('button', { name: 'Copy address', exact: true }).click();
+  await expect(dialog.getByRole('status')).toHaveText('Address copied.');
+  await expect(dialog.getByRole('button', { name: 'Copied', exact: true })).toBeEnabled();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(addresses.Bitcoin);
+  expect(await dialog.boundingBox()).toEqual(initial);
+  await page.clock.fastForward(2100);
+  await expect(dialog.getByRole('button', { name: 'Copy address', exact: true })).toBeVisible();
+  await expect(dialog.getByRole('status')).toBeEmpty();
+  expect(await dialog.boundingBox()).toEqual(initial);
+
+  await dialog.getByRole('button', { name: 'Copy address', exact: true }).click();
+  await page.clock.fastForward(1000);
+  await selectNetwork(dialog, 'Ethereum Mainnet');
+  await expect(dialog.getByRole('status')).toBeEmpty();
+  await dialog.getByRole('button', { name: 'Copy address', exact: true }).click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(addresses.Ethereum);
+  await page.clock.fastForward(1100);
+  await expect(dialog.getByRole('button', { name: 'Copied', exact: true })).toBeVisible();
+  await page.clock.fastForward(1100);
+  await expect(dialog.getByRole('button', { name: 'Copy address', exact: true })).toBeVisible();
+
+  await selectNetwork(dialog, 'Base');
+  await page.evaluate(() => {
+    Object.defineProperty(navigator.clipboard, 'writeText', { configurable: true, value: async () => { throw new DOMException('Clipboard denied', 'NotAllowedError'); } });
+  });
+  await dialog.getByRole('button', { name: 'Copy address', exact: true }).click();
+  await expect(dialog.getByRole('status')).toHaveText('Could not copy. Select the address and copy it manually.');
+  await expect(dialog.locator('.donation-address')).toBeFocused();
+  expect(await page.evaluate(() => window.getSelection().toString())).toBe(addresses.Ethereum);
+  await expect(dialog.getByRole('button', { name: 'Copy manually', exact: true })).toBeEnabled();
+  expect(await dialog.boundingBox()).toEqual(initial);
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await page.clock.fastForward(3000);
+  await expect(dialog).toHaveCount(0);
+});
+
+test('pending clipboard completion cannot report success for a different destination', async ({ page }) => {
+  await mockPanel(page);
+  await page.goto('/');
+  const dialog = await openCrypto(page);
+  await page.evaluate(() => {
+    Object.defineProperty(navigator.clipboard, 'writeText', { configurable: true, value: () => new Promise((resolve) => { window.finishDonationCopy = resolve; }) });
+  });
+  await dialog.getByRole('button', { name: 'Copy address', exact: true }).click();
+  await expect(dialog.getByRole('button', { name: 'Copy address', exact: true })).toBeDisabled();
+  await selectNetwork(dialog, 'Solana');
+  await page.evaluate(() => window.finishDonationCopy());
+  await expect(dialog.getByRole('status')).toBeEmpty();
+  await expect(dialog.getByRole('button', { name: 'Copy address', exact: true })).toBeEnabled();
+});
+
+test('a delayed Ko-fi load does not disable crypto copy feedback', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  let release;
+  const held = new Promise((resolve) => { release = resolve; });
+  await page.route('https://ko-fi.com/**', async (route) => {
+    await held;
+    await route.fulfill({ contentType: 'text/html', body: '<p>Payment fixture</p>' }).catch(() => {});
+  });
+  try {
+    await page.goto('/');
+    const dialog = await openCrypto(page);
+    release();
+    await expect(dialog.frameLocator('iframe').getByText('Payment fixture')).toHaveText('Payment fixture');
+    await dialog.getByRole('button', { name: 'Copy address', exact: true }).click();
+    await expect(dialog.getByRole('status')).toHaveText('Address copied.');
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(addresses.Bitcoin);
+  } finally { release(); }
+});
+
+test('crypto keyboard selection preserves draft and restores opener focus', async ({ page, request }) => {
+  await mockPanel(page);
+  await setup(page, request);
+  await page.getByRole('button', { name: 'New trade', exact: true }).click();
+  await page.getByLabel('Entry rationale', { exact: true }).fill('Crypto support must preserve this draft.');
+  const url = page.url();
+  const trigger = page.locator('.sidebar').getByRole('button', { name: 'Support this project', exact: true });
+  await trigger.click();
+  const dialog = page.getByRole('dialog', { name: 'Support vxTradeJournal' });
+  await page.keyboard.press('Tab');
+  await expect(dialog.getByRole('tab', { name: 'Ko-fi', exact: true })).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect(dialog.getByRole('tab', { name: 'Crypto', exact: true })).toBeFocused();
+  await expect(dialog.getByRole('tab', { name: 'Crypto', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await page.keyboard.press('Home');
+  await expect(dialog.getByRole('tab', { name: 'Ko-fi', exact: true })).toBeFocused();
+  await page.keyboard.press('End');
+  await page.keyboard.press('Tab');
+  const network = dialog.getByRole('combobox');
+  await expect(network).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expect(network).toContainText('Ethereum Mainnet');
+  await expect(network).toBeFocused();
+  await page.keyboard.press('End');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeVisible();
+  await expect(network).toHaveAttribute('aria-expanded', 'false');
+  await expect(network).toContainText('Ethereum Mainnet');
+  await page.keyboard.type('sol');
+  await page.keyboard.press('Enter');
+  await expect(network).toContainText('Solana');
+  await page.keyboard.press('Home');
+  await page.keyboard.press('Enter');
+  await expect(network).toContainText('Bitcoin');
+  await page.keyboard.press('End');
+  await page.keyboard.press('Tab');
+  await expect(network).toContainText('BNB Smart Chain');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  await expect(page.locator('iframe')).toHaveCount(0);
+  await expect(page.getByLabel('Entry rationale', { exact: true })).toHaveValue('Crypto support must preserve this draft.');
+  expect(page.url()).toBe(url);
+});
+
+for (const viewport of [{ width: 320, height: 640 }, { width: 390, height: 844 }, { width: 768, height: 900 }, { width: 1440, height: 900 }, { width: 1440, height: 600 }]) {
+  for (const theme of ['light', 'dark']) {
+    test(`crypto layout at ${viewport.width}x${viewport.height} in ${theme} theme`, async ({ page }) => {
+      await mockPanel(page);
+      await page.setViewportSize(viewport);
+      await page.goto('/');
+      await page.evaluate((theme) => document.documentElement.dataset.theme = theme, theme);
+      const dialog = await openCrypto(page);
+      await selectNetwork(dialog, 'Ethereum Mainnet');
+      const toggle = dialog.getByRole('button', { name: 'Show QR code', exact: true });
+      const compact = viewport.width <= 420 || viewport.height <= 720;
+      if (compact) {
+        await expect(dialog.locator('.donation-qr')).toBeHidden();
+        await expect(toggle).toBeVisible();
+      } else {
+        await expect(toggle).toBeHidden();
+        await expect(dialog.locator('.donation-qr')).toBeVisible();
+      }
+      const layout = await dialog.evaluate((node) => {
+        const bounds = node.getBoundingClientRect();
+        const body = node.querySelector('.support-body');
+        const actions = [...node.querySelectorAll('.support-method, .donation-network-trigger, .donation-copy, .donation-qr-toggle')];
+        return {
+          inside: bounds.x >= 0 && bounds.y >= 0 && bounds.right <= innerWidth && bounds.bottom <= innerHeight,
+          overflow: body.scrollWidth > body.clientWidth || document.documentElement.scrollWidth > innerWidth,
+          targets: actions.filter((action) => action.getClientRects().length).map((action) => action.getBoundingClientRect().height),
+        };
+      });
+      expect(layout.inside).toBe(true);
+      expect(layout.overflow).toBe(false);
+      expect(layout.targets.every((height) => height >= 44)).toBe(true);
+      await expect(dialog.locator('.donation-address')).toHaveText(addresses.Ethereum);
+      const baseline = await dialog.boundingBox();
+      for (const name of ['Bitcoin', 'Solana', 'BNB Smart Chain', 'Ethereum Mainnet']) {
+        await selectNetwork(dialog, name);
+        expect(await dialog.boundingBox()).toEqual(baseline);
+      }
+      await dialog.getByRole('combobox').click();
+      const menuBounds = await dialog.getByRole('listbox').boundingBox();
+      expect(menuBounds.x).toBeGreaterThanOrEqual(0);
+      expect(menuBounds.y).toBeGreaterThanOrEqual(0);
+      expect(menuBounds.x + menuBounds.width).toBeLessThanOrEqual(viewport.width);
+      expect(menuBounds.y + menuBounds.height).toBeLessThanOrEqual(viewport.height);
+      await page.keyboard.press('Escape');
+
+      if (!compact) expect(await decodeQR(dialog.locator('.donation-qr'))).toBe(addresses.Ethereum);
+      await page.screenshot({ path: `/tmp/vxj-crypto-${viewport.width}x${viewport.height}-${theme}.png` });
+      await dialog.screenshot({ path: `/tmp/vxj-crypto-dialog-${viewport.width}x${viewport.height}-${theme}.png` });
+      if (compact) {
+        await toggle.click();
+        await expect(dialog.locator('.donation-qr')).toBeVisible();
+        await expect(dialog.getByRole('button', { name: 'Hide QR code', exact: true })).toHaveAttribute('aria-expanded', 'true');
+        await dialog.getByRole('button', { name: 'Hide QR code', exact: true }).click();
+        await expect(dialog.locator('.donation-qr')).toBeHidden();
+      }
+    });
+  }
+}
 
 test('support preserves an unsaved trade in light and dark themes', async ({ page, request }) => {
   const calls = await mockPanel(page);

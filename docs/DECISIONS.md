@@ -292,3 +292,37 @@ A failing regression demonstrated that Firestore child query order can differ fr
 ## 2026-10-10 — Proportional correction history
 
 Supersedes the per-source evidence design and pending architecture decision of 9 October. Keep the static browser/CLI architecture. Each application save records one append-only entry with reason and changed financial fields, including automatic FX invalidations, in the existing source/parent/receipt transaction. Full unchanged source records and their metadata are omitted. Rules retain ownership, basic history structure and append-only protection; exhaustive source/evidence cross-document verification is removed. Authenticated owners can already maintain their own financial facts; history is application-recorded information, not independently verified authorship. Preserve six-leg atomic saves and verify the formerly failing eighteen-change correction. Schema 2 is unreleased; revise its new correction shape directly, retaining the immutable 1→2 transition and calculation version 1.
+
+## 2026-10-10 — Direct crypto support in vxTradeJournal
+
+Add Ko-fi/Crypto method tabs to the existing native support dialog, retaining Ko-fi as default and keeping checkout state mounted while switching. Keep public receiving addresses and supported network/asset labels in a presentation-owned configuration module; the wallet owner maintains funds and explicitly supports Ethereum Mainnet, Base, Arbitrum One, Optimism, Polygon PoS and BNB Smart Chain alongside Bitcoin and Solana. Use address-only QR codes with explicit network instructions and a primary copy action; expose QR through a disclosure on small/short viewports. This avoids network-dependent wallet integration, transaction monitoring and token-contract configuration. The app never infers payment success from copy, QR or dialog events.
+
+Bundle MIT-licensed, dependency-free `qrcode-generator` for local QR encoding. Keep it as a browser build dependency; the generated CLI runtime dependency manifest remains Firebase/decimal.js. Use `jsqr` only as an independent test decoder to verify displayed QR destinations. These libraries are development dependencies; no runtime origin, wallet SDK, schema or financial/CLI change is introduced. vxTradeJournal is the first integration; other applications remain outside this change.
+
+## 2026-10-10 — Single icon network selector
+
+Refines the direct crypto support design above. Replace currency buttons and conditional network controls with one persistent selector, ordered Bitcoin, Ethereum Mainnet, Solana, then Base, Arbitrum One, Optimism, Polygon PoS and BNB Smart Chain. Preserve icons in the selected value and each menu row through a themed select-only combobox and the existing native popover pattern. Keep network assets immediately below the selector; reserve two address lines and use fixed instruction text to prevent movement when switching networks. Product-owner instruction defers test execution until agreement on the finished design; previous verification does not establish acceptance of the revised selector.
+
+## 2026-10-10 — Explicit stablecoin donation examples
+
+Name USDC and USDT in applicable network captions, including Solana, alongside native assets and existing EVM token support. Distinguish bridged Base USDT, USDT/USDT0 on Arbitrum/Optimism/Polygon and Binance-Peg USDC/USDT on BNB; do not imply every representation is issuer-native. Reserve two caption lines for stable layout. Availability references: [Circle USDC addresses](https://developers.circle.com/stablecoins/usdc-contract-addresses), [Tether protocols](https://tether.to/en/supported-protocols/), [USDT0 deployments](https://docs.usdt0.to/technical-documentation/deployments), [Superchain USDT token list](https://github.com/ethereum-optimism/ethereum-optimism.github.io/blob/master/data/USDT/data.json) and [BNB stablecoin representations](https://github.com/bnb-chain/mpp-sdk#tokens). Test execution remains deferred until design agreement.
+
+## 2026-10-10 — Simple donation hints
+
+Supersedes the caption detail in “Explicit stablecoin donation examples” above. Captions are nonexclusive hints, not acceptance rules: show BTC for Bitcoin, and the native asset, USDC, USDT and other tokens for the remaining networks, including Solana. The wallet owner handles tokens received on supported networks. Remove the “Accepts:” prefix, token standards, bridge and variant terminology. Keep every network row uniform, removing the separator after Solana while retaining icons and ordering. Test execution remains deferred until design agreement.
+
+## 2026-10-10 — Remove donation footer instruction
+
+Refines “Direct crypto support in vxTradeJournal” and “Single icon network selector” above. Remove the footer instruction and its accessibility description reference: the explicit Network field and receiving-address label provide the requested context. The default crypto panel ends at the receiving-address card, reducing height. QR codes remain address-only. Test execution remains deferred until design agreement.
+
+## 2026-10-10 — Donation spacing rhythm
+
+Refines the spacing reservations in “Single icon network selector” and “Explicit stablecoin donation examples” above. Use existing spacing tokens: 24px desktop/16px mobile outer padding, consistent 16px section gaps, 8px selector field gaps and 8px vertical padding around the method tabs and support header. The concise asset hint reserves one line. Group the receiving label and address with a 4px gap, then separate Copy address by 12px. Reserve one address line on desktop and two at viewport widths up to 480px to accommodate wrapping without network-switch movement. Keep the 180px QR and 44px action targets. Test execution remains deferred until design agreement.
+
+## 2026-10-10 — Copy feedback without layout changes
+
+Refines the copy feedback in “Direct crypto support in vxTradeJournal” above. After clipboard success, show “Copied” in the existing button for two seconds, then restore “Copy address”. Keep the live status visually hidden to prevent dialog resizing. Clipboard failure selects the address and changes the button to “Copy manually”, with detailed recovery text announced to screen readers. A new copy attempt or network selection cancels the previous feedback timer; closing clears it. Destination revision checks continue to discard stale clipboard results. Test execution remains deferred until design agreement.
+
+## 2026-10-10 — Final donation design acceptance
+
+The product owner approved the design for verification, ending the test deferral recorded above. Update the focused support coverage for the final single selector and timed copy feedback. `npm run test:e2e -- tests/e2e/support.spec.js tests/e2e/support-reminders.spec.js` passes 25/25 tests in 48.3 seconds. Lint, skill documentation checks and the production build pass; representative mobile, intermediate and dark desktop captures show no clipping. Build retains the existing large-chunk warning. This verification is scoped to website support; financial, persistence and CLI behavior are unaffected. Other applications remain outside this commit.
