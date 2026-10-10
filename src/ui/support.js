@@ -26,7 +26,7 @@ export function openSupportDialog(opener) {
     feedback, el('div', { class: 'support-panel' }, frame));
   const cryptoPanel = el('div', { id: `${titleId}-crypto-panel`, role: 'tabpanel', 'aria-labelledby': `${titleId}-crypto-tab`, hidden: true });
   let crypto;
-  const tabs = ['Ko-fi', 'Crypto'].map((name, index) => button(name, () => selectMethod(index), 'support-method', {
+  const tabs = ['Cash', 'Crypto'].map((name, index) => button([icon(index ? 'crypto' : 'cash', 16), el('span', {}, name)], () => selectMethod(index), 'support-method', {
     id: `${titleId}-${index ? 'crypto' : 'kofi'}-tab`, role: 'tab',
     'aria-controls': index ? cryptoPanel.id : kofiPanel.id,
     'aria-selected': index === 0, tabindex: index === 0 ? '0' : '-1',

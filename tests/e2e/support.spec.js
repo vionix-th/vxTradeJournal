@@ -115,7 +115,9 @@ test('icon selector lists all networks and QR codes decode to supplied addresses
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto('/');
   const dialog = await openCrypto(page);
-  await expect(dialog.getByRole('tabpanel', { name: 'Ko-fi', exact: true })).toBeHidden();
+  await expect(dialog.getByRole('tabpanel', { name: 'Cash', exact: true })).toBeHidden();
+  await expect(dialog.getByRole('tab')).toHaveText(['Cash', 'Crypto']);
+  expect(await dialog.getByRole('tab').evaluateAll((tabs) => tabs.every((tab) => tab.querySelector('svg')?.getAttribute('aria-hidden') === 'true'))).toBe(true);
   const network = dialog.getByRole('combobox');
   const networks = [
     ['Bitcoin', 'BTC', addresses.Bitcoin],
@@ -147,14 +149,14 @@ test('icon selector lists all networks and QR codes decode to supplied addresses
     expect(await dialog.boundingBox()).toEqual(initial);
   }
   await expect(dialog.locator('.donation-instruction')).toHaveCount(0);
-  await dialog.getByRole('tab', { name: 'Ko-fi', exact: true }).click();
+  await dialog.getByRole('tab', { name: 'Cash', exact: true }).click();
   await expect(dialog.locator('iframe')).toBeVisible();
   await dialog.getByRole('tab', { name: 'Crypto', exact: true }).click();
   await expect(network).toContainText('BNB Smart Chain');
   expect(calls).toHaveLength(1);
   await dialog.getByRole('button', { name: 'Close', exact: true }).click();
   await page.getByRole('button', { name: 'Support this project', exact: true }).click();
-  await expect(dialog.getByRole('tab', { name: 'Ko-fi', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(dialog.getByRole('tab', { name: 'Cash', exact: true })).toHaveAttribute('aria-selected', 'true');
   await dialog.getByRole('tab', { name: 'Crypto', exact: true }).click();
   await expect(dialog.getByRole('combobox')).toContainText('Bitcoin');
   expect(pageErrors).toEqual([]);
@@ -247,12 +249,12 @@ test('crypto keyboard selection preserves draft and restores opener focus', asyn
   await trigger.click();
   const dialog = page.getByRole('dialog', { name: 'Support vxTradeJournal' });
   await page.keyboard.press('Tab');
-  await expect(dialog.getByRole('tab', { name: 'Ko-fi', exact: true })).toBeFocused();
+  await expect(dialog.getByRole('tab', { name: 'Cash', exact: true })).toBeFocused();
   await page.keyboard.press('ArrowRight');
   await expect(dialog.getByRole('tab', { name: 'Crypto', exact: true })).toBeFocused();
   await expect(dialog.getByRole('tab', { name: 'Crypto', exact: true })).toHaveAttribute('aria-selected', 'true');
   await page.keyboard.press('Home');
-  await expect(dialog.getByRole('tab', { name: 'Ko-fi', exact: true })).toBeFocused();
+  await expect(dialog.getByRole('tab', { name: 'Cash', exact: true })).toBeFocused();
   await page.keyboard.press('End');
   await page.keyboard.press('Tab');
   const network = dialog.getByRole('combobox');

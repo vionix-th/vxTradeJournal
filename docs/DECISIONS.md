@@ -330,3 +330,7 @@ Refines the copy feedback in “Direct crypto support in vxTradeJournal” above
 ## 2026-10-10 — Final donation design acceptance
 
 The product owner approved the design for verification, ending the test deferral recorded above. Update the focused support coverage for the final single selector and timed copy feedback. `npm run test:e2e -- tests/e2e/support.spec.js tests/e2e/support-reminders.spec.js` passes 25/25 tests in 48.3 seconds. Lint, skill documentation checks and the production build pass; representative mobile, intermediate and dark desktop captures show no clipping. Build retains the existing large-chunk warning. This verification is scoped to website support; financial, persistence and CLI behavior are unaffected. Other applications remain outside this commit.
+
+## 2026-10-10 — Donation method labels and icons
+
+Label the provider-backed method Cash and retain Crypto as the second method. Give each tab a decorative banknote/coin icon while preserving accessible text, equal-width controls and the existing Ko-fi checkout lifecycle. This makes method choice independent of provider branding; provider-specific loading and recovery copy still names Ko-fi.

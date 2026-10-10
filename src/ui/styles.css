@@ -447,7 +447,7 @@ tbody tr:hover { background: var(--raised); }
 .support-kofi { position: relative; background: #f9f9f9; }
 .support-dialog .support-header { padding-block: var(--space-xs); }
 .support-methods { display: flex; flex-shrink: 0; gap: 4px; padding: var(--space-xs) var(--space-lg); border-bottom: 1px solid var(--border); background: var(--panel); }
-.support-method { flex: 1; min-height: 44px; padding: 8px 16px; border: 0; border-radius: 7px; color: var(--muted); background: transparent; font-weight: 500; }
+.support-method { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: 1; min-height: 44px; padding: 8px 16px; border: 0; border-radius: 7px; color: var(--muted); background: transparent; font-weight: 500; }
 .support-method:hover { color: var(--text); background: var(--raised); }
 .support-method[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); }
 .crypto-support { display: grid; gap: var(--space-md); padding: var(--space-lg); }
