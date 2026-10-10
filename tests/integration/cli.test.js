@@ -14,7 +14,7 @@ let env, root, email, uid, verifiedSession;
 const project = "demo-vxjournal-auto";
 const executable = process.env.VXJ_CLI_EXECUTABLE || resolve("src/cli/index.js");
 async function cli(command, input, extra = {}, directory = root, profile = "auto") {
-  const args = [...command.split(" "), "--profile", profile];
+  const args = [...command.split(" "), ...(command === "export verify" ? [] : ["--profile", profile])];
   for (const [key, value] of Object.entries(extra)) { args.push(`--${key}`); if (value !== true) args.push(String(value)); }
   if (input !== undefined) args.push("--input", "-");
   return new Promise((done, reject) => {
@@ -123,10 +123,10 @@ it("records trades, calculations and corrections with revision and retry guarant
   const correction = { pointValue: "2" };
   const preview = await cli("legs correct-snapshot", correction, { trade: "t", id: "t-leg-1", revision: 3, preview: true });
   expect(preview.body.data.calculation.accountNet).toBe("7");
-  const mismatched = await cli("legs correct-snapshot", { pointValue: "3" }, { trade: "t", id: "t-leg-1", revision: 3, "operation-id": "wrong-preview", "accept-preview": preview.body.data.previewFingerprint });
+  const mismatched = await cli("legs correct-snapshot", { pointValue: "3" }, { trade: "t", id: "t-leg-1", revision: 3, "operation-id": "wrong-preview", "correction-reason": "Correct historical broker data", "accept-preview": preview.body.data.previewFingerprint });
   expect(mismatched.body.error.code).toBe("PREVIEW_MISMATCH");
   expect((await cli("trades get", undefined, { id: "t" })).body.data.trade.revision).toBe(3);
-  const corrected = await cli("legs correct-snapshot", correction, { trade: "t", id: "t-leg-1", revision: 3, "operation-id": "correct", "accept-preview": preview.body.data.previewFingerprint });
+  const corrected = await cli("legs correct-snapshot", correction, { trade: "t", id: "t-leg-1", revision: 3, "operation-id": "correct", "correction-reason": "Correct historical broker data", "accept-preview": preview.body.data.previewFingerprint });
   expect(corrected.code).toBe(0);
   expect(corrected.body.data.trade.summary.accountNet).toBe("7");
   const nativeRepo = new Repository(env.authenticatedContext(uid, { email_verified: true }).firestore(), uid);
@@ -157,12 +157,12 @@ it("invalidates snapshot FX in correction previews and saved records, then accep
   expect(preview.code).toBe(0);
   expect(preview.body.data.calculation).toMatchObject({ complete: false, accountNet: null, knownAccountNet: "-1", native: { EUR: "4", USD: "-1" } });
   expect((await cli("trades get", undefined, { id: "fx-trade" })).body.data.trade.summary.accountNet).toBe("3");
-  saved = await cli("legs correct-snapshot", { currency: "EUR" }, { ...options, "operation-id": "fx-correction", "accept-preview": preview.body.data.previewFingerprint });
+  saved = await cli("legs correct-snapshot", { currency: "EUR" }, { ...options, "operation-id": "fx-correction", "correction-reason": "Correct historical broker data", "accept-preview": preview.body.data.previewFingerprint });
   expect(saved.code, JSON.stringify(saved.body)).toBe(0);
   expect(saved.body.data.trade.legs[0].planning.rate).toBeNull();
   expect(saved.body.data.trade.executions.map((e) => e.resultRate)).toEqual([null, null]);
   expect(saved.body.data.trade.executions[0]).toMatchObject({ feeCurrency: "USD", feeRate: "1" });
-  saved = await cli("executions update", { resultRate: "0.8" }, { trade: "fx-trade", id: "fx-exit", revision: saved.body.data.trade.revision, "operation-id": "fx-explicit-rate" });
+  saved = await cli("executions update", { resultRate: "0.8" }, { trade: "fx-trade", id: "fx-exit", revision: saved.body.data.trade.revision, "operation-id": "fx-explicit-rate", "correction-reason": "Correct historical source record" });
   expect(saved.code).toBe(0);
   expect(saved.body.data.trade.summary.accountNet).toBe("2.2");
   const exported = await cli("export");
@@ -233,11 +233,11 @@ it("removes eligible persisted legs and preserves executed legs and the final le
   saved = await cli("executions add", { id: "removal-entry", legId: "protected", kind: "entry", quantity: "1", price: "10", timestamp: "2026-01-01T00:00:00Z" }, { trade: "removal", revision: 1, "operation-id": "removal-entry" });
   expect(saved.code).toBe(0);
   expect((await cli("legs delete", undefined, { trade: "removal", id: "protected", revision: 2, "operation-id": "protected-delete", yes: true })).code).toBe(2);
-  saved = await cli("legs delete", undefined, { trade: "removal", id: "eligible", revision: 2, "operation-id": "eligible-delete", yes: true });
+  saved = await cli("legs delete", undefined, { trade: "removal", id: "eligible", revision: 2, "operation-id": "eligible-delete", "correction-reason": "Correct historical source record", yes: true });
   expect(saved.body.data.trade.legs).toHaveLength(1);
   expect(saved.body.data.trade.executions).toHaveLength(1);
   expect((await cli("legs delete", undefined, { trade: "removal", id: "protected", revision: 3, "operation-id": "last-delete", yes: true })).code).toBe(2);
-  expect((await cli("executions delete", undefined, { trade: "removal", id: "removal-entry", revision: 3, "operation-id": "remove-entry", yes: true })).code).toBe(0);
+  expect((await cli("executions delete", undefined, { trade: "removal", id: "removal-entry", revision: 3, "operation-id": "remove-entry", "correction-reason": "Correct historical source record", yes: true })).code).toBe(0);
   expect((await cli("legs delete", undefined, { trade: "removal", id: "protected", revision: 4, "operation-id": "empty-delete", yes: true })).code).toBe(2);
 }, 60000);
 
@@ -338,9 +338,9 @@ it("covers archives, settings, multi-leg manual results and retained incomplete 
   }
   expect(saved.body.data.trade.summary).toMatchObject({ complete: false, accountNet: null, status: "closed" });
   expect((await cli("calculate size", undefined, { trade: "multi", leg: "linear-leg" })).code).toBe(2);
-  saved = await cli("executions update", { resultRate: "0.8" }, { trade: "multi", id: "short-exit", revision: 5, "operation-id": "fx" });
+  saved = await cli("executions update", { resultRate: "0.8" }, { trade: "multi", id: "short-exit", revision: 5, "operation-id": "fx", "correction-reason": "Correct historical source record" });
   expect(saved.body.data.trade.summary.complete).toBe(false);
-  saved = await cli("executions update", { manualGross: "3.25", manualSource: "broker-reported" }, { trade: "multi", id: "option-settle", revision: 6, "operation-id": "manual" });
+  saved = await cli("executions update", { manualGross: "3.25", manualSource: "broker-reported" }, { trade: "multi", id: "option-settle", revision: 6, "operation-id": "manual", "correction-reason": "Correct historical source record" });
   // Short gross 2*(20-18)=4 USD -> 3.2 EUR; manual gross 3.25 EUR.
   expect(saved.body.data.trade.summary.accountNet).toBe("6.45");
   saved = await cli("adjustments add", { id: "credit", amount: "0.05", currency: "EUR", timestamp: "2026-01-05T00:00:00Z", reason: "Credit" }, { trade: "multi", revision: 7, "operation-id": "credit" });
@@ -362,16 +362,16 @@ it("covers archives, settings, multi-leg manual results and retained incomplete 
 it("blocks incompatible schemas before reads, writes and export output while doctor remains available", async () => {
   const output = join(root, "blocked-export.json");
   try {
-    await readyDatabase(env, { schemaVersion: 2 });
+    await readyDatabase(env, { schemaVersion: 3 });
     for (const [command, input, extra] of [["accounts list", undefined, {}], ["accounts create", { id: "blocked", name: "Blocked", currency: "USD" }, {}], ["export", undefined, { output }]]) {
       const result = await cli(command, input, extra);
       expect(result.code).toBe(6);
-      expect(result.body.error).toMatchObject({ code: "SCHEMA_VERSION_MISMATCH", expectedSchema: 1, actualSchema: 2 });
+      expect(result.body.error).toMatchObject({ code: "SCHEMA_VERSION_MISMATCH", expectedSchema: 2, actualSchema: 3 });
     }
     await expect(readFile(output)).rejects.toMatchObject({ code: "ENOENT" });
     const diagnostic = await cli("doctor");
     expect(diagnostic.code).toBe(0);
-    expect(diagnostic.body.data.database).toMatchObject({ compatible: false, schemaVersion: 2 });
+    expect(diagnostic.body.data.database).toMatchObject({ compatible: false, schemaVersion: 3 });
     expect((await cli("auth status")).code).toBe(0);
     await readyDatabase(env, { status: "maintenance" });
     expect((await cli("accounts list")).body.error.code).toBe("DATABASE_MAINTENANCE");
@@ -382,3 +382,30 @@ it("blocks incompatible schemas before reads, writes and export output while doc
     expect((await cli("accounts list")).body.error.code).toBe("DATABASE_NOT_INITIALIZED");
   } finally { await readyDatabase(env); }
 });
+
+it('exposes correction requirements, structured rejection and offline backup verification', async () => {
+  const native = await prerequisites({ instrument: true });
+  const created = await cli('trades create', { id: 'audit', accountId: 'a', legs: [{ id: 'audit-leg', instrumentId: 'i', direction: 'long' }] }, { 'operation-id': 'audit-create' });
+  expect(created.body.writeOutcome).toEqual({ state: 'applied' });
+  const fill = await cli('executions add', { id: 'audit-fill', legId: 'audit-leg', kind: 'entry', quantity: '1', price: '10', timestamp: '2026-01-01T00:00:00Z' }, { trade: 'audit', revision: 1, 'operation-id': 'audit-entry' });
+  expect(fill.code, JSON.stringify(fill.body)).toBe(0);
+  const options = { trade: 'audit', id: 'audit-fill', revision: 2, 'operation-id': 'audit-correct' };
+  const preview = await cli('executions update', { fees: '1' }, { ...options, 'dry-run': true });
+  expect(preview.body).toMatchObject({ writeOutcome: { state: 'not_applied' }, data: { correctionRequired: true, corrections: [{ recordId: 'audit-fill' }] } });
+  const before = await native.getTrade('audit');
+  const missing = await cli('executions update', { fees: '1' }, options);
+  expect(missing.body).toMatchObject({ writeOutcome: { state: 'not_applied' }, error: { code: 'VALIDATION', rule: 'CORRECTION_REASON', path: '/correctionReason' } });
+  expect(await native.getTrade('audit')).toEqual(before);
+  const invalid = await cli('executions update', { quantity: '0' }, { ...options, 'correction-reason': 'Bad quantity' });
+  expect(invalid.body.error).toMatchObject({ rule: 'DECIMAL_RANGE', path: '/executions/0/quantity', recordId: 'audit-fill', rejectedValue: '0' });
+  const applied = await cli('executions update', { fees: '1' }, { ...options, 'correction-reason': 'Broker corrected execution fee' });
+  expect(applied.code, JSON.stringify(applied.body)).toBe(0);
+  expect((await cli('executions update', { fees: '1' }, { ...options, 'correction-reason': 'Broker corrected execution fee' })).body.data.replayed).toBe(true);
+  expect((await cli('executions update', { fees: '1' }, { ...options, 'correction-reason': 'Different reason' })).body.error.code).toBe('OPERATION_MISMATCH');
+  expect((await cli('trades corrections', undefined, { id: 'audit', page: 1, 'page-size': 12 })).body.data).toMatchObject({ total: 1, items: [{ reason: 'Broker corrected execution fee' }] });
+  const exported = await cli('export');
+  await cli('auth logout');
+  const verified = await cli('export verify', exported.body.data);
+  expect(verified.body).toMatchObject({ ok: true, data: { integrity: 'verified', counts: { corrections: 1 }, targetVersions: { schema: 2 } } });
+  expect(await native.getTrade('audit')).toEqual(applied.body.data.trade);
+}, 60000);

@@ -5,6 +5,7 @@ import { doc, getDoc, getDocs, collection, setDoc, Timestamp, writeBatch } from 
 import { Repository } from '../../src/persistence/repository.js';
 import { JournalTransfer } from '../../src/persistence/transfer.js';
 import { createTrade, calculateTrade } from '../../src/domain/journal.js';
+import { fingerprint } from '../../src/application/fingerprint.js';
 import { readyDatabase } from '../helpers/database.js';
 let env, repo, transfer;
 beforeAll(async () => {
@@ -120,7 +121,7 @@ it('resumes expired ownership without source file, rejects stale fences and reta
 });
 it('failed source upload never freezes journal and an incomplete upload can be cancelled', async () => {
   const { file } = await source(); const preview = await transfer.preview(file, { mode: 'replace' });
-  await env.withSecurityRulesDisabled(async (context) => setDoc(doc(context.firestore(), 'users/alice/imports/upload'), { id: 'upload', uid: 'alice', owner: 'gone', formatVersion: 1, projectId: repo.db.app.options.projectId, conversions: [], status: 'uploading', mode: 'replace', includeSettings: false, sourceFingerprint: 'x', previewFingerprint: preview.fingerprint, receiptId: 'new', schemaVersion: 1, calculationVersion: 1, sourceChunks: 2, backupAvailable: false }));
+  await env.withSecurityRulesDisabled(async (context) => setDoc(doc(context.firestore(), 'users/alice/imports/upload'), { id: 'upload', uid: 'alice', owner: 'gone', formatVersion: 1, projectId: repo.db.app.options.projectId, conversions: [], status: 'uploading', mode: 'replace', includeSettings: false, sourceFingerprint: 'x', previewFingerprint: preview.fingerprint, receiptId: 'new', schemaVersion: 2, calculationVersion: 1, sourceChunks: 2, backupAvailable: false }));
   await expect(transfer.resume('upload')).rejects.toMatchObject({ code: 'IMPORT_RECOVERY_REQUIRED' });
   expect((await repo.load()).trades).toHaveLength(1);
   expect((await transfer.rollback('upload', true)).status).toBe('rolledBack');
@@ -170,3 +171,58 @@ it('keeps ordinary instrument validation within the rules budget after transfers
     }
   }
 }, 60000);
+
+
+it('restores exact correction evidence on interrupted replacement rollback and preserves it in retained backup', async () => {
+  const { file, trade } = await source();
+  const changed = await repo.saveTrade({ ...trade, executions: trade.executions.map(e => e.kind === 'exit' ? { ...e, price: '13.01' } : e) }, 'correct-close', null, { correctionReason: 'Broker corrected close price' });
+  const preview = await transfer.preview(file, { mode: 'replace' });
+  transfer.onCheckpoint = () => { throw new Error('Correction transfer interruption'); };
+  await expect(transfer.apply(file, { mode: 'replace', yes: true, acceptPreview: preview.fingerprint, operationId: 'correction-rollback' })).rejects.toMatchObject({ writeOutcome: { state: 'partial' } });
+  transfer.onCheckpoint = null;
+  await transfer.rollback('correction-rollback', true);
+  const recovered = await repo.getTrade('t');
+  expect(recovered.corrections).toEqual(changed.corrections);
+  expect(recovered.executions.map(({ revision: _revision, ...e }) => e)).toEqual(changed.executions.map(({ revision: _revision, ...e }) => e));
+  expect(recovered.summary.accountNet).toBe('6.02');
+  const retry = await transfer.preview(file, { mode: 'replace' });
+  await transfer.apply(file, { mode: 'replace', yes: true, acceptPreview: retry.fingerprint, operationId: 'correction-replace' });
+  expect((await repo.getTrade('t')).corrections).toEqual([]);
+  expect((await transfer.backupExport('correction-replace')).trades[0].corrections).toEqual(changed.corrections);
+});
+
+it('downloads retained schema-1 backups unchanged and converts them only when restored', async () => {
+  const { file } = await source();
+  const preview = await transfer.preview(file, { mode: 'replace' });
+  await transfer.apply(file, { mode: 'replace', yes: true, acceptPreview: preview.fingerprint, operationId: 'retained-v1' });
+  // Model a completed backup retained from the schema-1 runtime, with its verified source checksum.
+  await env.withSecurityRulesDisabled(async context => {
+    const store = context.firestore();
+    const rows = (await getDocs(collection(store, 'users/alice/imports/retained-v1/records'))).docs;
+    const before = [];
+    for (const row of rows) {
+      const value = row.data();
+      if (value.before) {
+        if (value.before.schemaVersion === 2) value.before.schemaVersion = 1;
+        if (value.before.snapshot) value.before.snapshot.schemaVersion = 1;
+        if (value.before.strategySnapshot) value.before.strategySnapshot.schemaVersion = 1;
+        before.push({ path: value.path, data: value.before });
+      }
+      await setDoc(row.ref, value);
+    }
+    const sessionRef = doc(store, 'users/alice/imports/retained-v1');
+    await setDoc(sessionRef, { ...(await getDoc(sessionRef)).data(), schemaVersion: 1, backupHash: await fingerprint(before.sort((a, b) => a.path.localeCompare(b.path))) });
+  });
+  const backup = await transfer.backupExport('retained-v1');
+  expect(backup.schemaVersion).toBe(1);
+  expect(backup.trades[0].legs[0].snapshot.schemaVersion).toBe(1);
+  expect(backup.trades[0].corrections).toBeUndefined();
+  const restore = await transfer.preview(backup, { mode: 'replace' });
+  expect(restore.conversions).toMatchObject([{ id: 'schema-1-to-2' }]);
+  await transfer.apply(backup, { mode: 'replace', yes: true, acceptPreview: restore.fingerprint, operationId: 'restore-v1' });
+  const restored = await repo.getTrade('t');
+  expect(restored.summary.accountNet).toBe('4.02');
+  expect(restored.legs[0].snapshot.schemaVersion).toBe(2);
+  expect(restored.corrections).toEqual([]);
+  expect((await transfer.backupExport('retained-v1')).schemaVersion).toBe(1);
+});

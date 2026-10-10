@@ -1,7 +1,7 @@
 import { icon } from "./icons.js";
 import { calculateTrade, money } from "../domain/journal.js";
 import { filterJournal, aggregateAccount, journalOverview } from "../application/journal.js";
-import { removeChild } from "../application/operations.js";
+import { deleteSource, correctionHistory } from './corrections.js';
 import {
   el,
   button,
@@ -494,10 +494,7 @@ export function tradeView(ui, idOrArg) {
                   !confirm("Delete execution and recompute subsequent history?")
                 )
                   return;
-                await ui.action(
-                  () => ui.repo.saveTrade(removeChild(t, "executions", e.id)),
-                  () => ui.go("trade", id, true, { replace: true }),
-                );
+                deleteSource(ui, t, 'executions', e.id, () => ui.go('trade', id, true, { replace: true }));
               },
               "button danger small",
             ),
@@ -534,16 +531,13 @@ export function tradeView(ui, idOrArg) {
             "Delete adjustment",
             async () => {
               if (!confirm("Delete cash adjustment?")) return;
-              await ui.action(
-                () => ui.repo.saveTrade(removeChild(t, "adjustments", a.id)),
-                () => ui.go("trade", id, true, { replace: true }),
-              );
+              deleteSource(ui, t, 'adjustments', a.id, () => ui.go('trade', id, true, { replace: true }));
             },
             "button danger small",
           ),
         ),
       ),
     );
-  node.append(adjustments);
+  node.append(adjustments, correctionHistory(ui, t));
   ui.show(node);
 }

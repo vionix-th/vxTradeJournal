@@ -89,6 +89,7 @@ for (const viewport of [
       .getByRole("button", { name: "Edit execution 1", exact: true })
       .click();
     await page.getByLabel("Quantity", { exact: true }).fill("150");
+    await page.getByLabel("Correction reason", { exact: true }).fill("Broker corrected initial fill quantity");
     await page
       .getByRole("button", { name: "Save execution", exact: true })
       .click();
@@ -218,6 +219,7 @@ test("manual results, historical FX, retained validation and snapshot preview", 
     .click();
   await page.getByLabel("Gross realized amount", { exact: true }).fill("100");
   await page.getByLabel("Result conversion rate", { exact: true }).fill("0.8");
+  await page.getByLabel("Correction reason", { exact: true }).fill("Broker supplied historical result and conversion");
   await page
     .getByRole("button", { name: "Save execution", exact: true })
     .click();
@@ -226,6 +228,7 @@ test("manual results, historical FX, retained validation and snapshot preview", 
     .getByRole("button", { name: "Edit execution 1", exact: true })
     .click();
   await page.getByLabel("Quantity", { exact: true }).fill("1");
+  await page.getByLabel("Correction reason", { exact: true }).fill("Correct earlier entry quantity");
   await page
     .getByRole("button", { name: "Save execution", exact: true })
     .click();
@@ -243,6 +246,7 @@ test("manual results, historical FX, retained validation and snapshot preview", 
   await page
     .getByLabel("Quantity unit", { exact: true })
     .fill("option contracts");
+  await page.getByLabel("Correction reason", { exact: true }).fill("Correct historical quantity label");
   await page
     .getByRole("button", { name: "Preview correction", exact: true })
     .click();
@@ -275,6 +279,7 @@ test("manual results, historical FX, retained validation and snapshot preview", 
     "",
   );
   await page.getByLabel("Conversion rate", { exact: true }).fill("1.2");
+  await page.getByLabel("Correction reason", { exact: true }).fill("Supply historical financing conversion");
   await page
     .getByRole("button", { name: "Save adjustment", exact: true })
     .click();

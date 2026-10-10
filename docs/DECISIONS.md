@@ -1,5 +1,13 @@
 # Development decisions
 
+## 2026-10-10 — Release correction history and schema 2 as 0.4.0
+
+Publish proportional correction history, structured validation/write outcomes and portable verification as `0.4.0`. Persistence impact is the registered schema-1-to-2 transition and matching rules; calculation version remains `1`. The immutable transition updates managed record and embedded snapshot schema markers while preserving source values, identities, historical timestamps and receipts. Guard production conversion with exclusive maintenance, the rules propagation barrier, a verified private source snapshot and complete target validation. Publish website and skill from the same tested clean commit with annotated `v0.4.0`; replace installed skills and reinstall their locked dependencies before schema-2 workflows. A schema-1 application-only rollback is incompatible after conversion; recovery uses the retained source snapshot and guarded procedure.
+
+## 2026-10-09 — Group journal data actions in Settings
+
+Group Export JSON and Import journal and recovery under Journal data, using matching secondary buttons and the shared wrapping action layout aligned right. Keep Save settings primary to distinguish preference persistence from data transfer. Preserve export/import handlers, keyboard activation, CLI contracts and financial behavior; no version change is required. Add focused layout and keyboard coverage at 320, 910 and 1280 pixels.
+
 ## 2026-10-09 — Release portable import and recovery as 0.3.0
 
 Publish portable journal import/recovery, website navigation and project/support UI, and updated skill contracts as `0.3.0`. Persistence impact is compatible user-scoped transfer/recovery additions and changed rules; journal schema and calculation versions remain `1`, with no existing-record conversion. Use complete worker verification and a clean-commit hosted build, then guarded production deployment with enforced maintenance and rule propagation. Publish the website and portable skill from the same commit and immutable annotated `v0.3.0` tag. Installed skills require replacement and locked dependency installation to obtain import/recovery commands. Branding acceptance derives its expected application version from the package manifest so release increments do not invalidate the UI contract.
@@ -265,3 +273,22 @@ Centre the checkout iframe in symmetric responsive padding and reduce its initia
 Use a persistent secondary floating card after demonstrated website use instead of opening payment automatically. Count ten confirmed user journal writes; initial eligibility also needs 72 hours and three local dates, repeats need 28 days plus renewed writes. Count confirmation separately from refresh so retrying a failed read cannot inflate usage. Explicit UI commit options own qualifying writes; repository, financial and CLI layers do not know reminder policy.
 
 A small browser-local versioned store and origin-scoped Web Lock coordinate usage updates and claims. Corrupt storage or unavailable coordination fails closed. Metadata is separate from journal export and existing records are not backfilled. Keep claimed presentation in the page session, suspend while busy/editing/modal, and preserve keyboard-focused controls. Manual Support preserves opt-out while refreshing cooldown. No new dependency/backend/schema is introduced; rollback can remove automatic presentation without affecting manual Support or journal data.
+
+## 2026-10-09 — Source integrity and correction evidence
+
+Implement schema-2 correction evidence for saved execution/adjustment edits and removals and saved leg snapshot/direction/planning changes. Require a bounded explanation, including missing-to-known historical FX/manual amounts. Exclude new records and trade annotations. Persist before/after source records atomically with the parent revision and retry receipt; delete evidence with its trade. Treat imported evidence as supplied history, not authenticated authorship. Use a frozen preserving schema-1-to-2 transition; retain calculation version 1 and portable format 1. Installed skills must be replaced before schema-2 access. Existing backups retain original versions and convert on restoration. No release/version increment or deployment is part of this implementation.
+
+Expose shared structured validation and evidence-based application outcomes, offline export verification, a read-only skill walkthrough and restore drills. Extend deterministic replay coverage against independent arithmetic; retain six-leg atomic saves and existing uncertain-write/confirmed-refresh recovery behavior.
+
+
+## 2026-10-09 — Expanded correction transaction boundary (pending)
+
+The expanded six-currency regression changes six snapshots and twelve execution rates, requiring eighteen correction documents in one save. Current client rules reject that transaction at Firestore's 1,000-expression limit despite reduced repeated validation. Six-leg multiplier corrections remain atomic; no save splitting or supported leg-capacity reduction is introduced. A trusted mutation service would change the current client-only/Spark architecture; that decision remains pending. Keep the failing regression visible until the requirement is resolved. Validated unchanged snapshot fields and rate-only execution edits use bounded validation shortcuts; evidence still matches full persisted before/after records, and metadata-only fabricated events are rejected.
+
+## 2026-10-09 — Portable projection ordering
+
+A failing regression demonstrated that Firestore child query order can differ from the order used when saving a valid multi-leg summary. Portable validation now compares projection legs by ID and instrument caches as multisets, preserving duplicate counts, every projected value and stored presentation order. Tampered monetary results or cached instrument values still fail verification. Source records, calculation rules/version and frozen schema-transition dependencies remain unchanged.
+
+## 2026-10-10 — Proportional correction history
+
+Supersedes the per-source evidence design and pending architecture decision of 9 October. Keep the static browser/CLI architecture. Each application save records one append-only entry with reason and changed financial fields, including automatic FX invalidations, in the existing source/parent/receipt transaction. Full unchanged source records and their metadata are omitted. Rules retain ownership, basic history structure and append-only protection; exhaustive source/evidence cross-document verification is removed. Authenticated owners can already maintain their own financial facts; history is application-recorded information, not independently verified authorship. Preserve six-leg atomic saves and verify the formerly failing eighteen-change correction. Schema 2 is unreleased; revise its new correction shape directly, retaining the immutable 1→2 transition and calculation version 1.

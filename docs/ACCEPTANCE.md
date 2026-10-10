@@ -53,3 +53,19 @@ The mappings identify available permanent coverage, not a per-change execution c
 Run `npm run check` once before merging an accumulated batch into the main branch. The check includes lint, skill documentation contracts, unit/integration/browser acceptance, local build and portable packaged-skill acceptance. Releases additionally require `npm run build:prod` against the release inputs. Reuse integration results only when source, tests, configuration, dependencies and packaged artifacts remain unchanged; regenerate commit-bearing build metadata when the release revision changes. Verify generated application and skill metadata match the clean release revision; inspect affected rendered states and record functional, accessibility and visual evidence separately. Routine tasks use affected coverage and do not automatically repeat this complete gate.
 
 Known limits: automated browser coverage uses Chromium; classic History fallback preserves drafts and usable navigation but cannot guarantee the original physical cursor for unindexed entries. Automated authentication exercises stdin; the existing interactive hidden terminal prompt is unchanged and not exercised by this gate. Production services are not exercised or deployed by this remediation. Disposable test records require no retained-data conversion. Earlier dated results in VALIDATION.md are historical observations, not current acceptance status.
+
+
+## Dependable trade records and correction history
+
+| Contract | Permanent evidence |
+| --- | --- |
+| Source identity, deterministic replay and unchanged inputs | `tests/unit/corrections.test.js`: 32 seeded histories, tie ordering and array permutations; independently specified basis, gross, fees and signed conversion results |
+| Correction scope/reasons and grouped pagination | Shared correction-diff/reason tests; `tests/e2e/corrections.spec.js` at 375/800/1280, missing-to-known FX, deletion, thirteen-operation history and uncertain receipt retry |
+| Atomic source/history/receipt and owner isolation | `tests/integration/corrections.test.js`, security and repository suites: six multiplier/currency corrections, eighteen source changes in one compact entry, retries, basic entry validation, append-only history, stale/invalid writes and trade cascade deletion |
+| Structured errors and offline verification | CLI `exposes correction requirements, structured rejection and offline backup verification`; typed validation and write-outcome unit tests |
+| Portable correction recovery | Import/correction integration: owner rebinding, replacement backup, interrupted rollback preserving exact events and retained schema-1 backup restoration |
+| Portable projection identity | `tests/unit/portable-import.test.js`: reordered multi-leg sources preserve valid saved projections; resealed monetary/instrument-cache mismatches are rejected |
+| Adjacent schema preservation | Frozen transition registry unit test; database integration compares full source graph/snapshots/receipts/results before and after retained schema-1 startup migration |
+| Skill contracts | Generated CLI inventory, validated workflow examples and packaged-skill acceptance at complete verification |
+
+The six-currency/twelve-rate regression verifies eighteen source changes recorded in one application history entry, without splitting the save or adding a service. Rules intentionally permit direct owner source writes with a parent revision; application-recorded history does not independently verify authorship or every before/after value.

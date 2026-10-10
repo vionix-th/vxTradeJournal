@@ -1,3 +1,5 @@
+import { correctionDiff, correctionReason } from '../application/corrections.js';
+import { verifyExport } from '../application/portable.js';
 import { PRESETS, normalizeAccount, normalizeInstrument, normalizeStrategy, validateSettings, calculateTrade, sizePosition, isCalendarDate } from "../domain/journal.js";
 import { prepareTradeResult, filterJournal, journalOverview } from "../application/journal.js";
 import { JournalTransfer } from '../persistence/transfer.js';
@@ -62,13 +64,14 @@ async function entity({ repo, spec, options, input }) {
 
 async function tradeWrite({ command, spec, repo, options, input }) {
   const id = spec.action === "create" ? input.id : options.trade || options.id;
-  const requestHash = await fingerprint({ command, tradeId: id, recordId: options.trade ? options.id || null : null, revision: options.revision ?? 0, input });
+  const reason = correctionReason(options["correction-reason"]);
+  const requestHash = await fingerprint({ correctionReason: reason, command, tradeId: id, recordId: options.trade ? options.id || null : null, revision: options.revision ?? 0, input });
   const operationId = options["operation-id"];
   if (operationId && !options.preview && !options["dry-run"]) {
     const receipt = await repo.getOperation(id, operationId);
     if (receipt) {
       if (receipt.requestFingerprint !== requestHash) throw new CliError("OPERATION_MISMATCH", "Operation ID already used with different input.", 5);
-      return { trade: await getTrade(repo, id), appliedRevision: receipt.revision, replayed: true };
+      return { trade: await getTrade(repo, id), writeOutcome: { state: "applied" }, appliedRevision: receipt.revision, replayed: true };
     }
   }
   let next, data;
@@ -99,18 +102,24 @@ async function tradeWrite({ command, spec, repo, options, input }) {
   const previous = spec.action === "create" ? null : await getTrade(repo, id);
   if (previous) revision(previous, options.revision);
   const { trade: prepared, calculation } = prepareTradeResult(next, data, previous);
+  const changes = correctionDiff(previous, prepared);
   let previewFingerprint;
   if (spec.action === "correct-snapshot") {
     previewFingerprint = await fingerprint({ tradeId: id, revision: options.revision, legId: options.id, snapshot: prepared.legs.find((l) => l.id === options.id).snapshot, calculation });
     if (!options.preview && !options["dry-run"] && options["accept-preview"] !== previewFingerprint) throw new CliError("PREVIEW_MISMATCH", "Correction or trade changed since preview. Generate and review a new preview.", 5);
   }
-  if (options["dry-run"] || options.preview) return { dryRun: true, trade: prepared, calculation, ...(previewFingerprint ? { previewFingerprint } : {}) };
-  const trade = await repo.saveTrade(prepared, operationId, requestHash);
-  const receipt = required(await repo.getOperation(id, operationId), "Operation receipt");
-  return { trade, appliedRevision: receipt.revision, replayed: false };
+  if (options["dry-run"] || options.preview) return { dryRun: true, correctionRequired: changes.length > 0, corrections: changes, writeOutcome: { state: "not_applied" }, trade: prepared, calculation, ...(previewFingerprint ? { previewFingerprint } : {}) };
+  correctionReason(reason, changes.length > 0);
+  const trade = await repo.saveTrade(prepared, operationId, requestHash, { correctionReason: reason });
+  let receipt;
+  try { receipt = required(await repo.getOperation(id, operationId), "Operation receipt"); }
+  catch (error) { error.writeOutcome = { state: 'applied' }; throw error; }
+  return { trade, writeOutcome: { state: "applied" }, appliedRevision: receipt.revision, replayed: false };
 }
 
 export const handlers = {
+  verifyExport: ({ input }) => verifyExport(input),
+  corrections: async ({ repo, options }) => { required(await repo.getTrade(options.id), 'Trade'); return repo.getCorrections(options.id, options.page || 1, options['page-size'] || 12); },
   entity,
   tradeWrite,
   presets: async () => PRESETS,

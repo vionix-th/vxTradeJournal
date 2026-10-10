@@ -25,7 +25,7 @@ describe("database evolution contracts", () => {
   });
   it("fails closed on missing, unsupported, maintenance and mismatched schemas", () => {
     expect(checkDatabase(metadata())).toEqual(metadata());
-    for (const [value, code] of [[null, "DATABASE_NOT_INITIALIZED"], [{ ...metadata(), metadataVersion: 2 }, "DATABASE_NOT_INITIALIZED"], [metadata(1, "maintenance"), "DATABASE_MAINTENANCE"], [metadata(2), "SCHEMA_VERSION_MISMATCH"]]) {
+    for (const [value, code] of [[null, "DATABASE_NOT_INITIALIZED"], [{ ...metadata(), metadataVersion: 2 }, "DATABASE_NOT_INITIALIZED"], [metadata(1, "maintenance"), "DATABASE_MAINTENANCE"], [metadata(3), "SCHEMA_VERSION_MISMATCH"]]) {
       try { checkDatabase(value); throw new Error("Unexpected success"); } catch (error) { expect(error.code).toBe(code); }
     }
   });
@@ -76,7 +76,7 @@ describe("database evolution contracts", () => {
     expect((await journalDocuments(db)).length).toBe(1);
   });
   it("Hosting failure keeps maintenance and verified publication precedes reopening", async () => {
-    const db = new MemoryDatabase({ "_system/database": metadata(), "_system/release": { rulesHash: "before" } });
+    const db = new MemoryDatabase({ "_system/database": metadata(1), "_system/release": { rulesHash: "before" } });
     const identity = { projectId: "demo-test", rulesHash: "after" };
     const lease = new Lease(db, "run", identity); await lease.acquire();
     const events = [];
@@ -149,4 +149,18 @@ it("resumes mixed-version records after a mid-step chunk interruption", async ()
   expect(sourceChecks).toBe(1);
   expect((await journalDocuments(db)).every((item) => item.data.schemaVersion === 2 && item.data.amount === "0.123456789123456789")).toBe(true);
   expect(db.records.get("_system/database")).toEqual(metadata(2, "maintenance"));
+});
+
+it('registers preserving schema 1 to 2 correction-history transition', async () => {
+  const { schemaRegistry } = await import('../../src/application/schema-evolution.js');
+  expect(schemaRegistry.target).toBe(2);
+  const chain = migrationChain(1, 2, schemaRegistry.migrations);
+  expect(chain).toHaveLength(1);
+  const source = { path: 'users/alice/accounts/a', data: { id: 'a', uid: 'alice', schemaVersion: 1, revision: 7, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-02T00:00:00Z', name: 'Main', currency: 'USD', archived: false, hasTrades: false } };
+  const original = structuredClone(source);
+  await chain[0].validateSource([source]);
+  const target = await chain[0].transform([source]);
+  expect(target).toEqual([{ ...source, data: { ...source.data, schemaVersion: 2 } }]);
+  expect(source).toEqual(original);
+  await chain[0].validateTarget(target);
 });

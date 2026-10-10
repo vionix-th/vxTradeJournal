@@ -31,7 +31,7 @@ function sourceChunks(text) {
 const millis = (value) => value?.toMillis?.() || 0;
 const order = (row) => {
   const type = row.path.split('/').at(-2);
-  const rank = ['accounts', 'instruments', 'strategies', 'trades', 'legs', 'executions', 'adjustments', 'operations', 'settings'].indexOf(type);
+  const rank = ['accounts', 'instruments', 'strategies', 'trades', 'legs', 'executions', 'adjustments', 'corrections', 'operations', 'settings'].indexOf(type);
   return row.after === null ? 100 - rank : rank;
 };
 export class JournalTransfer {
@@ -47,7 +47,7 @@ export class JournalTransfer {
         assertJSON(item.data());
         if (item.data().uid !== this.uid || item.data().id !== item.id) throw new ImportError('INVALID_EXPORT', 'Destination journal metadata or ownership is invalid.');
         records.push({ path: `${type}/${item.id}`, data: item.data() });
-        if (type === 'trades') for (const child of ['legs', 'executions', 'adjustments', 'operations'])
+        if (type === 'trades') for (const child of ['legs', 'executions', 'adjustments', 'corrections', 'operations'])
           for (const record of (await getDocsFromServer(collection(item.ref, child))).docs) { assertJSON(record.data()); if (record.data().uid !== this.uid || record.data().id !== record.id) throw new ImportError('INVALID_EXPORT', 'Destination child ownership or identity is invalid.'); records.push({ path: `trades/${item.id}/${child}/${record.id}`, data: record.data() }); }
       }
     }
@@ -104,6 +104,22 @@ export class JournalTransfer {
       throw error;
     } finally { await stop(); }
   }
+  async outcome(id, operation) {
+    try { return await operation(); }
+    catch (error) {
+      if (!error.writeOutcome) {
+        let state = 'unknown';
+        try {
+          const session = await this.status(id);
+          if (['complete', 'rolledBack'].includes(session.status)) state = 'applied';
+          else if (['rollingBack', 'preparingRollback'].includes(session.status) || session.active && (session.cursor > 0 || ['verifying', 'verifyingRollback'].includes(session.phase))) state = 'partial';
+          else state = 'not_applied';
+        } catch (failure) { if (failure.code === 'IMPORT_NOT_FOUND') state = 'not_applied'; }
+        error.writeOutcome = { state };
+      }
+      throw error;
+    }
+  }
   async status(id) {
     if (!id) { const control = (await getDocFromServer(this.control())).data(); return control || { state: 'ready' }; }
     const session = (await getDocFromServer(this.session(id))).data();
@@ -147,7 +163,8 @@ export class JournalTransfer {
     if (source.sourceFingerprint !== session.sourceFingerprint) throw new ImportError('IMPORT_RECOVERY_REQUIRED', 'Staged source integrity check failed.');
     return source;
   }
-  async apply(file, options) {
+  async apply(file, options) { return this.outcome(options.operationId, () => this._apply(file, options)); }
+  async _apply(file, options) {
     if (!this.repo.verified()) throw new ImportError('EMAIL_UNVERIFIED', 'Verify email before importing.');
     const session = await this.upload(file, options);
     if (session.status === 'rejected') {
@@ -171,6 +188,7 @@ export class JournalTransfer {
       const original = old.get(path), type = path.split('/').at(-2);
       if (type === 'settings' && !session.includeSettings && !original && data.revision === 0 && !data.defaultAccount) continue;
       if (original && await same(original, data) && (session.mode === 'add' || type === 'settings' && !session.includeSettings)) target.set(path, original);
+      else if (type === 'corrections') target.set(path, structuredClone(data));
       else target.set(path, { ...data, uid: this.uid, schemaVersion: SCHEMA_VERSION, revision: Math.max(original?.revision || 0, data.revision || 0) + 1, createdAt: data.createdAt || session.startedAt, updatedAt: data.updatedAt || session.startedAt });
     }
     for (const { path, data } of before) if (path.split('/')[2] === 'operations' && session.mode === 'add') target.set(path, data);
@@ -228,7 +246,8 @@ export class JournalTransfer {
     });
     return this.status(id);
   }
-  async resume(id) {
+  async resume(id) { return this.outcome(id, () => this._resume(id)); }
+  async _resume(id) {
     let session = await this.status(id);
     if (done(session.status)) { await this.cleanup(id, session.backupAvailable); return session; }
     if (session.schemaVersion !== SCHEMA_VERSION || session.calculationVersion !== CALCULATION_VERSION || session.formatVersion !== 1 || session.projectId !== this.db.app.options.projectId || session.conversions.some((step) => !schemaRegistry.migrations.some((registered) => step.id === registered.id && step.checksum === registered.checksum))) throw new ImportError('UNSUPPORTED_EXPORT_VERSION', 'Import recovery requires matching project, contract, schema, calculation and conversion checksums.');
@@ -243,7 +262,8 @@ export class JournalTransfer {
       return result;
     } finally { await stop(); }
   }
-  async rollback(id, yes) {
+  async rollback(id, yes) { return this.outcome(id, () => this._rollback(id, yes)); }
+  async _rollback(id, yes) {
     if (!yes) throw new ImportError('INVALID_EXPORT', 'Rollback requires explicit confirmation.');
     let session = await this.status(id);
     if (['rolledBack', 'rejected'].includes(session.status)) { await this.cleanup(id, false); return session; }
@@ -261,7 +281,7 @@ export class JournalTransfer {
       const rows = await this.storedRows(id, session);
       if (session.status !== 'rollingBack') {
         await this.fenced(async (tx, current) => { tx.update(this.session(id), { status: 'preparingRollback' }); tx.set(this.control(), { ...current, phase: 'preparingRollback', checkpoint: current.checkpoint + 1 }); });
-        for (const row of rows) row.restore = row.before === null ? null : { ...row.before, ...(row.before.revision && row.path.split('/')[2] !== 'operations' ? { revision: Math.max(row.before.revision, row.after?.revision || 0) + 1 } : {}) };
+        for (const row of rows) row.restore = row.before === null ? null : { ...row.before, ...(row.before.revision && !['operations', 'corrections'].includes(row.path.split('/')[2]) ? { revision: Math.max(row.before.revision, row.after?.revision || 0) + 1 } : {}) };
         for (let index = 0; index < rows.length; index += 3) await this.fenced(async (tx, current) => { for (const row of rows.slice(index, index + 3)) tx.set(doc(this.rows(id), rowId(row.path)), row); tx.set(this.control(), { ...current, checkpoint: current.checkpoint + 1 }); });
         const restoreHash = await fingerprint(rows.map((r) => ({ path: r.path, data: r.restore })).sort((a, b) => a.path.localeCompare(b.path)));
         await this.fenced(async (tx, current) => { tx.update(this.session(id), { status: 'rollingBack', restoreHash }); tx.set(this.control(), { ...current, phase: 'rollingBack', cursor: 0, checkpoint: current.checkpoint + 1 }); });

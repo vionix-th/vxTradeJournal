@@ -1,14 +1,14 @@
 rules_version = '2';
 service cloud.firestore {
  match /databases/{database}/documents {
-  function available() { let d = get(/databases/$(database)/documents/_system/database).data; return d.metadataVersion == 1 && d.schemaVersion == 1 && d.status == "ready"; }
+  function available() { let d = get(/databases/$(database)/documents/_system/database).data; return d.metadataVersion == 1 && d.schemaVersion == 2 && d.status == "ready"; }
   match /_system/database { allow get: if request.auth != null; allow write: if false; }
   function authenticatedOwner(uid) { return request.auth != null && request.auth.uid == uid; }
   function controlPath(uid) { return /databases/$(database)/documents/users/$(uid)/_journal/control; }
   function readReady(uid) { return !exists(controlPath(uid)) || get(controlPath(uid)).data.state != 'import' || get(controlPath(uid)).data.phase in ['preparing','verifying','verifyingRollback']; }
   function writeReady(uid) { return !exists(controlPath(uid)) || get(controlPath(uid)).data.state == 'ready' || (get(controlPath(uid)).data.state == 'snapshot' && get(controlPath(uid)).data.expiresAt <= request.time); }
   function owner(uid) { return available() && authenticatedOwner(uid) && readReady(uid); }
-  function writer(uid) { return owner(uid) && request.auth.token.email_verified == true && writeReady(uid); }
+  function writer(uid) { return available() && authenticatedOwner(uid) && request.auth.token.email_verified == true && writeReady(uid); }
   function admission() { return !get(/databases/$(database)/documents/_system/database).data.get('importsBlocked',false); }
   function sessionPath(uid,id) { return /databases/$(database)/documents/users/$(uid)/imports/$(id); }
   function checkpointMoved(uid) {
@@ -57,18 +57,52 @@ service cloud.firestore {
   function iso(v) { return v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T.*Z$'); }
   function shortText(v) { return v is string && v.size() <= 120; }
   function body(v) { return v is string && v.size() <= 10000; }
-  function meta(uid,id) { let d=request.resource.data;return d.id == id && d.uid == uid && d.schemaVersion == 1 && d.revision is int && d.revision >= 1 && iso(d.createdAt) && iso(d.updatedAt); }
+  function meta(uid,id) { let d=request.resource.data;return d.id == id && d.uid == uid && d.schemaVersion == 2 && d.revision is int && d.revision >= 1 && iso(d.createdAt) && iso(d.updatedAt); }
   function revision() { return request.resource.data.revision == resource.data.revision + 1 && request.resource.data.createdAt == resource.data.createdAt; }
   function accountRef(uid,id) { return /databases/$(database)/documents/users/$(uid)/accounts/$(id); }
   function tradeRef(uid,id) { return /databases/$(database)/documents/users/$(uid)/trades/$(id); }
   function parentChange(uid,tid) { return existsAfter(tradeRef(uid,tid)) && (!exists(tradeRef(uid,tid)) || getAfter(tradeRef(uid,tid)).data.revision == get(tradeRef(uid,tid)).data.revision + 1); }
+  function correctionCreate(uid,tid,id) {
+   let c=request.resource.data;
+   return meta(uid,id) && c.keys().hasOnly(['id','uid','schemaVersion','calculationVersion','revision','createdAt','updatedAt','operationId','reason','changes'])
+    && id==c.operationId && id.matches('^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$') && c.calculationVersion==1
+    && c.updatedAt==c.createdAt && c.reason is string && c.reason.size()>0 && c.reason.size()<=1000 && c.reason.matches('(?s)\\S(?:.*\\S)?')
+    && c.changes is list && c.changes.size()>0
+    && existsAfter(tradeRef(uid,tid)) && c.revision==getAfter(tradeRef(uid,tid)).data.revision;
+  }
   function parentDelete(uid,tid) { return !existsAfter(tradeRef(uid,tid)) || parentChange(uid,tid); }
-  function strategySnapshot(d) { return d.keys().hasOnly(['id','uid','schemaVersion','revision','createdAt','updatedAt','name','purpose','markets','entryRules','exitRules','riskRules','archived']) && d.schemaVersion==1 && d.revision is int && d.revision>=1 && iso(d.createdAt) && iso(d.updatedAt) && shortText(d.name) && d.name.size()>0 && body(d.purpose) && body(d.markets) && body(d.entryRules) && body(d.exitRules) && body(d.riskRules) && d.archived is bool; }
+  function strategySnapshot(d) { return d.keys().hasOnly(['id','uid','schemaVersion','revision','createdAt','updatedAt','name','purpose','markets','entryRules','exitRules','riskRules','archived']) && d.schemaVersion==2 && d.revision is int && d.revision>=1 && iso(d.createdAt) && iso(d.updatedAt) && shortText(d.name) && d.name.size()>0 && body(d.purpose) && body(d.markets) && body(d.entryRules) && body(d.exitRules) && body(d.riskRules) && d.archived is bool; }
+  function normalLeg(uid,tid,id) {
+   let d=request.resource.data;
+   let old=exists(/databases/$(database)/documents/users/$(uid)/trades/$(tid)/legs/$(id));
+   let ref=/databases/$(database)/documents/users/$(uid)/instruments/$(d.instrumentId);
+   return parentChange(uid,tid) && meta(uid,id)
+    && d.keys().hasOnly(['id','uid','schemaVersion','revision','createdAt','updatedAt','instrumentId','snapshot','direction','planning'])
+    && d.direction in ['long','short'] && d.planning is map
+    && d.snapshot.id==d.instrumentId && d.snapshot.uid==uid && !d.snapshot.draft
+    && (old ? d.instrumentId==resource.data.instrumentId && savedSnapshot(d.snapshot)
+     : exists(ref) && !get(ref).data.archived && !get(ref).data.draft && d.snapshot==get(ref).data && instrument(d.snapshot));
+  }
+  function savedSnapshot(d) {
+   return d==resource.data.snapshot || (d.diff(resource.data.snapshot).affectedKeys().hasOnly(['pointValue'])
+    ? (pos(d.pointValue) || (d.pointValue==null && (d.draft || d.model=='manual')))
+    : (d.diff(resource.data.snapshot).affectedKeys().hasOnly(['currency']) ? code(d.currency) : instrument(d)));
+  }
   function instrument(d) {
    return shortText(d.name) && d.name.size()>0 && shortText(d.symbol) && shortText(d.market) && shortText(d.venue) && d.preset in ['equity','forex','futures','options','crypto','cryptoDerivative','cfd','custom'] && d.model in ['linear','manual'] && d.draft is bool && d.archived is bool && shortText(d.quantityUnit)
     && (!('priceUnit' in d) || (d.priceUnit is string && d.priceUnit.size()<=80))
-    && (d.draft || (d.symbol.size()>0 && d.market.size()>0 && d.quantityUnit.size()>0 && pos(d.quantityIncrement) && pos(d.priceIncrement) && code(d.currency) && (d.model=='manual' || pos(d.pointValue))))
-    && optionalRate(d.pointValue) && optionalRate(d.quantityIncrement) && optionalRate(d.priceIncrement) && (d.currency==null || code(d.currency)) && shortText(d.underlying) && d.expiry is string && (d.strike==null || dec(d.strike)) && d.optionType in ['','call','put'];
+    && optionalRate(d.pointValue) && optionalRate(d.quantityIncrement) && optionalRate(d.priceIncrement) && (d.currency==null || code(d.currency))
+    && (d.draft || (d.symbol.size()>0 && d.market.size()>0 && d.quantityUnit.size()>0 && d.quantityIncrement!=null && d.priceIncrement!=null && d.currency!=null && (d.model=='manual' || d.pointValue!=null))) && shortText(d.underlying) && d.expiry is string && (d.strike==null || dec(d.strike)) && d.optionType in ['','call','put'];
+  }
+  function execution(d,uid,tid) {
+   return d.keys().hasOnly(['id','uid','schemaVersion','revision','createdAt','updatedAt','legId','kind','quantity','price','timestamp','fees','feeCurrency','feeRate','resultRate','manualGross','manualSource','orderReference','reason','sequence']) && existsAfter(/databases/$(database)/documents/users/$(uid)/trades/$(tid)/legs/$(d.legId)) && d.kind in ['entry','exit','settlement'] && pos(d.quantity) && (dec(d.price) || (d.kind=='settlement' && d.price==null)) && dec(d.fees) && d.fees.matches('^[0-9]+([.][0-9]+)?$') && code(d.feeCurrency) && iso(d.timestamp) && optionalRate(d.get('feeRate',null)) && optionalRate(d.get('resultRate',null)) && (d.get('manualGross',null)==null || dec(d.manualGross));
+  }
+  function normalExecution(uid,tid,id) {
+   let d=request.resource.data;
+   return parentChange(uid,tid) && meta(uid,id)
+    && existsAfter(/databases/$(database)/documents/users/$(uid)/trades/$(tid)/legs/$(d.legId))
+    && (resource!=null && d.diff(resource.data).affectedKeys().hasOnly(['revision','updatedAt','resultRate'])
+     ? optionalRate(d.get('resultRate',null)) : execution(d,uid,tid));
   }
   match /users/{uid}/accounts/{id} {
    allow read: if owner(uid);
@@ -104,15 +138,15 @@ service cloud.firestore {
    allow delete: if writer(uid);
    match /legs/{id} {
     allow read: if owner(uid);
-    allow create,update: if writer(uid) && parentChange(uid,tid) && meta(uid,id) && request.resource.data.keys().hasOnly(['id','uid','schemaVersion','revision','createdAt','updatedAt','instrumentId','snapshot','direction','planning']) && request.resource.data.direction in ['long','short'] && request.resource.data.planning is map && exists(/databases/$(database)/documents/users/$(uid)/instruments/$(request.resource.data.instrumentId)) && request.resource.data.snapshot.id==request.resource.data.instrumentId && request.resource.data.snapshot.uid==uid && instrument(request.resource.data.snapshot) && !request.resource.data.snapshot.draft && (!exists(/databases/$(database)/documents/users/$(uid)/trades/$(tid)/legs/$(id)) || request.resource.data.instrumentId==resource.data.instrumentId) && (exists(/databases/$(database)/documents/users/$(uid)/trades/$(tid)/legs/$(id)) || (!get(/databases/$(database)/documents/users/$(uid)/instruments/$(request.resource.data.instrumentId)).data.archived && !get(/databases/$(database)/documents/users/$(uid)/instruments/$(request.resource.data.instrumentId)).data.draft && request.resource.data.snapshot==get(/databases/$(database)/documents/users/$(uid)/instruments/$(request.resource.data.instrumentId)).data));
+    allow create,update: if writer(uid) && normalLeg(uid,tid,id);
     allow create,update: if transferWrite(uid,'trades~'+tid+'~legs~'+id,false) && existsAfter(tradeRef(uid,tid)) && meta(uid,id) && request.resource.data.keys().hasOnly(['id','uid','schemaVersion','revision','createdAt','updatedAt','instrumentId','snapshot','direction','planning']) && request.resource.data.direction in ['long','short'] && request.resource.data.planning is map && exists(/databases/$(database)/documents/users/$(uid)/instruments/$(request.resource.data.instrumentId)) && request.resource.data.snapshot.id==request.resource.data.instrumentId && request.resource.data.snapshot.uid==uid && instrument(request.resource.data.snapshot) && !request.resource.data.snapshot.draft;
     allow delete: if transferWrite(uid,'trades~'+tid+'~legs~'+id,true);
     allow delete: if writer(uid) && parentDelete(uid,tid);
    }
    match /executions/{id} {
     allow read: if owner(uid);
-    allow create,update: if writer(uid) && parentChange(uid,tid) && meta(uid,id) && request.resource.data.keys().hasOnly(['id','uid','schemaVersion','revision','createdAt','updatedAt','legId','kind','quantity','price','timestamp','fees','feeCurrency','feeRate','resultRate','manualGross','manualSource','orderReference','reason','sequence']) && existsAfter(/databases/$(database)/documents/users/$(uid)/trades/$(tid)/legs/$(request.resource.data.legId)) && request.resource.data.kind in ['entry','exit','settlement'] && pos(request.resource.data.quantity) && (dec(request.resource.data.price) || (request.resource.data.kind=='settlement' && request.resource.data.price==null)) && dec(request.resource.data.fees) && request.resource.data.fees.matches('^[0-9]+([.][0-9]+)?$') && code(request.resource.data.feeCurrency) && iso(request.resource.data.timestamp) && optionalRate(request.resource.data.get('feeRate',null)) && optionalRate(request.resource.data.get('resultRate',null)) && (request.resource.data.get('manualGross',null)==null || dec(request.resource.data.manualGross));
-    allow create,update: if transferWrite(uid,'trades~'+tid+'~executions~'+id,false) && existsAfter(tradeRef(uid,tid)) && meta(uid,id) && request.resource.data.keys().hasOnly(['id','uid','schemaVersion','revision','createdAt','updatedAt','legId','kind','quantity','price','timestamp','fees','feeCurrency','feeRate','resultRate','manualGross','manualSource','orderReference','reason','sequence']) && existsAfter(/databases/$(database)/documents/users/$(uid)/trades/$(tid)/legs/$(request.resource.data.legId)) && request.resource.data.kind in ['entry','exit','settlement'] && pos(request.resource.data.quantity) && (dec(request.resource.data.price) || (request.resource.data.kind=='settlement' && request.resource.data.price==null)) && dec(request.resource.data.fees) && request.resource.data.fees.matches('^[0-9]+([.][0-9]+)?$') && code(request.resource.data.feeCurrency) && iso(request.resource.data.timestamp) && optionalRate(request.resource.data.get('feeRate',null)) && optionalRate(request.resource.data.get('resultRate',null)) && (request.resource.data.get('manualGross',null)==null || dec(request.resource.data.manualGross));
+    allow create,update: if writer(uid) && normalExecution(uid,tid,id);
+    allow create,update: if transferWrite(uid,'trades~'+tid+'~executions~'+id,false) && existsAfter(tradeRef(uid,tid)) && meta(uid,id) && execution(request.resource.data,uid,tid);
     allow delete: if transferWrite(uid,'trades~'+tid+'~executions~'+id,true);
     allow delete: if writer(uid) && parentDelete(uid,tid);
    }
@@ -122,6 +156,12 @@ service cloud.firestore {
     allow create,update: if transferWrite(uid,'trades~'+tid+'~adjustments~'+id,false) && existsAfter(tradeRef(uid,tid)) && meta(uid,id) && request.resource.data.keys().hasOnly(['id','uid','schemaVersion','revision','createdAt','updatedAt','amount','currency','rate','timestamp','reason']) && dec(request.resource.data.amount) && code(request.resource.data.currency) && optionalRate(request.resource.data.rate) && iso(request.resource.data.timestamp) && body(request.resource.data.reason) && request.resource.data.reason.size()>0;
     allow delete: if transferWrite(uid,'trades~'+tid+'~adjustments~'+id,true);
     allow delete: if writer(uid) && parentDelete(uid,tid);
+   }
+   match /corrections/{id} {
+    allow read: if owner(uid);
+    allow create: if writer(uid) && correctionCreate(uid,tid,id);
+    allow create,update: if transferWrite(uid,'trades~'+tid+'~corrections~'+id,false) && request.resource.data.uid==uid && request.resource.data.id==id && request.resource.data.schemaVersion==2;
+    allow delete: if transferWrite(uid,'trades~'+tid+'~corrections~'+id,true) || (writer(uid) && !existsAfter(tradeRef(uid,tid)));
    }
    match /operations/{id} {
     allow read: if owner(uid);

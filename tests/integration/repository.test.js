@@ -87,11 +87,11 @@ describe("transactional repository", () => {
     let saved = await repo.saveTrade(source, "capacity-create");
     expect(saved.summary.accountNet).toBe("12");
     expect((await repo.getEntity("accounts", account.id)).hasTrades).toBe(true);
-    saved = await repo.saveTrade({ ...saved, legs: saved.legs.map((leg, index) => index ? leg : { ...leg, snapshot: { ...leg.snapshot, pointValue: "2" } }) }, "capacity-correct");
+    saved = await repo.saveTrade({ ...saved, legs: saved.legs.map((leg, index) => index ? leg : { ...leg, snapshot: { ...leg.snapshot, pointValue: "2" } }) }, "capacity-correct", null, { correctionReason: "Correct contract multiplier" });
     expect(saved.summary.accountNet).toBe("14");
     await repo.deleteTrade(saved);
     expect(await repo.getTrade(saved.id)).toBeNull();
-    for (const type of ["legs", "executions", "adjustments", "operations"])
+    for (const type of ["legs", "executions", "adjustments", "corrections", "operations"])
       expect(await repo.listChildren(saved.id, type)).toEqual([]);
   });
   it("rejects rebinding persisted leg while retaining explicit snapshot corrections", async () => {
@@ -106,7 +106,7 @@ describe("transactional repository", () => {
     expect(saved.summary.accountNet).toBe("2");
     await expect(repo.saveTrade({ ...saved, legs: [{ ...saved.legs[0], instrumentId: replacement.id, snapshot: replacement }] }, "rebind")).rejects.toThrow(/leg instrument cannot change/i);
     expect((await repo.getTrade(t.id)).summary.accountNet).toBe("2");
-    const corrected = await repo.saveTrade({ ...saved, legs: [{ ...saved.legs[0], snapshot: { ...saved.legs[0].snapshot, pointValue: "10" } }] }, "correct-snapshot");
+    const corrected = await repo.saveTrade({ ...saved, legs: [{ ...saved.legs[0], snapshot: { ...saved.legs[0].snapshot, pointValue: "10" } }] }, "correct-snapshot", null, { correctionReason: "Correct historical multiplier" });
     expect(corrected.summary.accountNet).toBe("20");
     expect((await repo.getTrade(t.id)).legs[0].instrumentId).toBe(instrument.id);
   });

@@ -1,3 +1,4 @@
+import { writeOutcome } from '../application/write-outcome.js';
 import { assertJournalReady } from "./availability.js";
 import {
   collection,
@@ -17,6 +18,7 @@ import {
 import { prepareTrade } from "../application/journal.js";
 import { fingerprint } from "../application/fingerprint.js";
 import { defaultSettings } from "../application/settings.js";
+import { correctionDiff, correctionReason, correctionId, correctionPage } from '../application/corrections.js';
 export class ConflictError extends Error {
   constructor(message = "Save conflict. Reload current records, then reconcile changes.") {
     super(message);
@@ -38,10 +40,15 @@ export class Repository {
     this.verified = verified;
   }
   async guard(operation, writing = false) {
-    await assertJournalReady(this.db, this.uid, writing);
+    try { await assertJournalReady(this.db, this.uid, writing); }
+    catch (error) { if (writing) error.writeOutcome = writeOutcome(error); throw error; }
     try { return await operation(); }
     catch (error) {
-      if (String(error.code).includes("permission-denied")) await assertJournalReady(this.db, this.uid, writing);
+      if (writing) error.writeOutcome = writeOutcome(error, { started: true });
+      if (String(error.code).includes("permission-denied")) {
+        try { await assertJournalReady(this.db, this.uid, writing); }
+        catch (availability) { if (writing) availability.writeOutcome = error.writeOutcome; throw availability; }
+      }
       throw error;
     }
   }
@@ -51,6 +58,9 @@ export class Repository {
   async getOperation(...args) { return this.guard(() => this._getOperation(...args)); }
   async getSettings(...args) { return this.guard(() => this._getSettings(...args)); }
   async getTrade(...args) { return this.guard(() => this._getTrade(...args)); }
+  async getCorrections(id, page = 1, pageSize = 12) {
+    return this.guard(async () => correctionPage(await this._listChildren(id, 'corrections'), page, pageSize));
+  }
   async load(...args) { return this.guard(() => this._load(...args)); }
   async saveEntity(...args) { return this.guard(() => this._saveEntity(...args), true); }
   async saveTrade(...args) { return this.guard(() => this._saveTrade(...args), true); }
@@ -86,15 +96,15 @@ export class Repository {
     for (let attempt = 0; attempt < 3; attempt++) {
       const before = await getDoc(this.ref("trades", id));
       if (!before.exists()) return null;
-      const [legs, executions, adjustments] = await Promise.all(
-        ["legs", "executions", "adjustments"].map((type) =>
+      const [legs, executions, adjustments, corrections] = await Promise.all(
+        ["legs", "executions", "adjustments", "corrections"].map((type) =>
           this._listChildren(id, type),
         ),
       );
       const after = await getDoc(this.ref("trades", id));
       if (!after.exists()) return null;
       if (before.data().revision === after.data().revision) {
-        return { ...after.data(), legs, executions, adjustments };
+        return { ...after.data(), legs, executions, adjustments, corrections };
       }
     }
     throw new ConflictError();
@@ -157,9 +167,10 @@ export class Repository {
       return saved;
     });
   }
-  async _saveTrade(input, operationId = crypto.randomUUID(), requestFingerprint = null) {
+  async _saveTrade(input, operationId = crypto.randomUUID(), requestFingerprint = null, context = {}) {
     requireValue(this.verified(), "Verify email before saving");
-    const requestHash = requestFingerprint || await fingerprint(input);
+    const reason = correctionReason(context.correctionReason);
+    const requestHash = requestFingerprint || await fingerprint({ input, correctionReason: reason });
     const previous = await this._getTrade(input.id);
     const receipt = this.child(input.id, "operations", operationId);
     const ref = this.ref("trades", input.id);
@@ -195,8 +206,11 @@ export class Repository {
         strategies: strategyDoc?.exists() ? [strategyDoc.data()] : [],
       };
       const prepared = prepareTrade(this.metadata(input, old), data, previous);
-      const { legs, executions, adjustments, ...parent } = prepared;
+      const changes = correctionDiff(previous, prepared);
+      correctionReason(reason, changes.length > 0);
+      const { legs, executions, adjustments, corrections: _corrections, ...parent } = prepared;
       const saved = { ...parent, lastOperation: operationId };
+      const persisted = {};
       for (const [type, records] of Object.entries({
         legs,
         executions,
@@ -224,16 +238,30 @@ export class Repository {
               "schemaVersion",
             ])
               delete prior[key];
-          if (JSON.stringify(content) !== JSON.stringify(prior))
+          if (JSON.stringify(content) !== JSON.stringify(prior)) {
+            const after = this.metadata(content, before);
+            persisted[`${type}/${record.id}`] = after;
             tx.set(
               this.child(input.id, type, record.id),
-              this.metadata(content, before),
+              after,
             );
+          }
         }
         for (const record of oldRecords.filter(
           (r) => !records.some((n) => n.id === r.id),
         ))
           tx.delete(this.child(input.id, type, record.id));
+      }
+      const evidence = [];
+      if (changes.length) {
+        const id = correctionId(operationId);
+        const correction = {
+          id, uid: this.uid, schemaVersion: SCHEMA_VERSION, calculationVersion: 1,
+          revision: saved.revision, createdAt: saved.updatedAt, updatedAt: saved.updatedAt,
+          operationId, reason, changes: clean(changes),
+        };
+        evidence.push(correction);
+        tx.set(this.child(input.id, 'corrections', id), correction);
       }
       tx.set(ref, saved);
       tx.set(receipt, {
@@ -249,16 +277,23 @@ export class Repository {
           this.ref("accounts", a.id),
           this.metadata({ ...a, hasTrades: true }, a),
         );
-      return saved;
+      return { ...saved, legs: legs.map((record) => persisted[`legs/${record.id}`] || previous?.legs.find((old) => old.id === record.id)), executions: executions.map((record) => persisted[`executions/${record.id}`] || previous?.executions.find((old) => old.id === record.id)), adjustments: adjustments.map((record) => persisted[`adjustments/${record.id}`] || previous?.adjustments.find((old) => old.id === record.id)), corrections: [...(previous?.corrections || []), ...evidence] };
     });
     // Reading after either commit or a durable receipt returns current state; retries never recreate records.
-    return (await this._getTrade(input.id)) || result;
+    try { return (await this._getTrade(input.id)) || result; }
+    catch (error) {
+      // A resolved transaction or existing durable receipt is conclusive application evidence.
+      if (result) return result;
+      error.writeOutcome = { state: 'applied' };
+      throw error;
+    }
   }
   async _deleteTrade(input) {
     requireValue(this.verified(), "Verify email before deleting");
     const previous = await this._getTrade(input.id);
     if (!previous) return;
     const operations = await this._listChildren(input.id, "operations");
+    const corrections = await this._listChildren(input.id, 'corrections');
     await runTransaction(this.db, async (tx) => {
       const s = await tx.get(this.ref("trades", input.id));
       if (!s.exists()) return;
@@ -272,6 +307,7 @@ export class Repository {
           tx.delete(this.child(input.id, type, r.id));
       for (const r of operations)
         tx.delete(this.child(input.id, "operations", r.id));
+      for (const r of corrections) tx.delete(this.child(input.id, 'corrections', r.id));
       tx.delete(this.ref("trades", input.id));
     });
   }

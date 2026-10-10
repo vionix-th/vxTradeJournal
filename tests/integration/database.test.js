@@ -9,7 +9,8 @@ import { connectAdmin, journalDocuments } from "../../scripts/database/admin.js"
 import { Lease } from "../../scripts/database/lease.js";
 import { migrate } from "../../scripts/database/migrate.js";
 import { writeSnapshot, readSnapshot, restoreSnapshot } from "../../scripts/database/snapshot.js";
-import { metadata, hash, validateSchema1 } from "../../scripts/database/schema.js";
+import { metadata, hash, validateSchema1, registry as currentRegistry } from "../../scripts/database/schema.js";
+import { createTrade } from "../../src/domain/journal.js";
 import { Repository } from "../../src/persistence/repository.js";
 import { readyDatabase } from "../helpers/database.js";
 let env, admin;
@@ -74,23 +75,41 @@ it("automatically registers retained emulator data after backup under enforced m
     const client = env.authenticatedContext("alice", { email_verified: true }).firestore();
     const repo = new Repository(client, "alice");
     const account = await repo.saveEntity("accounts", { id: "a", name: "Retained", currency: "USD" });
+    const instrument = await repo.saveEntity("instruments", { id: "i", name: "Retained equity", symbol: "R", market: "Equities", preset: "equity", model: "linear", quantityUnit: "shares", quantityIncrement: "1", priceIncrement: "0.01", pointValue: "1", currency: "USD" });
+    const strategy = await repo.saveEntity("strategies", { id: "s", name: "Retained strategy" });
+    const trade = createTrade({ id: "t", account, strategy, instruments: [{ instrument, direction: "long" }] });
+    trade.executions = ['entry', 'exit'].map((kind, index) => ({ id: `e${index}`, legId: trade.legs[0].id, kind, quantity: '2', price: index ? '12' : '10', timestamp: `2026-01-0${index + 1}T00:00:00Z`, fees: '1', feeCurrency: 'USD' }));
+    await repo.saveTrade(trade, 'retained-source');
+    for (const record of await journalDocuments(admin.db)) {
+      const data = structuredClone(record.data);
+      if (data.schemaVersion === 2) data.schemaVersion = 1;
+      if (data.snapshot) data.snapshot.schemaVersion = 1;
+      if (data.strategySnapshot) data.strategySnapshot.schemaVersion = 1;
+      await admin.db.doc(record.path).set(data);
+    }
     await admin.db.doc("users/alice/unknown/missing/children/c").set({ exact: "123456789.123456789123456789" });
+    const original = await journalDocuments(admin.db);
     await admin.db.doc("_system/database").delete();
     const { prepareDevelopmentDatabase } = await import("../../scripts/database/development.js");
-    const registry = { target: 1, migrations: [], validators: new Map([[1, async documents => {
+    const registry = { ...currentRegistry, validators: new Map([...currentRegistry.validators, [1, async documents => {
       expect((await admin.db.doc("_system/database").get()).data().status).toBe("maintenance");
       await assertFails(getDoc(doc(client, "users/alice/accounts/a")));
       const runId = (await admin.db.doc("_system/lock").get()).data().runId;
       const recovery = (await admin.db.doc(`_system/runs/history/${runId}`).get()).data().snapshot;
-      expect((await readSnapshot(recovery, admin.projectId)).count).toBe(2);
+      expect((await readSnapshot(recovery, admin.projectId)).count).toBe(original.length);
       validateSchema1(documents);
     }]]) };
     const result = await prepareDevelopmentDatabase(admin.db, { profile: "auto", projectId: admin.projectId, directory, registry, log: () => {} });
-    expect((await readSnapshot(result.snapshot, admin.projectId)).count).toBe(2);
-    expect((await admin.db.doc("users/alice/accounts/a").get()).data()).toEqual(account);
+    const backup = await readSnapshot(result.snapshot, admin.projectId);
+    expect(backup.count).toBe(original.length);
+    expect(backup.schemaVersion).toBe(1);
+    expect((await admin.db.doc("users/alice/accounts/a").get()).data()).toEqual({ ...original.find(record => record.path === "users/alice/accounts/a").data, schemaVersion: 2 });
+    const expected = original.map(({ path, data }) => ({ path, data: { ...data, ...(data.schemaVersion === 1 ? { schemaVersion: 2 } : {}), ...(data.snapshot ? { snapshot: { ...data.snapshot, schemaVersion: 2 } } : {}), ...(data.strategySnapshot ? { strategySnapshot: { ...data.strategySnapshot, schemaVersion: 2 } } : {}) } }));
+    expect(await journalDocuments(admin.db)).toEqual(expected);
+    expect((await repo.getTrade('t')).corrections).toEqual([]);
     expect((await admin.db.doc("users/alice/unknown/missing/children/c").get()).data().exact).toBe("123456789.123456789123456789");
     expect((await admin.db.doc("_system/database").get()).data()).toEqual(metadata());
-    expect(await repo.getEntity("accounts", "a")).toEqual(account);
+    expect((await repo.getTrade("t")).summary.accountNet).toBe("2");
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
@@ -99,7 +118,9 @@ it("automatically resumes a real failed adjacent upgrade with the same backup an
   try {
     const client = env.authenticatedContext("alice", { email_verified: true }).firestore();
     const repo = new Repository(client, "alice");
-    await repo.saveEntity("accounts", { id: "a", name: "Retained", currency: "USD" });
+    const account = await repo.saveEntity("accounts", { id: "a", name: "Retained", currency: "USD" });
+    await admin.db.doc("users/alice/accounts/a").set({ ...account, schemaVersion: 1 });
+    await admin.db.doc("_system/database").set(metadata(1));
     await admin.db.doc("users/alice/unknown/missing/children/c").set({ exact: "123456789.123456789123456789", schemaVersion: 1 });
     const { prepareDevelopmentDatabase } = await import("../../scripts/database/development.js");
     let fail = true;

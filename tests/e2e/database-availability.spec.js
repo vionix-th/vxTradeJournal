@@ -12,7 +12,7 @@ for (const width of [375, 800, 1280]) test(`maintenance preserves editor draft a
     await page.getByRole("button", { name: "Accounts", exact: true }).click();
     await page.getByRole("button", { name: "New account", exact: true }).click();
     await page.getByLabel("Account name", { exact: true }).fill("Retained draft");
-    await admin.db.doc("_system/database").set(metadata(1, "maintenance"));
+    await admin.db.doc("_system/database").set(metadata(2, "maintenance"));
     await page.getByRole("button", { name: "Save account", exact: true }).click();
     await expect(page.getByRole("alert")).toContainText("database maintenance");
     await expect(page.getByLabel("Account name", { exact: true })).toHaveValue("Retained draft");
@@ -22,12 +22,12 @@ for (const width of [375, 800, 1280]) test(`maintenance preserves editor draft a
     await page.getByRole("button", { name: "Save account", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Accounts", exact: true })).toBeVisible();
     await expect(page.getByText("Retained draft", { exact: true })).toBeVisible();
-    await admin.db.doc("_system/database").set(metadata(1, "maintenance"));
+    await admin.db.doc("_system/database").set(metadata(2, "maintenance"));
     await page.reload();
     await expect(page.getByRole("heading", { name: "Journal unavailable" })).toBeVisible();
     await expect(page.getByRole("alert")).toContainText("database maintenance");
     await page.screenshot({ path: `test-results/database-unavailable-${width}.png`, fullPage: true });
-    await admin.db.doc("_system/database").set(metadata(2));
+    await admin.db.doc("_system/database").set(metadata(3));
     await page.getByRole("button", { name: "Retry loading", exact: true }).click();
     await expect(page.getByRole("alert")).toContainText("schemas differ");
     await admin.db.doc("_system/database").set(metadata());

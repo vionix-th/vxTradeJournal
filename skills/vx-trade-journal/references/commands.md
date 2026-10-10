@@ -43,6 +43,7 @@ This inventory is generated from the executable catalogue. Required options are 
 | `strategies trades` | List trade summaries linked to a strategy | `--profile`, `--id` |
 | `journal list` | Filter journal summaries, ordered by newest activity | `--profile` |
 | `journal overview` | Counts and one-account realized results | `--profile` |
+| `trades corrections` | Read correction history grouped by operation | `--profile`, `--id` |
 | `trades get` | Read complete source records and current calculations | `--profile`, `--id` |
 | `trades create` | Create a trade with up to six legs | `--profile`, `--operation-id`, `--input` |
 | `trades update` | Edit context or link/unlink a strategy | `--profile`, `--id`, `--revision`, `--operation-id`, `--input` |
@@ -69,6 +70,7 @@ This inventory is generated from the executable catalogue. Required options are 
 | `settings get` | Read display preferences | `--profile` |
 | `settings update` | Update preferences and owned default account | `--profile`, `--revision`, `--input` |
 | `export` | Export complete versioned journal source data | `--profile` |
+| `export verify` | Verify portable integrity, versions and replay without journal writes | `--input` |
 | `import preview` | preview portable journal JSON with add-only or replacement mode | `--profile`, `--mode`, `--input` |
 | `import apply` | apply portable journal JSON with add-only or replacement mode | `--profile`, `--mode`, `--accept-preview`, `--operation-id`, `--input` |
 | `import status` | status a durable journal import | `--profile` |

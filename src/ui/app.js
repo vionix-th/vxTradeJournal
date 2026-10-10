@@ -28,7 +28,7 @@ import { auth, db, useEmulators } from "../persistence/firebase.js";
 import { Repository } from "../persistence/repository.js";
 import { JournalTransfer } from '../persistence/transfer.js';
 import { recoveryPanel } from './import-editor.js';
-import { el, button, field, values, header, notice } from "./components.js";
+import { mutationErrorMessage, el, button, field, values, header, notice } from "./components.js";
 const root = document.getElementById("app");
 class JournalUI {
   constructor() {
@@ -255,7 +255,15 @@ class JournalUI {
       try {
         await handler(node);
       } catch (error) {
-        errors.append(notice(error.message, "error"));
+        errors.append(notice(mutationErrorMessage(error), "error"));
+        const path = error.details?.path;
+        if (path) {
+          const name = path.split('/').at(-1);
+          const scope = error.details.recordId ? [...node.querySelectorAll('[data-leg-id]')].find((leg) => leg.dataset.legId === error.details.recordId) || node : node;
+          const control = [...scope.querySelectorAll('[name]')].find((input) => input.name === name);
+          control?.fieldHandle?.setError(error.message);
+          control?.focus();
+        }
         if (error.name === "ConflictError")
           errors.append(
             button(
@@ -327,7 +335,7 @@ class JournalUI {
     try {
       await this.commit(action, after);
     } catch (e) {
-      this.main.prepend(notice(e.message, "error"));
+      this.main.prepend(notice(mutationErrorMessage(e), "error"));
     }
   }
   async reloadCurrent() {
@@ -345,7 +353,7 @@ class JournalUI {
         this.go(refreshed.route, refreshed.arg, true, { replace: true });
       });
     } catch (e) {
-      this.main.prepend(notice(e.message, "error"));
+      this.main.prepend(notice(mutationErrorMessage(e), "error"));
     }
   }
   date(value) {

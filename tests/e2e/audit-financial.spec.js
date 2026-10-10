@@ -55,6 +55,7 @@ test("snapshot currency correction clears obsolete result and planning conversio
   await page.getByText("Instrument snapshot and planning", { exact: true }).click();
   await page.getByRole("button", { name: "Correct snapshot", exact: true }).click();
   await page.getByLabel("P&L currency", { exact: true }).fill("EUR");
+  await page.getByLabel("Correction reason", { exact: true }).fill("Correct historical result currency");
   await page.getByRole("button", { name: "Preview correction", exact: true }).click();
   await expect(page.getByText(/Before: .*3.00 USD. After: Unknown \/ incomplete USD/)).toBeVisible();
   await page.getByRole("button", { name: "Save instrument", exact: true }).click();
@@ -64,6 +65,7 @@ test("snapshot currency correction clears obsolete result and planning conversio
   await expect(page.getByLabel("Fee currency", { exact: true })).toHaveValue("USD");
   await expect(page.getByLabel("Fee conversion rate", { exact: true })).toHaveValue("1");
   await page.getByLabel("Result conversion rate", { exact: true }).fill("0.8");
+  await page.getByLabel("Correction reason", { exact: true }).fill("Supply historical FX");
   await page.getByRole("button", { name: "Save execution", exact: true }).click();
   await expect(page.getByTestId("trade-result")).toContainText("2.20 USD");
   await page.getByRole("button", { name: "Edit trade", exact: true }).click();

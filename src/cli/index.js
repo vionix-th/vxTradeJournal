@@ -90,24 +90,28 @@ async function exportFile(path, data, overwrite) {
   return { path: destination, schemaVersion: data.schemaVersion, calculationVersion: data.calculationVersion };
 }
 
+const isMutation = (spec) => ['tradeWrite', 'tradeDelete'].includes(spec.handler) || spec.handler === 'entity' && !['list', 'get'].includes(spec.action) || spec.handler === 'settings' && spec.action === 'update' || spec.handler === 'import' && ['apply', 'resume', 'rollback'].includes(spec.action) || spec.handler === 'backup' && spec.action === 'delete';
+const optionsState = (parsed) => parsed.options['dry-run'] || parsed.options.preview ? 'not_applied' : 'applied';
 export async function run(args = process.argv.slice(2)) {
   let parsed, config, connection;
   const context = {};
+  let writing = false, writeStarted = false, confirmedOutcome = null;
   const emit = (body) => process.stdout.write(`${JSON.stringify({ cliContractVersion: 1, ...context, ...body })}\n`);
   const timeout = ['import', 'backup', 'export'].includes(args[0]) ? null : setTimeout(() => {
     if (process.stdin.isTTY && process.stdin.isRaw) process.stdin.setRawMode(false);
-    emit({ ok: false, error: { code: "TIMEOUT", message: "Command timed out. A write may have committed; check its record or receipt before retrying." } });
+    emit({ ok: false, writeOutcome: { state: confirmedOutcome || (writeStarted ? 'unknown' : 'not_applied') }, error: { code: 'TIMEOUT', message: 'Command timed out. A write may have committed; check its record or receipt before retrying.' } });
     process.exit(7);
   }, 60000);
   timeout?.unref();
   try {
     parsed = parseArguments(args);
     const { command, spec, options } = parsed;
+    writing = isMutation(spec);
     const [major, minor] = process.versions.node.split(".").map(Number);
     if (major < 22 || major === 22 && minor < 13) throw new CliError("UNSUPPORTED_RUNTIME", "Node.js 22.13 or newer is required.");
     if (credentialsCommands.has(command) && options.input && options.input !== "-")
       throw new CliError("INVALID_INPUT", "Credentials require stdin (--input -) or a hidden terminal prompt.");
-    let input = options.input ? validateInput(command, await inputJson(options.input, spec.handler === 'import' ? IMPORT_MAX_BYTES : 1024 * 1024)) : {};
+    let input = options.input ? validateInput(command, await inputJson(options.input, ['import', 'verifyExport'].includes(spec.handler) ? IMPORT_MAX_BYTES : 1024 * 1024)) : {};
     let data;
     if (spec.offline) {
       if (command === "version") data = { version, commit, cliContractVersion: 1, schemaVersion: SCHEMA_VERSION, calculationVersion: CALCULATION_VERSION };
@@ -140,21 +144,25 @@ export async function run(args = process.argv.slice(2)) {
         data = { database, journal: connection ? await new JournalTransfer(connection.repo).status() : { state: 'unchecked' }, node: process.versions.node, version, commit, useEmulators: config.useEmulators, sessionDirectory: session.store.root, session: user ? { uid: user.uid, email: user.email, emailVerified: user.emailVerified } : null };
       } else {
         const user = await session.token();
-        const writing = ["tradeWrite", "tradeDelete"].includes(spec.handler) || spec.handler === "entity" && !["list", "get"].includes(spec.action) || spec.handler === "settings" && spec.action === "update" || spec.handler === 'import' && ['apply', 'resume', 'rollback'].includes(spec.action) || spec.handler === 'backup' && spec.action === 'delete';
+
         if (writing && !user.emailVerified) throw new CliError("EMAIL_UNVERIFIED", "Verify email before saving journal records. Open the verification email and run auth status.", 3);
         connection = await connectJournal(config, user);
         await assertDatabaseReady(connection.repo.db);
+        writeStarted = writing;
         data = await handlers[spec.handler]({ command, spec, options, input, repo: connection.repo });
+        if (writing) confirmedOutcome = optionsState(parsed);
         if ((spec.handler === "export" || spec.handler === 'backup' && spec.action === 'export') && options.output) data = await exportFile(options.output, data, options.overwrite);
       }
     }
     if (connection) { await connection.close(); connection = null; }
-    emit({ ok: true, data });
+    emit({ ok: true, ...(writing ? { writeOutcome: { state: optionsState(parsed) } } : {}), data });
     return 0;
   } catch (error) {
     const safe = publicError(error);
     const options = parsed?.options;
-    emit({ ok: false, error: { code: safe.code, message: safe.message, ...safe.details, ...(options?.["operation-id"] ? { operationId: options["operation-id"], recovery: parsed?.spec.handler === 'import' ? 'Inspect import status, then explicitly resume or roll back the recorded operation.' : 'Read the operation receipt and current trade before retrying or reconciling.' } : {}) } });
+    const deterministic = ['VALIDATION', 'INVALID_INPUT', 'CONFLICT', 'OPERATION_MISMATCH', 'PREVIEW_MISMATCH', 'EMAIL_UNVERIFIED', 'NOT_FOUND', 'IMPORT_PREVIEW_CHANGED', 'IMPORT_CONFLICT', 'UNSUPPORTED_EXPORT_VERSION', 'INVALID_EXPORT'].includes(safe.code);
+    const state = error.writeOutcome?.state || confirmedOutcome || (writeStarted && !deterministic ? 'unknown' : 'not_applied');
+    emit({ ok: false, ...(writing || parsed?.spec.handler === 'tradeWrite' ? { writeOutcome: { state } } : {}), error: { code: safe.code, message: safe.message, ...safe.details, ...(options?.["operation-id"] ? { operationId: options["operation-id"], recovery: parsed?.spec.handler === 'import' ? 'Inspect import status, then explicitly resume or roll back the recorded operation.' : 'Read the operation receipt and current trade before retrying or reconciling.' } : {}) } });
     return safe.exitCode;
   } finally {
     clearTimeout(timeout);

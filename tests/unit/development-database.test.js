@@ -14,13 +14,13 @@ async function upgrade(db, options = {}) {
 }
 afterEach(async () => { for (const path of directories.splice(0)) await rm(path, { recursive: true, force: true }); });
 
-it("automatically registers retained schema-1 records after private backup without changing any values", async () => {
+it("automatically registers and upgrades retained schema-1 records after private backup without changing financial values", async () => {
   const path = await directory();
   const records = { "users/alice/accounts/a": retained, "users/alice/unknown/missing/children/c": { exact: "0.123456789123456789", values: [false, null] } };
   const db = new MemoryDatabase(records);
   const result = await upgrade(db, { directory: path });
-  expect(db.records.get("_system/database")).toEqual(metadata());
-  for (const [key, value] of Object.entries(records)) expect(db.records.get(key)).toEqual(value);
+  expect(db.records.get("_system/database")).toEqual(metadata(2));
+  for (const [key, value] of Object.entries(records)) expect(db.records.get(key)).toEqual(key.endsWith("/accounts/a") ? { ...value, schemaVersion: 2 } : value);
   const snapshot = await readSnapshot(result.snapshot, "demo-vxjournal-auto");
   expect(snapshot.count).toBe(2);
   expect(decode(snapshot.records.find(item => item.path.endsWith("/a")).value, db)).toEqual(retained);
@@ -42,7 +42,7 @@ it("creates the required schema for a genuinely empty database and makes repeat 
 
 it("automatically resumes the same interrupted adjacent chain and reuses its original recovery file", async () => {
   const path = await directory();
-  const db = new MemoryDatabase({ "_system/database": metadata(), "users/alice/accounts/a": retained });
+  const db = new MemoryDatabase({ "_system/database": metadata(1), "users/alice/accounts/a": retained });
   let fail = true;
   const calls = [];
   const migrations = [1, 2].map(from => ({ id: `${from}-${from + 1}`, from, to: from + 1, checksum: hash(`dev-step-${from}`), validateSource: () => {}, validateTarget: () => {}, transform: records => {
@@ -85,8 +85,8 @@ it("keeps failed legacy validation in maintenance with backup and unchanged jour
 it("rejects unknown schemas, missing paths and competing live runs without changing database state", async () => {
   for (const [db, options, error] of [
     [new MemoryDatabase({ "_system/database": metadata(7) }), {}, "Unknown"],
-    [new MemoryDatabase({ "_system/database": metadata() }), { registry: { ...baseline, target: 2, validators: new Map([[1, () => {}], [2, () => {}]]) } }, "Missing migration"],
-    [new MemoryDatabase({ "_system/database": metadata(), "_system/lock": { runId: "other", owner: "live", expiresAt: Date.now() + 120000 } }), {}, "owns"],
+    [new MemoryDatabase({ "_system/database": metadata(1) }), { registry: { ...baseline, migrations: [], target: 2, validators: new Map([[1, () => {}], [2, () => {}]]) } }, "Missing migration"],
+    [new MemoryDatabase({ "_system/database": metadata(1), "_system/lock": { runId: "other", owner: "live", expiresAt: Date.now() + 120000 } }), {}, "owns"],
   ]) {
     const before = structuredClone([...db.records]);
     await expect(upgrade(db, options)).rejects.toThrow(error);
@@ -116,7 +116,7 @@ it("rejects production automatic upgrade and ambiguous legacy commands before da
 
 it("keeps an interrupted automatic upgrade guarded and resumes after the last verified step", async () => {
   const path = await directory();
-  const db = new MemoryDatabase({ "_system/database": metadata(), "users/alice/accounts/a": retained });
+  const db = new MemoryDatabase({ "_system/database": metadata(1), "users/alice/accounts/a": retained });
   const controller = new AbortController();
   const step = { id: "1-2", from: 1, to: 2, checksum: hash("abort-step"), validateSource: () => {}, validateTarget: () => {}, transform: records => {
     controller.abort();
@@ -134,7 +134,7 @@ it("keeps an interrupted automatic upgrade guarded and resumes after the last ve
 
 it("does not overwrite an upgrade completed between preflight and lease acquisition", async () => {
   const path = await directory();
-  const db = new MemoryDatabase({ "_system/database": metadata(), "users/alice/accounts/a": retained });
+  const db = new MemoryDatabase({ "_system/database": metadata(1), "users/alice/accounts/a": retained });
   const step = { id: "1-2", from: 1, to: 2, checksum: hash("concurrent-step"), validateSource: documents => {
     for (const item of documents) if (item.data.schemaVersion !== 1) throw new Error("Source already advanced");
   }, validateTarget: () => {}, transform: records => records.map(item => ({ ...item, data: { ...item.data, schemaVersion: 2 } })) };

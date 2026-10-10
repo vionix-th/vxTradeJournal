@@ -123,7 +123,7 @@ describe("application boundaries", () => {
       token: "secret",
     };
     const result = exportJournal(data, "2026-01-01T00:00:00Z");
-    expect(result.schemaVersion).toBe(1);
+    expect(result.schemaVersion).toBe(2);
     expect(result.trades[0].legs[0].snapshot.symbol).toBe("ACME");
     expect(JSON.stringify(result)).not.toContain("secret");
   });

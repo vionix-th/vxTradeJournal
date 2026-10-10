@@ -4,7 +4,7 @@ vi.mock("firebase/firestore", () => ({
   doc: (_db, ...parts) => parts.join("/"),
   collection: (_db, ...parts) => parts.join("/"),
   getDoc: mocks.getDoc,
-  getDocFromServer: async () => ({ exists: () => true, data: () => ({ metadataVersion: 1, schemaVersion: 1, status: "ready" }) }),
+  getDocFromServer: async () => ({ exists: () => true, data: () => ({ metadataVersion: 1, schemaVersion: 2, status: "ready" }) }),
   getDocs: mocks.getDocs,
   runTransaction: vi.fn(),
 }));

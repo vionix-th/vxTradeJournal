@@ -1,5 +1,70 @@
 import { test, expect } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 import { setup } from "./fixtures.js";
+
+for (const width of [320, 910, 1280]) {
+  test(`settings journal data actions at ${width}px`, async ({ page, request }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await setup(page, request);
+    const settings = page.getByRole("button", { name: "Settings", exact: true });
+    if (!await settings.isVisible()) await page.getByRole("button", { name: "More", exact: true }).click();
+    await settings.click();
+    await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Journal data", exact: true })).toBeVisible();
+    const actions = page.locator(".journal-data-actions");
+    const exportButton = actions.getByRole("button", { name: "Export JSON", exact: true });
+    const importButton = actions.getByRole("button", { name: "Import journal and recovery", exact: true });
+    const saveButton = page.getByRole("button", { name: "Save settings", exact: true });
+    await expect(actions.getByRole("button")).toHaveCount(2);
+    await expect(exportButton).toBeVisible();
+    await expect(importButton).toBeVisible();
+    const layout = await actions.evaluate((group) => {
+      const bounds = (node) => {
+        const { top, bottom, left, right, height } = node.getBoundingClientRect();
+        return { top, bottom, left, right, height };
+      };
+      const buttons = [...group.querySelectorAll("button")].map((node) => {
+        const style = getComputedStyle(node);
+        return {
+          bounds: bounds(node),
+          style: { background: style.backgroundColor, borderColor: style.borderColor, borderStyle: style.borderStyle, borderWidth: style.borderWidth },
+        };
+      });
+      return { group: bounds(group), buttons };
+    });
+    const [exportLayout, importLayout] = layout.buttons;
+    expect(exportLayout.style).toEqual(importLayout.style);
+    expect(exportLayout.style.background).not.toBe(await saveButton.evaluate((node) => getComputedStyle(node).backgroundColor));
+    expect(exportLayout.bounds.height).toBeGreaterThanOrEqual(44);
+    expect(importLayout.bounds.height).toBeGreaterThanOrEqual(44);
+    expect(Math.abs(exportLayout.bounds.height - importLayout.bounds.height)).toBeLessThanOrEqual(1);
+    if (width > 320) {
+      expect(Math.abs(exportLayout.bounds.top - importLayout.bounds.top)).toBeLessThanOrEqual(1);
+      expect(importLayout.bounds.left).toBeGreaterThanOrEqual(exportLayout.bounds.right);
+    } else {
+      expect(importLayout.bounds.top).toBeGreaterThanOrEqual(exportLayout.bounds.bottom);
+    }
+    expect(Math.abs(importLayout.bounds.right - layout.group.right)).toBeLessThanOrEqual(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await page.screenshot({ path: `test-results/settings-journal-data-${width}.png`, fullPage: true });
+
+    await saveButton.focus();
+    await page.keyboard.press("Tab");
+    await expect(exportButton).toBeFocused();
+    const download = page.waitForEvent("download");
+    await page.keyboard.press("Enter");
+    const file = JSON.parse(await readFile(await (await download).path(), "utf8"));
+    expect(file.formatVersion).toBe(1);
+    await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
+    await expect(page).toHaveURL(/#settings$/);
+    await page.keyboard.press("Tab");
+    await expect(importButton).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { name: "Import journal", exact: true })).toBeVisible();
+    await expect(page.getByLabel("Journal JSON file", { exact: true })).toBeVisible();
+    await expect(page).toHaveURL(/#importEditor$/);
+  });
+}
 
 for (const width of [1280, 375]) {
   test(`catalogue spacing and section alignment at ${width}px`, async ({ page, request }) => {

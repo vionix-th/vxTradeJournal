@@ -1,4 +1,4 @@
-import { SCHEMA_VERSION, normalizeAccount, normalizeInstrument, normalizeStrategy, validateSettings, calculateTrade } from "../domain/journal.js";
+import { SCHEMA_VERSION } from "../domain/journal.js";
 import checksums from '../config/migrations.json' with { type: 'json' };
 export function migrationChain(from, to, migrations, applied = []) {
   if (!Number.isInteger(from) || from < 1 || !Number.isInteger(to) || to < from) throw new Error("Unknown schema or schema downgrade.");
@@ -20,33 +20,28 @@ export function migrationChain(from, to, migrations, applied = []) {
   return chain;
 }
 
-const entityValidators = { accounts: normalizeAccount, instruments: normalizeInstrument, strategies: normalizeStrategy, settings: validateSettings };
-export function validateSchema1(documents) {
-  const map = new Map(documents.map((item) => [item.path, item.data]));
+export { validateSchema1 } from './migrations/schema-1-to-2/validate-v1.js';
+import { validateTarget as validateSchema2Base, validateSource, transform } from './migrations/schema-1-to-2/transition.js';
+import { validateCorrection, validateCorrectionHistory } from './corrections.js';
+export function validateSchema2(documents) {
+  validateSchema2Base(documents.filter(({ path }) => !path.includes('/corrections/')));
+  const parents = new Map(documents.filter(({ path }) => path.split('/').length === 4).map(({ path, data }) => [path, data]));
   for (const { path, data } of documents) {
-    const parts = path.split("/");
-    if (parts[0] !== "users" || parts.length % 2) throw new Error(`Invalid journal path: ${path}`);
-    if (parts.length === 2) continue;
-    const [, uid, type, id, child, childId] = parts;
-    const managed = parts.length === 4 && (entityValidators[type] || type === "trades") || parts.length === 6 && type === "trades" && ["legs", "executions", "adjustments"].includes(child);
-    if (managed && (data.uid !== uid || data.id !== (childId || id) || data.schemaVersion !== 1 || !Number.isInteger(data.revision) || data.revision < 1 || !Number.isFinite(Date.parse(data.createdAt)) || !Number.isFinite(Date.parse(data.updatedAt)))) throw new Error(`Invalid schema-1 metadata: ${path}`);
-    if (parts.length === 4 && entityValidators[type]) entityValidators[type](structuredClone(data));
-    if (parts.length === 4 && type === "trades") {
-      const children = (name) => documents.filter((item) => item.path.startsWith(`${path}/${name}/`) && item.path.split("/").length === 6).map((item) => item.data);
-      const trade = { ...data, legs: children("legs"), executions: children("executions"), adjustments: children("adjustments") };
-      if (!map.has(`users/${uid}/accounts/${data.accountId}`)) throw new Error(`Missing trade account: ${path}`);
-      for (const leg of trade.legs) {
-        if (!map.has(`users/${uid}/instruments/${leg.instrumentId}`) || leg.snapshot?.uid !== uid) throw new Error(`Invalid leg reference: ${path}`);
-        normalizeInstrument(leg.snapshot);
-      }
-      if (data.strategyId && (!map.has(`users/${uid}/strategies/${data.strategyId}`) || data.strategySnapshot?.uid !== uid)) throw new Error(`Invalid strategy reference: ${path}`);
-      calculateTrade(trade); // Validation/replay only; never persist recalculated results.
-    }
-    if (parts.length === 6 && type === "trades" && !map.has(`users/${uid}/trades/${id}`)) throw new Error(`Orphan trade child: ${path}`);
-    if (parts.length === 6 && child === "operations" && (data.uid !== uid || data.id !== childId)) throw new Error(`Invalid operation receipt: ${path}`);
+    if (path.split('/').length === 6 && path.includes('/legs/') && data.snapshot?.schemaVersion !== 2 || path.split('/').length === 4 && path.includes('/trades/') && data.strategySnapshot && data.strategySnapshot.schemaVersion !== 2) throw new Error(`Invalid snapshot metadata: ${path}`);
   }
+  for (const { path, data } of documents.filter(({ path }) => path.includes('/corrections/'))) {
+    const parts = path.split('/');
+    if (parts.length !== 6 || parts[2] !== 'trades' || !parents.has(parts.slice(0, 4).join('/'))) throw new Error(`Orphan correction: ${path}`);
+    validateCorrection(data, parts[1]);
+    if (parts[5] !== data.id) throw new Error(`Invalid correction identity: ${path}`);
+  }
+  for (const [path, parent] of parents) if (path.split('/')[2] === 'trades') validateCorrectionHistory(documents.filter(record => record.path.startsWith(`${path}/corrections/`)).map(record => record.data), parent.revision);
 }
-// Future transitions import pure functions here and declare their sourcePath
-// and transformation dependencies. Builds verify the generated checksum file.
-export const migrationDefinitions = [];
-export const schemaRegistry = { target: SCHEMA_VERSION, validators: new Map([[1, validateSchema1]]), migrations: migrationDefinitions.map((step) => ({ ...step, checksum: checksums[step.id] })) };
+const migrationPath = 'src/application/migrations/schema-1-to-2/';
+export const migrationDefinitions = [{
+  id: 'schema-1-to-2', from: 1, to: 2,
+  sourcePath: `${migrationPath}transition.js`,
+  dependencies: ['validate-v1.js', 'journal-v1.js', 'leg-capacity.js'].map((name) => `${migrationPath}${name}`),
+  validateSource, transform, validateTarget: validateSchema2,
+}];
+export const schemaRegistry = { target: SCHEMA_VERSION, validators: new Map([[1, validateSource], [2, validateSchema2]]), migrations: migrationDefinitions.map((step) => ({ ...step, checksum: checksums[step.id] })) };

@@ -1,3 +1,4 @@
+import { ValidationError } from '../domain/validation.js';
 import { MAX_NEW_TRADE_LEGS } from "../domain/leg-capacity.js";
 const string = (extra = {}) => ({ type: "string", ...extra });
 const identifier = string({ pattern: "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$" });
@@ -25,7 +26,7 @@ const execution = {
 const adjustment = { id: identifier, amount: decimal, currency: string(), rate: nullable(decimal), timestamp: instant, reason: string() };
 const entityFields = { accounts: { name: string(), currency: string(), archived: boolean }, instruments: instrument, strategies: strategy };
 const mutationOptions = ["input", "dry-run"];
-const tradeOptions = ["revision", "operation-id", ...mutationOptions];
+const tradeOptions = ["correction-reason", "revision", "operation-id", ...mutationOptions];
 export const catalogue = {};
 function add(command, handler, summary, { options = [], requiredOptions = [], input = object(), requiresInput = false, offline = false, ...rest } = {}) {
   catalogue[command] = { command, handler, summary, options: offline ? options : ["profile", ...options], requiredOptions: offline ? requiredOptions : ["profile", ...requiredOptions], input, requiresInput, offline, ...rest };
@@ -52,6 +53,7 @@ add("instruments preview", "instrumentPreview", "Validate instrument configurati
 add("strategies trades", "linkedTrades", "List trade summaries linked to a strategy", { options: ["id"], requiredOptions: ["id"] });
 add("journal list", "journal", "Filter journal summaries, ordered by newest activity", { options: ["search", "account", "market", "status", "strategy", "tag", "from", "to", "page", "page-size", "timezone"] });
 add("journal overview", "overview", "Counts and one-account realized results", { options: ["account"] });
+add("trades corrections", "corrections", "Read correction history grouped by operation", { options: ["id", "page", "page-size"], requiredOptions: ["id"] });
 add("trades get", "tradeRead", "Read complete source records and current calculations", { options: ["id"], requiredOptions: ["id"] });
 add("trades create", "tradeWrite", "Create a trade with up to six legs", {
   action: "create", options: ["operation-id", ...mutationOptions], requiredOptions: ["operation-id"], requiresInput: true,
@@ -78,6 +80,7 @@ add("calculate size", "size", "Compute single-leg linear sizing with decimal ari
 add("settings get", "settings", "Read display preferences", { action: "get" });
 add("settings update", "settings", "Update preferences and owned default account", { action: "update", options: ["revision", ...mutationOptions], requiredOptions: ["revision"], input: object({ theme: string({ enum: ["system", "light", "dark"] }), timezone: string(), defaultAccount: nullable(identifier) }), requiresInput: true });
 add("export", "export", "Export complete versioned journal source data", { options: ["output", "overwrite"] });
+add('export verify', 'verifyExport', 'Verify portable integrity, versions and replay without journal writes', { offline: true, options: ['input'], requiresInput: true, input: { type: 'object', additionalProperties: true, properties: {} } });
 const portableInput = { type: 'object', additionalProperties: true, properties: {} };
 for (const action of ['preview', 'apply']) add(`import ${action}`, 'import', `${action} portable journal JSON with add-only or replacement mode`, {
   action, options: ['input', 'mode', 'include-settings', ...(action === 'apply' ? ['accept-preview', 'operation-id', 'yes'] : [])],
@@ -126,25 +129,36 @@ export function parseArguments(args) {
 }
 
 function validate(value, schema, path) {
+  try { return validateSchemaValue(value, schema, path); }
+  catch (error) {
+    if (error instanceof ValidationError && !error.details.path) {
+      error.details.rule = 'INPUT_SCHEMA';
+      error.details.path = '/' + path.replace(/^input[.]?/, '').replace(/\[(\d+)\]/g, '/$1').replaceAll('.', '/');
+      if (value === null || typeof value === 'number' || typeof value === 'boolean' || typeof value === 'string' && value.length <= 120 && !/password|email|rationale|review|reason|Rules|purpose/i.test(path)) error.details.rejectedValue = value;
+    }
+    throw error;
+  }
+}
+function validateSchemaValue(value, schema, path) {
   if (schema.anyOf) {
     if (schema.anyOf.some((choice) => { try { validate(value, choice, path); return true; } catch { return false; } })) return;
-    throw new Error(`${path} has an invalid value or type`);
+    throw new ValidationError(`${path} has an invalid value or type`);
   }
   const type = value === null ? "null" : Array.isArray(value) ? "array" : typeof value;
-  if (schema.type === "integer" ? !Number.isSafeInteger(value) : type !== schema.type) throw new Error(`${path} must be ${schema.type}`);
-  if (schema.enum && !schema.enum.includes(value)) throw new Error(`${path} has an unsupported value`);
-  if (schema.pattern && !new RegExp(schema.pattern).test(value)) throw new Error(`${path} has an invalid format`);
-  if (schema.maxLength && value.length > schema.maxLength) throw new Error(`${path} is too long`);
-  if (schema.minimum !== undefined && value < schema.minimum) throw new Error(`${path} is below minimum`);
+  if (schema.type === "integer" ? !Number.isSafeInteger(value) : type !== schema.type) throw new ValidationError(`${path} must be ${schema.type}`);
+  if (schema.enum && !schema.enum.includes(value)) throw new ValidationError(`${path} has an unsupported value`);
+  if (schema.pattern && !new RegExp(schema.pattern).test(value)) throw new ValidationError(`${path} has an invalid format`);
+  if (schema.maxLength && value.length > schema.maxLength) throw new ValidationError(`${path} is too long`);
+  if (schema.minimum !== undefined && value < schema.minimum) throw new ValidationError(`${path} is below minimum`);
   if (type === "object") {
     for (const key of Object.keys(value)) {
-      if (!Object.hasOwn(schema.properties, key)) { if (schema.additionalProperties === true) continue; throw new Error(`Unknown input field ${path}.${key}`); }
+      if (!Object.hasOwn(schema.properties, key)) { if (schema.additionalProperties === true) continue; throw new ValidationError(`Unknown input field ${path}.${key}`); }
       validate(value[key], schema.properties[key], `${path}.${key}`);
     }
-    for (const key of schema.required || []) if (!Object.hasOwn(value, key)) throw new Error(`${path}.${key} is required`);
+    for (const key of schema.required || []) if (!Object.hasOwn(value, key)) throw new ValidationError(`${path}.${key} is required`);
   }
   if (type === "array") {
-    if (schema.minItems && value.length < schema.minItems || schema.maxItems && value.length > schema.maxItems) throw new Error(`${path} has invalid item count`);
+    if (schema.minItems && value.length < schema.minItems || schema.maxItems && value.length > schema.maxItems) throw new ValidationError(`${path} has invalid item count`);
     value.forEach((item, index) => validate(item, schema.items, `${path}[${index}]`));
   }
 }

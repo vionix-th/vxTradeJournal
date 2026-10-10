@@ -27,6 +27,7 @@ for (const width of [375, 800, 1280]) test(`persisted leg removal prerequisites 
   await page.screenshot({ path: `test-results/final-removal-${width}.png`, fullPage: true });
   await second.getByRole("button", { name: "Remove leg", exact: true }).click();
   await expect(first.getByRole("button", { name: "Remove leg", exact: true })).toHaveAccessibleDescription(/one leg/);
+  await page.getByLabel("Correction reason", { exact: true }).fill("Remove unused saved leg");
   await page.getByRole("button", { name: "Save trade", exact: true }).click();
   await expect(page.getByRole("button", { name: "Add execution", exact: true })).toHaveCount(1);
   await expect(page.getByRole("button", { name: "Edit execution 1", exact: true })).toBeVisible();

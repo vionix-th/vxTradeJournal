@@ -1,8 +1,9 @@
+import { ValidationError, validationContext } from './validation.js';
 import { assertLegCapacity } from "./leg-capacity.js";
 import Decimal from "decimal.js";
 /** All monetary/quantity inputs and outputs remain decimal strings. */
 export const D = Decimal.clone({ precision: 40, toExpNeg: -40, toExpPos: 40 });
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 export const CALCULATION_VERSION = 1;
 export const PRESETS = {
   equity: {
@@ -86,13 +87,15 @@ export const PRESETS = {
     pointValue: null,
   },
 };
-export function requireValue(condition, message) {
-  if (!condition) throw new Error(message);
+export function requireValue(condition, message, details = {}) {
+  if (!condition) throw new ValidationError(message, details);
 }
+const fieldNames = { 'Account name': 'name', 'Strategy name': 'name', 'Underlying': 'underlying', 'Option type': 'optionType', 'Purpose': 'purpose', 'Applicable markets': 'markets', 'Entry rules': 'entryRules', 'Exit rules': 'exitRules', 'Risk rules': 'riskRules', 'Rationale': 'rationale', 'Review': 'review', 'Order reference': 'orderReference', 'Settlement reason': 'reason', 'Adjustment reason': 'reason', 'Instrument name': 'name', 'Symbol': 'symbol', 'Market': 'market', 'Venue': 'venue', 'Quantity unit': 'quantityUnit', 'Price unit': 'priceUnit', 'Quantity increment': 'quantityIncrement', 'Price increment': 'priceIncrement', 'Point value': 'pointValue', 'Currency': 'currency', 'Expiry': 'expiry', 'Strike': 'strike', 'Quantity': 'quantity', 'Price': 'price', 'Fees': 'fees', 'Result conversion rate': 'resultRate', 'Fee conversion rate': 'feeRate', 'Gross realized result': 'manualGross', 'Amount': 'amount', 'Adjustment amount': 'amount', 'Adjustment conversion rate': 'rate', 'Conversion rate': 'rate', 'Risk budget': 'riskBudget', 'Entry price': 'entry', 'Stop price': 'stop', 'Target price': 'target' };
+const fieldDetails = (label, rule, value, includeValue = true) => ({ rule, path: fieldNames[label] ? `/${fieldNames[label]}` : null, ...(includeValue ? { rejectedValue: value } : {}) });
 export function text(value, label, required = false, max = 10000) {
   const result = String(value ?? "").trim();
-  requireValue(result.length <= max, `${label} is too long`);
-  requireValue(!required || result.length > 0, `${label} is required`);
+  requireValue(result.length <= max, `${label} is too long`, fieldDetails(label, "TEXT_LENGTH", value, false));
+  requireValue(!required || result.length > 0, `${label} is required`, fieldDetails(label, "REQUIRED", value, false));
   return result;
 }
 export function decimal(
@@ -106,22 +109,24 @@ export function decimal(
     typeof value === "string" &&
       /^-?\d+(\.\d+)?$/.test(value) &&
       value.length <= 100,
-    `${label} must be a decimal string`,
+    `${label} must be a decimal string`, fieldDetails(label, "DECIMAL_STRING", value),
   );
   const d = new D(value);
   requireValue(
     d.isFinite() && (!positive || d.gt(0)),
-    `${label} must be ${positive ? "positive" : "finite"}`,
+    `${label} must be ${positive ? "positive" : "finite"}`, fieldDetails(label, "DECIMAL_RANGE", value),
   );
   return d.toFixed();
 }
-export function currency(value) {
+export function currency(value, field = "currency") {
+  try {
   const result = text(value, "Currency", true, 12);
   requireValue(
     /^[A-Z][A-Z0-9]{2,11}$/.test(result),
-    "Currency must be uppercase code (3–12 characters)",
+    "Currency must be uppercase code (3–12 characters)", { rule: "CURRENCY", path: `/${field}`, rejectedValue: value },
   );
   return result;
+  } catch (error) { if (error instanceof ValidationError) error.details.path = `/${field}`; throw error; }
 }
 export function isCalendarDate(value) {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value))
@@ -134,7 +139,7 @@ export function timestamp(value) {
     typeof value === "string" &&
       /^\d{4}-\d{2}-\d{2}T/.test(value) &&
       Number.isFinite(Date.parse(value)),
-    "Valid timestamp required",
+    "Valid timestamp required", { rule: "TIMESTAMP", path: "/timestamp", rejectedValue: value },
   );
   const parts = value.match(
     /^\d{4}-\d{2}-\d{2}T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/,
@@ -145,7 +150,7 @@ export function timestamp(value) {
       Number(parts[2]) < 60 &&
       Number(parts[3]) < 60 &&
       isCalendarDate(value.slice(0, 10)),
-    "Valid timestamp required",
+    "Valid timestamp required", { rule: "TIMESTAMP", path: "/timestamp", rejectedValue: value },
   );
   return new Date(value).toISOString();
 }
@@ -159,11 +164,11 @@ export function normalizeAccount(a) {
   };
 }
 export function normalizeInstrument(i) {
-  requireValue(i.priceUnit === undefined || typeof i.priceUnit === "string", "Price unit must be text");
-  requireValue(Object.hasOwn(PRESETS, i.preset), "Unknown instrument preset");
+  requireValue(i.priceUnit === undefined || typeof i.priceUnit === "string", "Price unit must be text", { rule: "TEXT_TYPE", path: "/priceUnit" });
+  requireValue(Object.hasOwn(PRESETS, i.preset), "Unknown instrument preset", { rule: "ENUM", path: "/preset", rejectedValue: i.preset });
   requireValue(
     ["linear", "manual"].includes(i.model),
-    "Unknown calculation model",
+    "Unknown calculation model", { rule: "ENUM", path: "/model", rejectedValue: i.model },
   );
   const draft = !!i.draft;
   const result = {
@@ -200,11 +205,11 @@ export function normalizeInstrument(i) {
   };
   requireValue(
     !result.expiry || isCalendarDate(result.expiry),
-    "Expiry must be a date",
+    "Expiry must be a date", { rule: "CALENDAR_DATE", path: "/expiry", rejectedValue: result.expiry },
   );
   requireValue(
     ["", "call", "put"].includes(result.optionType),
-    "Option type must be call or put",
+    "Option type must be call or put", { rule: "ENUM", path: "/optionType", rejectedValue: result.optionType },
   );
   return result;
 }
@@ -221,11 +226,11 @@ export function normalizeStrategy(s) {
   };
 }
 export function validateSettings(s) {
-  requireValue(["system", "light", "dark"].includes(s.theme), "Unknown theme");
+  requireValue(["system", "light", "dark"].includes(s.theme), "Unknown theme", { rule: "ENUM", path: "/theme", rejectedValue: s.theme });
   try {
     new Intl.DateTimeFormat("en", { timeZone: s.timezone });
   } catch {
-    throw new Error("Invalid display timezone");
+    throw new ValidationError("Invalid display timezone", { rule: "TIMEZONE", path: "/timezone" });
   }
   return {
     ...s,
@@ -289,7 +294,7 @@ export function createTrade({ id, account, instruments, strategy = null }) {
 function increment(value, step, label) {
   requireValue(
     new D(value).mod(step).eq(0),
-    `${label} must match increment ${step}`,
+    `${label} must match increment ${step}`, fieldDetails(label, "INCREMENT", String(value)),
   );
 }
 export function conversionRate(source, account, rate) {
@@ -347,6 +352,7 @@ function validateField(path, check) {
   try { return check(); }
   catch (error) {
     error.path = Object.freeze(path);
+    if (error instanceof ValidationError) error.details.path = path[0] === "legs" ? `/${path.slice(2).join("/")}` : `/${path.join("/")}`;
     throw error;
   }
 }
@@ -375,7 +381,7 @@ export function validatePlanning(leg) {
 /** Structural prerequisites for replay; record and position validation happen during replay. */
 function validateTradeStructure(t) {
   requireValue(t.id && t.accountId, "Trade and account IDs required");
-  currency(t.accountCurrency);
+  currency(t.accountCurrency, "accountCurrency");
   requireValue(
     Array.isArray(t.legs) && t.legs.length > 0,
     "At least one leg required",
@@ -386,7 +392,7 @@ function validateTradeStructure(t) {
     requireValue(l.id && !ids.has(l.id), "Unique leg IDs required");
     ids.add(l.id);
     requireValue(l.instrumentId, "Instrument reference required");
-    normalizeInstrument(l.snapshot);
+    validationContext(() => normalizeInstrument(l.snapshot), `/legs/${t.legs.indexOf(l)}/snapshot`, l.id);
     requireValue(
       l.snapshot.id === l.instrumentId,
       "Instrument snapshot must match reference",
@@ -394,9 +400,9 @@ function validateTradeStructure(t) {
     requireValue(!l.snapshot.draft, "Draft instrument cannot start trades");
     requireValue(
       ["long", "short"].includes(l.direction),
-      "Direction must be long or short",
+      "Direction must be long or short", { rule: "ENUM", path: `/legs/${t.legs.indexOf(l)}/direction`, recordId: l.id, rejectedValue: l.direction },
     );
-    validatePlanning(l);
+    validationContext(() => validatePlanning(l), `/legs/${t.legs.indexOf(l)}`, l.id);
   }
   requireValue(
     Array.isArray(t.executions) && Array.isArray(t.adjustments),
@@ -441,22 +447,22 @@ export function calculateTrade(t) {
   };
   const seen = new Set();
   const ordered = t.executions
-    .map((e) => {
-      requireValue(e.id && !seen.has(e.id), "Unique execution IDs required");
+    .map((e, index) => validationContext(() => {
+      requireValue(e.id && !seen.has(e.id), "Unique execution IDs required", { rule: "DUPLICATE_RECORD", path: "/id", rejectedValue: e.id });
       seen.add(e.id);
       text(e.orderReference, "Order reference", false, 1000);
       text(e.reason, "Settlement reason", false, 1000);
       requireValue(
         e.sequence == null ||
           (Number.isSafeInteger(e.sequence) && e.sequence >= 0),
-        "Sequence must be a non-negative safe integer",
+        "Sequence must be a non-negative safe integer", { rule: "EVENT_ORDER", path: "/sequence", rejectedValue: e.sequence },
       );
       requireValue(
         t.legs.some((l) => l.id === e.legId),
-        "Execution leg does not exist",
+        "Execution leg does not exist", { rule: "UNKNOWN_REFERENCE", path: "/legId", rejectedValue: e.legId, relatedPaths: ["/legs"] },
       );
       return { ...e, timestamp: timestamp(e.timestamp) };
-    })
+    }, `/executions/${index}`, e.id))
     .sort(
       (a, b) =>
         a.timestamp.localeCompare(b.timestamp) ||
@@ -471,22 +477,23 @@ export function calculateTrade(t) {
       unknown = false;
     const history = [];
     for (const e of ordered.filter((e) => e.legId === l.id)) {
+      validationContext(() => {
       requireValue(
         ["entry", "exit", "settlement"].includes(e.kind),
-        "Unknown record type",
+        "Unknown record type", { rule: "ENUM", path: "/kind", rejectedValue: e.kind },
       );
       const q = new D(decimal(e.quantity, "Quantity", true));
       increment(q, i.quantityIncrement, "Quantity");
       const price = decimal(e.price, "Price", false, e.kind === "settlement");
       if (price != null) increment(price, i.priceIncrement, "Price");
       const fee = decimal(e.fees ?? "0", "Fees");
-      requireValue(new D(fee).gte(0), "Fees cannot be negative");
-      currency(e.feeCurrency || i.currency);
+      requireValue(new D(fee).gte(0), "Fees cannot be negative", { rule: "NONNEGATIVE_FEE", path: "/fees", rejectedValue: e.fees });
+      currency(e.feeCurrency || i.currency, "feeCurrency");
       decimal(e.resultRate, "Result conversion rate", true, true);
       decimal(e.feeRate, "Fee conversion rate", true, true);
       let result = null;
       if (e.kind === "entry") {
-        requireValue(price != null, "Entry price required");
+        requireValue(price != null, "Entry price required", { rule: "REQUIRED", path: "/price" });
         average = remaining
           .times(average)
           .plus(q.times(price))
@@ -495,7 +502,7 @@ export function calculateTrade(t) {
       } else {
         requireValue(
           q.lte(remaining),
-          "Closing quantity exceeds remaining position",
+          "Closing quantity exceeds remaining position", { rule: "POSITION_OVERDRAW", path: "/quantity", rejectedValue: e.quantity, relatedPaths: ordered.filter((r) => r.legId === l.id).map((r) => `/executions/${t.executions.findIndex((item) => item.id === r.id)}`) },
         );
         if (e.kind === "settlement")
           text(e.reason, "Settlement reason", true, 1000);
@@ -509,7 +516,7 @@ export function calculateTrade(t) {
           result = decimal(e.manualGross, "Gross realized result", false, true);
           requireValue(
             ["user-entered", "broker-reported"].includes(e.manualSource),
-            "Manual result source required",
+            "Manual result source required", { rule: "ENUM", path: "/manualSource", rejectedValue: e.manualSource },
           );
         }
         if (result == null) unknown = true;
@@ -530,6 +537,7 @@ export function calculateTrade(t) {
         averageEntry: average.toFixed(),
         gross: result,
       });
+      }, `/executions/${t.executions.findIndex((item) => item.id === e.id)}`, e.id);
     }
     let remainingRisk = null;
     if (
@@ -564,7 +572,8 @@ export function calculateTrade(t) {
   });
   const adjIds = new Set();
   for (const a of t.adjustments) {
-    requireValue(a.id && !adjIds.has(a.id), "Unique adjustment IDs required");
+    validationContext(() => {
+    requireValue(a.id && !adjIds.has(a.id), "Unique adjustment IDs required", { rule: "DUPLICATE_RECORD", path: "/id", rejectedValue: a.id });
     adjIds.add(a.id);
     timestamp(a.timestamp);
     text(a.reason, "Adjustment reason", true, 1000);
@@ -575,6 +584,7 @@ export function calculateTrade(t) {
       a.rate,
       `Adjustment ${a.id}`,
     );
+    }, `/adjustments/${t.adjustments.indexOf(a)}`, a.id);
   }
   const complete = incomplete.length === 0;
   return {

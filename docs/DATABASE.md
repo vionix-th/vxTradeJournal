@@ -1,6 +1,6 @@
 # Database deployment and recovery
 
-The journal is live on schema `1`. Application release numbers do not identify database structure. Only adjacent schema transitions are registered; releases that retain the schema need no conversion. This implementation establishes infrastructure without changing journal records or financial calculation version.
+The current journal runtime requires schema `2`. Application release numbers do not identify database structure. Only adjacent schema transitions are registered; releases that retain the schema need no conversion. The schema-1-to-2 transition changes managed schema metadata and enables correction evidence. Financial values and calculation version `1` remain unchanged.
 
 ## Operator setup
 
@@ -69,8 +69,14 @@ Portable [journal import and recovery](IMPORT.md) shares pure validators and bou
 
 Declare one pure `n→n+1` transition in `migrationDefinitions` in `src/application/schema-evolution.js`, with unique ID, `sourcePath` and declared transformation-code dependencies. The Admin `loadMigration` loader independently verifies the generated source checksum; include all transformation dependencies. Supply source/target validators and a deterministic `transform(records)` returning bounded `{path, data}` writes or `{path, delete: true}` removals. Input chunks contain at most 100 documents from one owner; output paths and record ownership must remain with that owner; output permits at most 200 writes. Every affected path must remain within the journal. Transformations must be idempotent across retries and mixed source/target records after interruption, including moved/created paths. Checkpoint and writes commit together. Validate the entire target dataset before completing the step.
 
-Define embedded snapshot, receipt and derived-cache treatment explicitly. Preserve historical financial inputs and decimal strings. Retain all transitions needed by deployed data, and test independent expected outcomes, reruns, interruption and recovery. Synthetic migrations exercise the runner; the production registry currently contains no transitions.
+Define embedded snapshot, receipt and derived-cache treatment explicitly. Preserve historical financial inputs and decimal strings. Retain all transitions needed by deployed data, and test independent expected outcomes, reruns, interruption and recovery. Synthetic migrations exercise the runner; the production registry contains the preserving schema-1-to-2 transition.
 
 ## Verification
 
 Select focused commands through the PRD matrix. Database unit tests cover chain/lease/deployment/snapshot contracts. Full integration covers rule isolation and CLI/recovery. Browser database tests form a serial project that runs after ordinary browser coverage because metadata is global; focused execution uses `npm run test:e2e -- tests/e2e/database-availability.spec.js --no-deps`. Check rendered maintenance and draft screenshots at 375/800/1280 px. Packaging checks ensure administrator code/dependencies never enter the user skill. Production bootstrap and restore are operator actions, not automated test fixtures.
+
+## Schema 2 correction history
+
+The schema-1-to-2 transition is immutable and includes frozen source validation/calculation dependencies in its generated checksum. It changes managed and nested snapshot schema metadata only, preserving values, identities, revisions, timestamps and cached results. No correction history is fabricated. Active imports must finish or roll back before transition; retained backups preserve original versions and restore through validated conversion. Replace installed schema-1 skills with a compatible generated distribution before schema-2 access. Database deployment/restore retain private snapshots, exclusive fenced maintenance, checkpoint resume and full target validation.
+
+Each correcting application save creates one append-only entry containing changed values and reason. Rules enforce ownership and basic structure without exhaustive cross-document audit verification. History is application-recorded information, not independently verified authorship. The static architecture and six-leg atomic saves remain supported.

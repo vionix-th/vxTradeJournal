@@ -120,7 +120,7 @@ function fieldHandle(control, labelNode, { help, unit, containerAttrs = {} }) {
     else control.removeAttribute("aria-describedby");
   };
   describe();
-  return {
+  const handle = {
     node, control,
     get unit() { return unitNode; },
     setUnit(value) {
@@ -142,6 +142,8 @@ function fieldHandle(control, labelNode, { help, unit, containerAttrs = {} }) {
       describe();
     },
   };
+  control.fieldHandle = handle;
+  return handle;
 }
 /**
  * Semantic options are type/choices/help/unit/tooltip. Attribute bags target their
@@ -280,4 +282,14 @@ export function bindConversionRate(
   source.addEventListener("input", update);
   source.addEventListener("change", update);
   update();
+}
+
+export function mutationErrorMessage(error) {
+  const status = {
+    not_applied: 'Changes were not applied.',
+    applied: 'The write is confirmed. Reload records before continuing.',
+    unknown: 'Write status is unknown. Check current records or the operation receipt before retrying.',
+    partial: 'Transfer is partially applied. Inspect its checkpoint, then resume or roll back.',
+  }[error.writeOutcome?.state];
+  return status ? `${error.message} ${status}` : error.message;
 }

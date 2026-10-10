@@ -7,6 +7,7 @@ export class CliError extends Error {
   }
 }
 export function publicError(error) {
+  if (error.name === "ValidationError") return new CliError("VALIDATION", error.message, 2, error.details);
   if (error instanceof CliError) return error;
   if (error.name === 'ImportError') {
     const exitCode = ({ IMPORT_CONFLICT: 5, IMPORT_PREVIEW_CHANGED: 5, IMPORT_BUSY: 5, IMPORT_NOT_FOUND: 4, IMPORT_RECOVERY_REQUIRED: 6, EMAIL_UNVERIFIED: 3 })[error.code] || 2;

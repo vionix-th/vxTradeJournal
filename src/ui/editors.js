@@ -1,3 +1,4 @@
+import { attachCorrectionReason, correctionContext, journalValues } from './corrections.js';
 import { MAX_NEW_TRADE_LEGS } from "../domain/leg-capacity.js";
 import {
   PRESETS,
@@ -21,7 +22,6 @@ import {
   field,
   decimalField,
   checkbox,
-  values,
   section,
   notice,
   details,
@@ -39,7 +39,7 @@ export function accountEditor(ui, account = null, first = false) {
     "Reporting currency locks after first trade.",
     "Save account",
     async (f) => {
-      const v = values(f);
+      const v = journalValues(f);
       await ui.commit(
         () =>
           ui.repo.saveEntity(
@@ -78,7 +78,7 @@ export function strategyEditor(ui, strategy = null) {
         () =>
           ui.repo.saveEntity(
             "strategies",
-            normalizeStrategy({ ...strategy, ...values(f), id }),
+            normalizeStrategy({ ...strategy, ...journalValues(f), id }),
           ),
       );
     },
@@ -126,12 +126,12 @@ export function instrumentEditor(
       : "Presets supply editable examples. Confirm actual contract specifications.",
     "Save instrument",
     async (f) => {
-      const i = normalizeInstrument({ ...instrument, ...values(f), id });
+      const i = normalizeInstrument({ ...instrument, ...journalValues(f), id });
       if (correction) {
         requireValue(previewed, "Preview correction before saving");
         const next = correctSnapshot(correction.trade, correction.legId, i);
         await ui.commit(
-          () => ui.repo.saveTrade(next, form.operationId),
+          () => ui.repo.saveTrade(next, form.operationId, null, correctionContext(form)),
           null, { countsUsage: true },
         );
       } else
@@ -191,7 +191,7 @@ export function instrumentEditor(
   append(form.body, preview);
   const update = () => {
     previewed = false;
-    const v = values(f);
+    const v = journalValues(f);
     fields.pointValue.setVisible(v.model === "linear");
     contract.setVisible(["futures", "options", "cryptoDerivative"].includes(v.preset));
     try {
@@ -220,8 +220,8 @@ export function instrumentEditor(
       fields[key].control.value = p[key] ?? "";
     update();
   });
-  f.addEventListener("input", update);
-  f.addEventListener("change", update);
+  f.addEventListener("input", (event) => { if (event.target.name !== "correctionReason") update(); });
+  f.addEventListener("change", (event) => { if (event.target.name !== "correctionReason") update(); });
   update();
   if (correction) {
     const out = el("div", { class: "full" });
@@ -231,7 +231,7 @@ export function instrumentEditor(
         () => {
           try {
             const next = correctSnapshot(correction.trade, correction.legId,
-              normalizeInstrument({ ...instrument, ...values(f), id }));
+              normalizeInstrument({ ...instrument, ...journalValues(f), id }));
             const calc = calculateTrade(next);
             out.replaceChildren(
               notice(
@@ -248,6 +248,7 @@ export function instrumentEditor(
       out,
     );
   }
+  if (correction) attachCorrectionReason(form, correction.trade, () => correctSnapshot(correction.trade, correction.legId, normalizeInstrument({ ...instrument, ...journalValues(f), id })));
   ui.show(f);
 }
 export function tradeEditor(ui, session) {
@@ -268,7 +269,7 @@ export function tradeEditor(ui, session) {
         ? replaceLegs(editTrade(session.baseRecord, input, ui.data), input.legs, ui.data)
         : newTrade(input, ui.data);
       await ui.commit(
-        () => ui.repo.saveTrade(trade, session.operationId),
+        () => ui.repo.saveTrade(trade, session.operationId, null, correctionContext(form)),
         null, { countsUsage: true },
       );
     },
@@ -305,7 +306,7 @@ export function tradeEditor(ui, session) {
   function renderLeg(leg) {
     const existingLeg = session.baseRecord?.legs.some((record) => record.id === leg.id);
     const legend = el("legend", {}, `Leg ${blocks.length + 1}`);
-    const node = el("fieldset", { class: "leg-card" }, legend);
+    const node = el("fieldset", { class: "leg-card", "data-leg-id": leg.id }, legend);
     const instrumentChoices = choices(ui.data.instruments.filter(
       (record) => (!record.archived && !record.draft) || record.id === leg.instrumentId));
     if (leg.instrumentId && !instrumentChoices.some((record) => record.value === leg.instrumentId))
@@ -431,6 +432,8 @@ export function tradeEditor(ui, session) {
       }, "button secondary"),
     ),
   );
+  if (session.isExisting) attachCorrectionReason(form, session.baseRecord, () => replaceLegs(session.baseRecord, session.toInput().legs, ui.data), { initial: session.correctionReason || '', retain: (value) => { session.correctionReason = value; } });
+  form.node.addEventListener('click', () => form.updateCorrectionReason?.());
   updatePlanning();
   ui.show(form.node);
 }
@@ -462,7 +465,7 @@ export function executionEditor(ui, trade, legId, existing = null) {
     `${i.name} · ${leg.direction} · quantities in ${i.quantityUnit}. Timestamps entered in UTC; journal displays configured timezone.`,
     "Save execution",
     async (f) => {
-      const v = values(f);
+      const v = journalValues(f);
       const e = {
         ...existing,
         ...v,
@@ -478,7 +481,7 @@ export function executionEditor(ui, trade, legId, existing = null) {
       };
       const next = putExecution(trade, e, !!existing);
       await ui.commit(
-        () => ui.repo.saveTrade(next, form.operationId),
+        () => ui.repo.saveTrade(next, form.operationId, null, correctionContext(form)),
           null, { countsUsage: true },
       );
     },
@@ -537,7 +540,7 @@ export function executionEditor(ui, trade, legId, existing = null) {
   );
   const update = () => {
     const f = form.node,
-      v = values(f);
+      v = journalValues(f);
     const manual =
       v.kind !== "entry" &&
       (i.model === "manual" || (v.kind === "settlement" && !v.price));
@@ -562,6 +565,10 @@ export function executionEditor(ui, trade, legId, existing = null) {
   );
   form.node.addEventListener("input", update);
   form.node.addEventListener("change", update);
+  if (existing) attachCorrectionReason(form, trade, () => {
+    const v = journalValues(form.node);
+    return putExecution(trade, { ...existing, ...v, id, legId, price: nullable(v.price), timestamp: new Date(`${v.timestamp}Z`).toISOString(), feeRate: nullable(v.feeRate), resultRate: nullable(v.resultRate), manualGross: nullable(v.manualGross), sequence: record.sequence }, true);
+  });
   update();
   ui.show(form.node);
 }
@@ -572,7 +579,7 @@ export function adjustmentEditor(ui, trade, existing = null) {
     "Signed monetary event: negative costs, positive credits. Fees on executions already counted.",
     "Save adjustment",
     async (f) => {
-      const v = values(f);
+      const v = journalValues(f);
       const a = {
         ...existing,
         ...v,
@@ -582,7 +589,7 @@ export function adjustmentEditor(ui, trade, existing = null) {
       };
       const next = putAdjustment(trade, a, !!existing);
       await ui.commit(
-        () => ui.repo.saveTrade(next, form.operationId),
+        () => ui.repo.saveTrade(next, form.operationId, null, correctionContext(form)),
           null, { countsUsage: true },
       );
     },
@@ -611,20 +618,24 @@ export function adjustmentEditor(ui, trade, existing = null) {
     }),
   );
   bindConversionRate(form.node, "currency", "rate", trade.accountCurrency);
+  if (existing) attachCorrectionReason(form, trade, () => {
+    const v = journalValues(form.node);
+    return putAdjustment(trade, { ...existing, ...v, id, rate: nullable(v.rate), timestamp: new Date(`${v.timestamp}Z`).toISOString() }, true);
+  });
   ui.show(form.node);
 }
 export function settingsEditor(ui) {
   const s = ui.data.settings;
   const form = ui.form(
     "Settings",
-    "Display preferences and portable journal export.",
+    "Display preferences and portable journal export, import and recovery.",
     "Save settings",
     async (f) => {
       await ui.commit(
         () =>
           ui.repo.saveEntity(
             "settings",
-            validateSettings({ ...s, ...values(f), id: "preferences" }),
+            validateSettings({ ...s, ...journalValues(f), id: "preferences" }),
           ),
       );
     },
@@ -654,17 +665,18 @@ export function settingsEditor(ui) {
     } catch (e) {
       form.errors.replaceChildren(notice(e.message, "error"));
     }
-  });
+  }, "button secondary");
   form.node.append(
     section(
-      "Export journal",
+      "Journal data",
       el(
         "p",
         { class: "muted" },
         "Versioned JSON includes all accounts, instruments, strategies, snapshots, executions, cash adjustments and settings. Authentication secrets excluded.",
       ),
-      exportButton,
-      button('Import journal and recovery', () => ui.go('importEditor'), 'button secondary'),
+      el("div", { class: "actions journal-data-actions" },
+        exportButton,
+        button('Import journal and recovery', () => ui.go('importEditor'), 'button secondary')),
     ),
   );
   ui.show(form.node);

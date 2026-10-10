@@ -1,3 +1,4 @@
+import { validateCorrection, validateCorrectionHistory } from './corrections.js';
 import { SCHEMA_VERSION, CALCULATION_VERSION, normalizeAccount, normalizeInstrument, normalizeStrategy, validateSettings, calculateTrade } from '../domain/journal.js';
 import { defaultSettings } from './settings.js';
 import { fingerprint, canonical } from './fingerprint.js';
@@ -9,6 +10,9 @@ export class ImportError extends Error {
   constructor(code, message, details = {}) { super(message); this.name = 'ImportError'; this.code = code; this.details = details; }
 }
 const fail = (message) => { throw new ImportError('INVALID_EXPORT', message); };
+const canonicalJSON = (value) => JSON.stringify(canonical(value));
+const summaryIdentity = (summary) => summary && { ...summary, legs: Array.isArray(summary.legs) ? [...summary.legs].sort((a, b) => String(a.id).localeCompare(String(b.id))) : summary.legs };
+const instrumentIdentity = (instruments) => Array.isArray(instruments) ? instruments.map(canonicalJSON).sort() : instruments;
 const idPattern = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
 const meta = ['id', 'uid', 'schemaVersion', 'revision', 'createdAt', 'updatedAt'];
 export const recordFields = {
@@ -22,7 +26,7 @@ export const recordFields = {
   adjustments: [...meta, 'amount', 'currency', 'rate', 'timestamp', 'reason'],
 };
 const collections = ['accounts', 'instruments', 'strategies', 'trades'];
-const children = ['legs', 'executions', 'adjustments'];
+const children = ['legs', 'executions', 'adjustments', 'corrections'];
 const requiredStrings = {
   accounts: ['name', 'currency'], instruments: ['name', 'symbol', 'market', 'venue', 'preset', 'model', 'quantityUnit', 'underlying', 'expiry', 'optionType'],
   strategies: ['name', 'purpose', 'markets', 'entryRules', 'exitRules', 'riskRules'], settings: ['theme', 'timezone'],
@@ -42,7 +46,7 @@ export function flattenJournal(journal) {
   for (const type of collections) for (const item of journal[type]) {
     const data = structuredClone(item);
     if (type === 'trades') for (const child of children) {
-      for (const record of data[child]) records.push({ path: `trades/${data.id}/${child}/${record.id}`, data: record });
+      for (const record of data[child] || []) records.push({ path: `trades/${data.id}/${child}/${record.id}`, data: record });
       delete data[child];
     }
     records.push({ path: `${type}/${data.id}`, data });
@@ -62,10 +66,16 @@ export function rebuildJournal(records) {
     trade[child] = records.filter(({ path }) => path.startsWith(`trades/${trade.id}/${child}/`)).map(({ data }) => structuredClone(data));
   return result;
 }
-function counts(data) { return Object.fromEntries([...collections, ...children].map((type) => [type, collections.includes(type) ? data[type].length : data.trades.reduce((n, t) => n + t[type].length, 0)])); }
+function counts(data, schemaVersion = SCHEMA_VERSION) { return Object.fromEntries([...collections, ...children.filter((type) => type !== 'corrections' || schemaVersion >= 2)].map((type) => [type, collections.includes(type) ? data[type].length : data.trades.reduce((n, t) => n + (t[type] || []).length, 0)])); }
 export async function createExport(journal, exportedAt, versions = {}) {
   assertJSON(journal);
-  const payload = { ...exportJournal(journal, exportedAt), ...versions, formatVersion: 1, counts: counts(journal) };
+  const exported = exportJournal(journal, exportedAt);
+  const schemaVersion = versions.schemaVersion ?? SCHEMA_VERSION;
+  for (const trade of exported.trades) {
+    if (schemaVersion >= 2) trade.corrections ||= [];
+    else delete trade.corrections;
+  }
+  const payload = { ...exported, ...versions, formatVersion: 1, counts: counts(exported, schemaVersion) };
   return { ...payload, checksum: await fingerprint(payload) };
 }
 function fields(data, type, persisted = true) {
@@ -94,7 +104,10 @@ export function validatePortable(journal) {
   for (const { path, data } of records) {
     if (paths.has(path)) fail(`Duplicate record: ${path}.`); paths.add(path);
     const type = path.split('/').at(-2);
-    fields(data, type, type !== 'settings' || data.revision !== 0);
+    if (type === 'corrections') {
+      validateCorrection(data, data.uid);
+    }
+    else fields(data, type, type !== 'settings' || data.revision !== 0);
     if (data.uid) owners.add(data.uid);
   }
   if (owners.size > 1) fail('Export contains mixed ownership.');
@@ -116,11 +129,12 @@ export function validatePortable(journal) {
       fields(leg.snapshot, 'instruments');
       if (leg.snapshot.uid !== trade.uid) fail('Historical instrument ownership mismatch.');
     }
+    validateCorrectionHistory(trade.corrections || [], trade.revision);
     const replay = calculateTrade(trade);
     const result = { ...replay, legs: replay.legs.map(({ history: _history, ...leg }) => leg) };
-    // Cached results are verified, never silently rewritten during import.
-    if (JSON.stringify(canonical(result)) !== JSON.stringify(canonical(trade.summary)) || result.status !== trade.status || result.openedAt !== trade.openedAt) fail(`Historical summary does not match source history: ${trade.id}.`);
-    if (JSON.stringify(canonical(trade.instruments)) !== JSON.stringify(canonical(trade.legs.map((leg) => ({ name: leg.snapshot.name, symbol: leg.snapshot.symbol, market: leg.snapshot.market }))))) fail(`Historical instrument cache is inconsistent: ${trade.id}.`);
+    // Child query order is presentation only. Verify all projection values without rewriting caches.
+    if (canonicalJSON(summaryIdentity(result)) !== canonicalJSON(summaryIdentity(trade.summary)) || result.status !== trade.status || result.openedAt !== trade.openedAt) fail(`Historical summary does not match source history: ${trade.id}.`);
+    if (canonicalJSON(instrumentIdentity(trade.instruments)) !== canonicalJSON(instrumentIdentity(trade.legs.map((leg) => ({ name: leg.snapshot.name, symbol: leg.snapshot.symbol, market: leg.snapshot.market }))))) fail(`Historical instrument cache is inconsistent: ${trade.id}.`);
   }
   return journal;
 }
@@ -143,14 +157,13 @@ export async function readExport(file, registry = schemaRegistry) {
     }
     if (!collections.every((key) => Array.isArray(file[key])) || !file.settings || !Number.isFinite(Date.parse(file.exportedAt))) fail('Incomplete journal export.');
     const journal = Object.fromEntries([...collections, 'settings'].map((key) => [key, structuredClone(file[key])]));
-    for (const trade of journal.trades) if (!children.every((key) => Array.isArray(trade[key]))) fail('Incomplete trade history.');
-    if (file.formatVersion === 1 && await fingerprint(file.counts) !== await fingerprint(counts(journal))) fail('Export counts are inconsistent.');
+    for (const trade of journal.trades) if (!children.filter((key) => key !== 'corrections' || file.schemaVersion >= 2).every((key) => Array.isArray(trade[key]))) fail('Incomplete trade history.');
+    if (file.formatVersion === 1 && await fingerprint(file.counts) !== await fingerprint(counts(journal, file.schemaVersion))) fail('Export counts are inconsistent.');
     const steps = migrationChain(file.schemaVersion, SCHEMA_VERSION, registry.migrations);
     let converted = journal;
     if (steps.length) {
-      const uid = journal.accounts[0]?.uid || journal.trades[0]?.uid;
-      if (!uid) fail('Older schema has no identifiable owner.');
-      let records = flattenJournal(journal).map(({ path, data }) => ({ path: `users/${uid}/${path}`, data }));
+      const uid = journal.accounts[0]?.uid || journal.trades[0]?.uid || journal.instruments[0]?.uid || journal.strategies[0]?.uid || journal.settings.uid || 'portable-empty';
+      let records = flattenJournal(journal).filter(({ path, data }) => path !== 'settings/preferences' || data.revision !== 0).map(({ path, data }) => ({ path: `users/${uid}/${path}`, data }));
       for (const step of steps) {
         await step.validateSource(records);
         const map = new Map(records.map((r) => [r.path, r]));
@@ -174,7 +187,9 @@ export function rebind(journal, uid) {
     record.uid = uid;
     if (type === 'trades') {
       if (record.strategySnapshot) record.strategySnapshot.uid = uid;
-      for (const child of children) for (const item of record[child]) { item.uid = uid; if (item.snapshot) item.snapshot.uid = uid; }
+      for (const child of children) for (const item of record[child] || []) {
+        item.uid = uid; if (item.snapshot) item.snapshot.uid = uid;
+      }
     }
   }
   copy.settings.uid = uid;
@@ -182,7 +197,7 @@ export function rebind(journal, uid) {
 }
 function comparable(data, type) {
   const copy = structuredClone(data);
-  for (const key of ['uid', 'revision', 'schemaVersion', 'updatedAt', 'lastOperation']) delete copy[key];
+  for (const key of type === 'corrections' ? ['uid'] : ['uid', 'revision', 'schemaVersion', 'updatedAt', 'lastOperation']) delete copy[key];
   if (type === 'accounts') delete copy.hasTrades;
   if (type === 'instruments') delete copy.lastUsedAt;
   return copy;
@@ -197,7 +212,7 @@ export async function planImport(source, destination, { uid, projectId, mode, in
     if (mode === 'replace') { if (!existing) added.push(`${type}/${record.id}`); continue; }
     if (!existing) { target[type].push(record); added.push(`${type}/${record.id}`); }
     else {
-      const normalize = (r) => type === 'trades' ? { ...comparable(r, type), ...Object.fromEntries(children.map((c) => [c, r[c].map((item) => comparable(item, c)).sort((a, b) => a.id.localeCompare(b.id))])) } : comparable(r, type);
+      const normalize = (r) => type === 'trades' ? { ...comparable(r, type), ...Object.fromEntries(children.map((c) => [c, (r[c] || []).map((item) => comparable(item, c)).sort((a, b) => a.id.localeCompare(b.id))])) } : comparable(r, type);
       if (await fingerprint(normalize(record)) === await fingerprint(normalize(existing))) skipped++;
       else conflicts.push(`${type}/${record.id}`);
     }
@@ -209,4 +224,15 @@ export async function planImport(source, destination, { uid, projectId, mode, in
   for (const account of target.accounts) account.hasTrades = account.hasTrades || target.trades.some((t) => t.accountId === account.id);
   const hash = await fingerprint({ source: source.sourceFingerprint, destination, uid, projectId, mode, includeSettings, conversions: source.conversions });
   return { fingerprint: hash, canApply: conflicts.length === 0, mode, includeSettings, added, deleted, skipped, conflicts, warnings, conversions: source.conversions, target };
+}
+
+export async function verifyExport(file) {
+  const source = await readExport(file);
+  return {
+    sourceVersions: { format: file.formatVersion ?? 'legacy', schema: file.schemaVersion, calculation: file.calculationVersion },
+    targetVersions: { format: 1, schema: SCHEMA_VERSION, calculation: CALCULATION_VERSION },
+    counts: counts(source.journal), integrity: file.formatVersion === 1 ? 'verified' : 'unavailable',
+    warnings: source.warnings, conversions: source.conversions,
+    incompleteTradeIds: source.journal.trades.filter((trade) => !calculateTrade(trade).complete).map((trade) => trade.id),
+  };
 }

@@ -127,6 +127,7 @@ main#main { min-width: 0; }
 .page-header p { margin: 0; font-size: 13px; line-height: 1.6; }
 .actions, .toolbar, .inline, .split { display: flex; align-items: center; gap: 10px; }
 .actions, .toolbar, .inline { flex-wrap: wrap; }
+.journal-data-actions { justify-content: flex-end; }
 .split { justify-content: space-between; }
 .button { display: inline-flex; justify-content: center; align-items: center; gap: 8px; min-height: 44px; padding: 10px 16px; border: 1px solid #6255d9; border-radius: 7px; background: #6255d9; color: #fff; font-size: 12px; font-weight: 500; text-decoration: none; transition: background-color .15s, border-color .15s; }
 .button:hover { background: #5043c4; border-color: #5043c4; }
@@ -462,3 +463,11 @@ tbody tr:hover { background: var(--raised); }
 .support-reminder-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .support-reminder-actions .button { min-height: 44px; }
 .support-reminder-actions .quiet { background: transparent; color: var(--muted); border-color: transparent; }
+
+.correction-dialog { width: min(36rem, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); overflow: auto; padding: var(--space-5, 1.5rem); border-radius: var(--radius-lg, 1rem); background: var(--surface); color: var(--text); }
+.correction-dialog form, .correction-history { display: grid; gap: 1rem; }
+.correction-values { width: 100%; }
+.correction-values table { width: 100%; table-layout: fixed; }
+.correction-values th, .correction-values td { overflow-wrap: anywhere; vertical-align: top; }
+.correction-values pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .8125rem; }
+.correction-history .card { min-width: 0; overflow-wrap: anywhere; }

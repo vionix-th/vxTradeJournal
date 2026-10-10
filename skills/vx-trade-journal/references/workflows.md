@@ -6,6 +6,21 @@ New trades support up to six legs; adding a leg cannot exceed that limit. Earlie
 
 Planned quantities and fills must match the leg snapshot's quantity increment. An optional plan may omit quantity; a supplied off-increment quantity is rejected, including when correcting a snapshot's increment. Read the historical snapshot rather than assuming the current catalogue definition applies.
 
+## Inspect a journal without changes
+
+After authentication, confirm profile/project with `doctor --profile dev`. These examples inspect synthetic emulator records; select `prod` only for the authorized hosted journal.
+
+```sh
+node /path/to/vx-trade-journal/scripts/vxjournal.mjs accounts list --profile dev
+node /path/to/vx-trade-journal/scripts/vxjournal.mjs accounts get --profile dev --id account-example
+node /path/to/vx-trade-journal/scripts/vxjournal.mjs journal list --profile dev --account account-example
+node /path/to/vx-trade-journal/scripts/vxjournal.mjs trades get --profile dev --id trade-example
+node /path/to/vx-trade-journal/scripts/vxjournal.mjs calculate trade --profile dev --id trade-example
+node /path/to/vx-trade-journal/scripts/vxjournal.mjs trades corrections --profile dev --id trade-example --page 1 --page-size 12
+```
+
+Read account currency, historical instrument snapshots, source fills/adjustments, revisions and incomplete flags. Current catalogue definitions do not replace historical snapshots. Derived results are reproducible from source records, snapshots, supplied FX, event ordering and calculation version. Missing results/rates remain unknown. Correction history has one entry per correcting save with reason and changed values, including automatic FX invalidations; schema-1 edits cannot be reconstructed. History does not independently verify authorship.
+
 ## Record a trade
 
 1. Check the selected environment and signed-in user with `doctor --profile dev`.
@@ -37,7 +52,7 @@ JSON
 
 ## Correct historical data
 
-Read the trade, its children and current revision first. Preview edits to prior executions with `--dry-run`; reconcile any invalid subsequent exits before applying. For instrument snapshot correction, pass the proposed instrument JSON with `--preview`, review recalculated results and the returned fingerprint, then submit `--accept-preview <fingerprint>` using that same proposal, revision and a new operation ID. Re-read the trade after saving.
+Read the trade, its children and current revision first. Preview edits to prior executions with `--dry-run`; reconcile any invalid subsequent exits before applying. For instrument snapshot correction, pass the proposed instrument JSON with `--preview`, review recalculated results and the returned fingerprint, then submit `--accept-preview <fingerprint>` using that same proposal, revision and a new operation ID. Re-read the trade and correction history after saving. Saved execution/adjustment edits or removals and leg direction/planning changes also require a correction reason; completing missing FX/manual values counts. Keep original explanation on retry. Dry runs/previews disclose reason requirements without requiring the reason until apply.
 
 For example, a proposal file containing `{ "pointValue": "2" }` uses:
 
@@ -47,7 +62,7 @@ node /path/to/vx-trade-journal/scripts/vxjournal.mjs legs correct-snapshot \
   --preview --input proposal.json
 ```
 
-The apply call retains `--revision 3` and the same input, replaces `--preview` with `--accept-preview <returned fingerprint>`, and adds `--operation-id <unique ID>`. A changed trade or proposal requires a new preview.
+The apply call adds `--correction-reason "Correct historical broker specification"`, retains `--revision 3` and the same input, replaces `--preview` with `--accept-preview <returned fingerprint>`, and adds `--operation-id <unique ID>`. A changed trade or proposal requires a new preview.
 
 Changing the snapshot P&L currency changes the source side of its FX pair. The correction clears that leg's planning and execution result rates; if the corrected currency matches the account, rates become `1`. Fee currencies/rates and other legs remain unchanged. Review the resulting incomplete flags rather than inferring replacement rates. After saving, use `executions update` with a known `resultRate` for each realized closing result, and `legs update` with a known planning rate when sizing is needed. Read the current revision before every update. Existing leg instrument references cannot be replaced; snapshot corrections retain that reference.
 
@@ -60,6 +75,14 @@ FX rates are reporting-currency units per source-currency unit. Read the account
 ## Export
 
 Run `export --profile dev --output <path>` after checking the profile. The export contains complete owned journal source data and version metadata; it excludes authentication secrets. If the path already exists, choose a different path or explicitly use `--overwrite` only when replacement is intended.
+
+Verify downloaded JSON without authentication or journal writes:
+
+```sh
+node /path/to/vx-trade-journal/scripts/vxjournal.mjs export verify --input journal.json
+```
+
+Verification reports source/target versions, integrity, record counts, conversions/warnings and incomplete trades. Legacy files have no checksum. Store exports privately, retaining dated copies. Run a restore drill in an isolated emulator journal: preview/apply the export, re-export, compare source records/snapshots/correction events and independently expected financial results. Ownership and optimistic revisions change during import; whole-file checksums/times need not match. Checksum consistency does not prove authenticity. Restore hosted data only when authorized; replacement preserves displaced data in its recovery backup.
 
 ## Import and recovery
 

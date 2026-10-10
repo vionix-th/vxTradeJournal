@@ -11,7 +11,7 @@ let env;
 const base = {
   id: "a",
   uid: "alice",
-  schemaVersion: 1,
+  schemaVersion: 2,
   revision: 1,
   createdAt: "2026-01-01T00:00:00Z",
   updatedAt: "2026-01-01T00:00:00Z",
@@ -210,6 +210,10 @@ describe("ownership and structural validation", () => {
       timestamp: base.createdAt,
       revision: 2,
     });
+    const previous = { ...base, id: 'x', amount: '1', currency: 'USD', rate: '1', reason: 'Correction', timestamp: base.createdAt };
+    const after = { ...previous, amount: '2', reason: 'Changed', revision: 2 };
+    batch.set(doc(d, 'users/alice/trades/t/corrections/op'), { ...base, id: 'op', revision: 2, calculationVersion: 1, operationId: 'op', reason: 'Broker corrected charge', changes: [{ recordType: 'adjustments', recordId: 'x', before: { amount: previous.amount, reason: previous.reason }, after: { amount: after.amount, reason: after.reason } }] });
+    batch.set(doc(d, "users/alice/trades/t/operations/op"), { id: "op", uid: "alice", revision: 2 });
     await assertSucceeds(batch.commit());
   });
 });
@@ -248,6 +252,8 @@ describe("historical and configuration integrity", () => {
     corrected.set(doc(d, "users/alice/trades/t/legs/l"), {
       ...leg, revision: 2, snapshot: { ...instrument, pointValue: "10" },
     });
+    corrected.set(doc(d, 'users/alice/trades/t/corrections/op'), { ...base, id: 'op', revision: 2, calculationVersion: 1, operationId: 'op', reason: 'Correct multiplier', changes: [{ recordType: 'legs', recordId: 'l', before: { snapshot: { pointValue: '1' } }, after: { snapshot: { pointValue: '10' } } }] });
+    corrected.set(doc(d, "users/alice/trades/t/operations/op"), { id: "op", uid: "alice", revision: 2 });
     await assertSucceeds(corrected.commit());
   });
   it("rejects forged strategy snapshots on new links and subsequent edits", async () => {
@@ -366,22 +372,37 @@ describe("quotation-unit persistence boundary", () => {
 describe("database availability", () => {
   it("blocks journal access during maintenance and protects control metadata", async () => {
     await env.withSecurityRulesDisabled(async (context) => {
-      await setDoc(doc(context.firestore(), "_system/database"), { metadataVersion: 1, schemaVersion: 1, status: "maintenance" });
+      await setDoc(doc(context.firestore(), "_system/database"), { metadataVersion: 1, schemaVersion: 2, status: "maintenance" });
       await setDoc(doc(context.firestore(), "users/alice/accounts/a"), account);
     });
     await assertFails(getDoc(doc(db(), "users/alice/accounts/a")));
     await assertFails(setDoc(doc(db(), "users/alice/accounts/a"), { ...account, revision: 2 }));
     await assertFails(deleteDoc(doc(db(), "users/alice/trades/t")));
     await assertSucceeds(getDoc(doc(db(), "_system/database")));
-    await assertFails(setDoc(doc(db(), "_system/database"), { metadataVersion: 1, schemaVersion: 1, status: "ready" }));
+    await assertFails(setDoc(doc(db(), "_system/database"), { metadataVersion: 1, schemaVersion: 2, status: "ready" }));
   });
   it("blocks absent and mismatched database schemas", async () => {
     await env.withSecurityRulesDisabled(async (context) => deleteDoc(doc(context.firestore(), "_system/database")));
     await assertFails(setDoc(doc(db(), "users/alice/accounts/a"), account));
     await env.withSecurityRulesDisabled(async (context) => {
-      await setDoc(doc(context.firestore(), "_system/database"), { metadataVersion: 1, schemaVersion: 2, status: "ready" });
+      await setDoc(doc(context.firestore(), "_system/database"), { metadataVersion: 1, schemaVersion: 3, status: "ready" });
     });
     await assertFails(getDoc(doc(db(), "users/alice/accounts/a")));
     await assertFails(setDoc(doc(db(), "users/alice/accounts/a"), account));
   });
+});
+
+it('permits direct owner source edits with parent revision; application history is not a rules audit guarantee', async () => {
+  const parent = { ...base, id: 't', accountId: 'a', accountCurrency: 'USD', strategyId: null, strategySnapshot: null, rationale: '', review: '', tags: [], riskBudget: null, status: 'open', summary: {}, lastOperation: 'original' };
+  const adjustment = { ...base, id: 'x', amount: '1', currency: 'USD', rate: '1', reason: 'Charge', timestamp: base.createdAt };
+  await env.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'users/alice/accounts/a'), { ...account, hasTrades: true });
+    await setDoc(doc(context.firestore(), 'users/alice/trades/t'), parent);
+    await setDoc(doc(context.firestore(), 'users/alice/trades/t/adjustments/x'), adjustment);
+  });
+  const store = db();
+  const batch = writeBatch(store);
+  batch.set(doc(store, 'users/alice/trades/t'), { ...parent, revision: 2, lastOperation: 'correct' });
+  batch.set(doc(store, 'users/alice/trades/t/adjustments/x'), { ...adjustment, revision: 2, amount: '2' });
+  await assertSucceeds(batch.commit());
 });
