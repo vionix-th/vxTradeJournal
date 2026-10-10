@@ -472,7 +472,7 @@ tbody tr:hover { background: var(--raised); }
 .donation-receiving { display: grid; gap: var(--space-sm); min-width: 0; padding: var(--space-md); border: 1px solid var(--border); border-radius: 8px; background: var(--raised); }
 .donation-address-details { display: grid; gap: 4px; min-width: 0; }
 .donation-address-label { color: var(--muted); font-size: 12px; }
-.donation-address { display: block; min-width: 0; min-height: 1.65em; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.65; user-select: all; }
+.donation-address { display: block; min-width: 0; min-height: 1.65em; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.65; color: var(--accent); font-weight: 400; text-decoration: underline; text-underline-offset: 3px; user-select: all; }
 .donation-copy { width: 100%; }
 .donation-assets { min-height: 1.5em; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
 @media (max-width: 480px) {

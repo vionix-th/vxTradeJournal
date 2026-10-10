@@ -334,3 +334,7 @@ The product owner approved the design for verification, ending the test deferral
 ## 2026-10-10 — Donation method labels and icons
 
 Label the provider-backed method Cash and retain Crypto as the second method. Give each tab a decorative banknote/coin icon while preserving accessible text, equal-width controls and the existing Ko-fi checkout lifecycle. This makes method choice independent of provider branding; provider-specific loading and recovery copy still names Ko-fi.
+
+## 2026-10-10 — Native wallet address links
+
+Make the displayed receiving address a native Bitcoin, ERC-681 or Solana Pay link, retaining raw address text, clipboard contents and address-only QR payloads. Include the selected EVM chain ID to avoid inheriting the wallet's active network; omit amounts and token contracts. Link activation delegates native-asset payment entry to a compatible installed wallet without adding a wallet SDK or new dialog controls. Generic token donations retain the copy flow. Browser and wallet support determines whether the URI opens a payment screen.

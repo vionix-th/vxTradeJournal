@@ -1,6 +1,6 @@
 import { el, button } from './components.js';
 import { icon } from './icons.js';
-import { donationNetworks } from './donation-config.js';
+import { donationNetworks, donationWalletUri } from './donation-config.js';
 import { donationNetworkSelector } from './donation-network-selector.js';
 import { addressQRCode } from './donation-qr.js';
 
@@ -19,7 +19,7 @@ export function cryptoSupport(id) {
     copyLabel.textContent = 'Copy address';
     setCopyFeedback('');
   }
-  const address = el('code', { id: `${id}-address`, class: 'donation-address', tabindex: '0' });
+  const address = el('a', { id: `${id}-address`, class: 'donation-address', tabindex: '0' });
   const assets = el('p', { class: 'donation-assets' });
   const network = donationNetworkSelector(id, donationNetworks, (selected) => {
     destination = selected;
@@ -67,6 +67,7 @@ export function cryptoSupport(id) {
     copy.disabled = false;
     resetCopyFeedback();
     address.textContent = destination.address;
+    address.href = donationWalletUri(destination);
     assets.textContent = destination.assets;
     qrHost.replaceChildren(addressQRCode(destination.address, `${destination.name} receiving address QR code`));
   }

@@ -8,6 +8,17 @@ const addresses = {
   Solana: '7oLWWpSrEG6aDKVZDAyuAjF3kDKEgAmnG3Q7JAb9uUXy',
 };
 
+const walletUris = [
+  'bitcoin:bc1qesd92qv7h3mlh4qqs4grz3e32phvxj6spwkcyz',
+  'ethereum:0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2@1',
+  'solana:7oLWWpSrEG6aDKVZDAyuAjF3kDKEgAmnG3Q7JAb9uUXy',
+  'ethereum:0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2@8453',
+  'ethereum:0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2@42161',
+  'ethereum:0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2@10',
+  'ethereum:0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2@137',
+  'ethereum:0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2@56',
+];
+
 async function openCrypto(page) {
   await page.getByRole('button', { name: 'Support this project', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Support vxTradeJournal' });
@@ -138,13 +149,23 @@ test('icon selector lists all networks and QR codes decode to supplied addresses
   await expect(network).toHaveAttribute('aria-expanded', 'false');
   await expect(network).toContainText('Bitcoin');
   const initial = await dialog.boundingBox();
-  for (const [name, assets, address] of networks) {
+  for (const [index, [name, assets, address]] of networks.entries()) {
     await selectNetwork(dialog, name);
     await expect(network).toContainText(name);
     await expect(dialog.locator('.donation-network-icon svg')).toHaveCount(1);
     await expect(dialog.getByRole('option', { name, exact: true, includeHidden: true })).toHaveAttribute('aria-selected', 'true');
     await expect(dialog.locator('.donation-assets')).toHaveText(assets);
-    await expect(dialog.locator('.donation-address')).toHaveText(address);
+    const walletLink = dialog.getByRole('link', { name: address, exact: true });
+    await expect(walletLink).toHaveText(address);
+    await expect(walletLink).toHaveAttribute('href', walletUris[index]);
+    // Observe native link activation without launching an external wallet in automation.
+    await walletLink.evaluate((node) => node.addEventListener('click', (event) => {
+      event.preventDefault();
+      node.setAttribute('data-activated-uri', node.getAttribute('href'));
+    }, { once: true }));
+    await walletLink.focus();
+    await page.keyboard.press('Enter');
+    await expect(walletLink).toHaveAttribute('data-activated-uri', walletUris[index]);
     expect(await decodeQR(dialog.getByRole('img', { name: `${name} receiving address QR code` }))).toBe(address);
     expect(await dialog.boundingBox()).toEqual(initial);
   }
