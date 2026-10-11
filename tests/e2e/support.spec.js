@@ -8,6 +8,8 @@ const addresses = {
   Solana: '7oLWWpSrEG6aDKVZDAyuAjF3kDKEgAmnG3Q7JAb9uUXy',
   Zcash: 't1ffcdEs6WUZsK4iTpSg3fYM3STmZ8rfXjy',
   ZcashShielded: 'u1093sjwd5aleadm0j8jfzu0l7krkmv82yjrpk5j86j0vrkmy3eppkcv6e930qukvdy4p6nc8u0ttlwh6qu5gce84wht06xpzjzcqdwev0',
+  TRON: 'TLq3NiF3QkwzcFwhZhvVDUSQ3shzbDf6fQ',
+  Dogecoin: 'DLYUL5TuJPvQq71xFxdm337Ti5sZyP5BKk',
   Monero: '47XCwRMTyEvav4QMqeh8ChaLg4Ubt7ASSWvyW9BG8vB19wXUS4E7C1qWkFnyzFFoTcf8AAmrUDG11EE2B6GFgFAWArkriQd',
 };
 
@@ -22,6 +24,8 @@ const walletUris = [
   'ethereum:0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2@56',
   'zcash:t1ffcdEs6WUZsK4iTpSg3fYM3STmZ8rfXjy',
   'zcash:u1093sjwd5aleadm0j8jfzu0l7krkmv82yjrpk5j86j0vrkmy3eppkcv6e930qukvdy4p6nc8u0ttlwh6qu5gce84wht06xpzjzcqdwev0',
+  'trust://send?asset=c195&address=TLq3NiF3QkwzcFwhZhvVDUSQ3shzbDf6fQ',
+  'dogecoin:DLYUL5TuJPvQq71xFxdm337Ti5sZyP5BKk',
   'monero:47XCwRMTyEvav4QMqeh8ChaLg4Ubt7ASSWvyW9BG8vB19wXUS4E7C1qWkFnyzFFoTcf8AAmrUDG11EE2B6GFgFAWArkriQd',
 ];
 
@@ -148,6 +152,8 @@ test('icon selector lists all networks and QR codes decode to supplied addresses
     ['BNB Smart Chain', 'BNB, USDC, USDT and other tokens', addresses.Ethereum],
     ['Zcash Transparent', 'ZEC', addresses.Zcash],
     ['Zcash Shielded', 'ZEC', addresses.ZcashShielded],
+    ['TRON', 'TRX, USDT and other tokens', addresses.TRON],
+    ['Dogecoin', 'DOGE', addresses.Dogecoin],
     ['Monero', 'XMR', addresses.Monero],
   ];
   await network.click();
@@ -177,7 +183,7 @@ test('icon selector lists all networks and QR codes decode to supplied addresses
     await page.keyboard.press('Enter');
     await expect(walletLink).toHaveAttribute('data-activated-uri', walletUris[index]);
     expect(await decodeQR(dialog.getByRole('img', { name: `${name} receiving address QR code` }))).toBe(address);
-    if (name.startsWith('Zcash') || name === 'Monero') {
+    if (index >= 8) {
       await dialog.getByRole('button', { name: 'Copy address', exact: true }).click();
       expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(address);
     }
@@ -354,8 +360,9 @@ for (const viewport of [{ width: 320, height: 640 }, { width: 390, height: 844 }
       expect(layout.targets.every((height) => height >= 44)).toBe(true);
       await expect(dialog.locator('.donation-address')).toHaveText(addresses.Ethereum);
       const baseline = await dialog.boundingBox();
-      for (const name of ['Bitcoin', 'Solana', 'BNB Smart Chain', 'Ethereum Mainnet', 'Zcash Transparent', 'Monero', 'Zcash Shielded']) {
+      for (const name of ['Bitcoin', 'Solana', 'BNB Smart Chain', 'Ethereum Mainnet', 'Zcash Transparent', 'TRON', 'Dogecoin', 'Monero', 'Zcash Shielded']) {
         await selectNetwork(dialog, name);
+        if (name === 'TRON' || name === 'Dogecoin') await dialog.screenshot({ path: `/tmp/vxj-crypto-${viewport.width}x${viewport.height}-${theme}-${name.toLowerCase()}.png` });
         expect(await dialog.boundingBox()).toEqual(baseline);
       }
       await dialog.getByRole('combobox').click();

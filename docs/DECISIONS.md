@@ -346,3 +346,7 @@ Append Zcash and Monero to the existing selector, with ZEC/XMR hints and the wal
 ## 2026-10-11 — Shielded Zcash donations
 
 Distinguish Zcash Transparent and Zcash Shielded in the shared selector, retaining the Zcash icon and ZEC hint. The Shielded entry uses the wallet owner's Unified Address and an explicit `zcash:` URI scheme override, independent of its selector ID. Display, clipboard and QR remain raw-address only. Reserve three desktop address lines and four at narrow mobile widths for the 106-character address, keeping destination switching stable.
+
+## 2026-10-11 — TRON and Dogecoin donations
+
+Add TRON and Dogecoin to the shared icon selector with the wallet owner's supplied addresses. TRON uses the owner-approved Trust Wallet native `trust://send` handoff for asset `c195`, without preset amount or HTTPS fallback; no generic `tron:` payment format is assumed. Dogecoin uses `dogecoin:`. Keep display, Copy and QR address-only. TRON's nonexclusive caption lists TRX, USDT and other tokens; do not promote discontinued USDC support there. Extend the existing themed outline icon set without dependencies or wallet connection.
