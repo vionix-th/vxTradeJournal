@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-11 — Release wallet support as 0.6.0
+
+Publish native wallet address links, expanded cryptocurrency destinations, alphabetical network selection and clearer donation controls as `0.6.0`. These are compatible website-only support additions; journal schema `2`, calculation version `1`, CLI/data contracts and persistence rules remain unchanged, with no conversion required. Verify the complete release and portable skill, then publish website and skill from the same tested clean commit through guarded deployment and annotated `v0.6.0` tag. Wallet handoff availability depends on the donor's installed wallet; QR and clipboard preserve raw addresses.
+
 ## 2026-10-10 — Release crypto support as 0.5.0
 
 Publish the approved crypto donation selector, address QR and clipboard interaction as `0.5.0`. This is website-only support presentation; journal schema `2`, calculation version `1`, user records and persistence rules remain unchanged, with no conversion required. Verify the complete release and portable skill, then use guarded deployment with unchanged rules/schema. Publish website and skill from the same tested clean commit and annotated `v0.5.0` tag.
