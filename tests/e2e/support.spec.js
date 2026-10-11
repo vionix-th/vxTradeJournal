@@ -7,6 +7,7 @@ const addresses = {
   Ethereum: '0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2',
   Solana: '7oLWWpSrEG6aDKVZDAyuAjF3kDKEgAmnG3Q7JAb9uUXy',
   Zcash: 't1ffcdEs6WUZsK4iTpSg3fYM3STmZ8rfXjy',
+  ZcashShielded: 'u1093sjwd5aleadm0j8jfzu0l7krkmv82yjrpk5j86j0vrkmy3eppkcv6e930qukvdy4p6nc8u0ttlwh6qu5gce84wht06xpzjzcqdwev0',
   Monero: '47XCwRMTyEvav4QMqeh8ChaLg4Ubt7ASSWvyW9BG8vB19wXUS4E7C1qWkFnyzFFoTcf8AAmrUDG11EE2B6GFgFAWArkriQd',
 };
 
@@ -20,6 +21,7 @@ const walletUris = [
   'ethereum:0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2@137',
   'ethereum:0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2@56',
   'zcash:t1ffcdEs6WUZsK4iTpSg3fYM3STmZ8rfXjy',
+  'zcash:u1093sjwd5aleadm0j8jfzu0l7krkmv82yjrpk5j86j0vrkmy3eppkcv6e930qukvdy4p6nc8u0ttlwh6qu5gce84wht06xpzjzcqdwev0',
   'monero:47XCwRMTyEvav4QMqeh8ChaLg4Ubt7ASSWvyW9BG8vB19wXUS4E7C1qWkFnyzFFoTcf8AAmrUDG11EE2B6GFgFAWArkriQd',
 ];
 
@@ -144,7 +146,8 @@ test('icon selector lists all networks and QR codes decode to supplied addresses
     ['Optimism', 'ETH, USDC, USDT and other tokens', addresses.Ethereum],
     ['Polygon PoS', 'POL, USDC, USDT and other tokens', addresses.Ethereum],
     ['BNB Smart Chain', 'BNB, USDC, USDT and other tokens', addresses.Ethereum],
-    ['Zcash', 'ZEC', addresses.Zcash],
+    ['Zcash Transparent', 'ZEC', addresses.Zcash],
+    ['Zcash Shielded', 'ZEC', addresses.ZcashShielded],
     ['Monero', 'XMR', addresses.Monero],
   ];
   await network.click();
@@ -174,7 +177,7 @@ test('icon selector lists all networks and QR codes decode to supplied addresses
     await page.keyboard.press('Enter');
     await expect(walletLink).toHaveAttribute('data-activated-uri', walletUris[index]);
     expect(await decodeQR(dialog.getByRole('img', { name: `${name} receiving address QR code` }))).toBe(address);
-    if (name === 'Zcash' || name === 'Monero') {
+    if (name.startsWith('Zcash') || name === 'Monero') {
       await dialog.getByRole('button', { name: 'Copy address', exact: true }).click();
       expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(address);
     }
@@ -351,7 +354,7 @@ for (const viewport of [{ width: 320, height: 640 }, { width: 390, height: 844 }
       expect(layout.targets.every((height) => height >= 44)).toBe(true);
       await expect(dialog.locator('.donation-address')).toHaveText(addresses.Ethereum);
       const baseline = await dialog.boundingBox();
-      for (const name of ['Bitcoin', 'Solana', 'BNB Smart Chain', 'Ethereum Mainnet', 'Zcash', 'Monero']) {
+      for (const name of ['Bitcoin', 'Solana', 'BNB Smart Chain', 'Ethereum Mainnet', 'Zcash Transparent', 'Monero', 'Zcash Shielded']) {
         await selectNetwork(dialog, name);
         expect(await dialog.boundingBox()).toEqual(baseline);
       }
@@ -363,7 +366,7 @@ for (const viewport of [{ width: 320, height: 640 }, { width: 390, height: 844 }
       expect(menuBounds.y + menuBounds.height).toBeLessThanOrEqual(viewport.height);
       await page.keyboard.press('Escape');
 
-      if (!compact) expect(await decodeQR(dialog.locator('.donation-qr'))).toBe(addresses.Monero);
+      if (!compact) expect(await decodeQR(dialog.locator('.donation-qr'))).toBe(addresses.ZcashShielded);
       await page.screenshot({ path: `/tmp/vxj-crypto-${viewport.width}x${viewport.height}-${theme}.png` });
       await dialog.screenshot({ path: `/tmp/vxj-crypto-dialog-${viewport.width}x${viewport.height}-${theme}.png` });
       if (compact) {
