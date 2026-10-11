@@ -16,17 +16,17 @@ const addresses = {
 const walletUris = [
   'bitcoin:bc1qesd92qv7h3mlh4qqs4grz3e32phvxj6spwkcyz',
   'ethereum:0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2@1',
-  'solana:7oLWWpSrEG6aDKVZDAyuAjF3kDKEgAmnG3Q7JAb9uUXy',
-  'ethereum:0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2@8453',
   'ethereum:0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2@42161',
-  'ethereum:0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2@10',
-  'ethereum:0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2@137',
+  'ethereum:0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2@8453',
   'ethereum:0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2@56',
-  'zcash:t1ffcdEs6WUZsK4iTpSg3fYM3STmZ8rfXjy',
-  'zcash:u1093sjwd5aleadm0j8jfzu0l7krkmv82yjrpk5j86j0vrkmy3eppkcv6e930qukvdy4p6nc8u0ttlwh6qu5gce84wht06xpzjzcqdwev0',
-  'trust://send?asset=c195&address=TLq3NiF3QkwzcFwhZhvVDUSQ3shzbDf6fQ',
   'dogecoin:DLYUL5TuJPvQq71xFxdm337Ti5sZyP5BKk',
   'monero:47XCwRMTyEvav4QMqeh8ChaLg4Ubt7ASSWvyW9BG8vB19wXUS4E7C1qWkFnyzFFoTcf8AAmrUDG11EE2B6GFgFAWArkriQd',
+  'ethereum:0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2@10',
+  'ethereum:0x0D4aAc6d3C5DF6D162F121992eBD441728B143a2@137',
+  'solana:7oLWWpSrEG6aDKVZDAyuAjF3kDKEgAmnG3Q7JAb9uUXy',
+  'trust://send?asset=c195&address=TLq3NiF3QkwzcFwhZhvVDUSQ3shzbDf6fQ',
+  'zcash:u1093sjwd5aleadm0j8jfzu0l7krkmv82yjrpk5j86j0vrkmy3eppkcv6e930qukvdy4p6nc8u0ttlwh6qu5gce84wht06xpzjzcqdwev0',
+  'zcash:t1ffcdEs6WUZsK4iTpSg3fYM3STmZ8rfXjy',
 ];
 
 async function openCrypto(page) {
@@ -144,17 +144,17 @@ test('icon selector lists all networks and QR codes decode to supplied addresses
   const networks = [
     ['Bitcoin', 'BTC', addresses.Bitcoin],
     ['Ethereum Mainnet', 'ETH, USDC, USDT and other tokens', addresses.Ethereum],
-    ['Solana', 'SOL, USDC, USDT and other tokens', addresses.Solana],
-    ['Base', 'ETH, USDC, USDT and other tokens', addresses.Ethereum],
     ['Arbitrum One', 'ETH, USDC, USDT and other tokens', addresses.Ethereum],
-    ['Optimism', 'ETH, USDC, USDT and other tokens', addresses.Ethereum],
-    ['Polygon PoS', 'POL, USDC, USDT and other tokens', addresses.Ethereum],
+    ['Base', 'ETH, USDC, USDT and other tokens', addresses.Ethereum],
     ['BNB Smart Chain', 'BNB, USDC, USDT and other tokens', addresses.Ethereum],
-    ['Zcash Transparent', 'ZEC', addresses.Zcash],
-    ['Zcash Shielded', 'ZEC', addresses.ZcashShielded],
-    ['TRON', 'TRX, USDT and other tokens', addresses.TRON],
     ['Dogecoin', 'DOGE', addresses.Dogecoin],
     ['Monero', 'XMR', addresses.Monero],
+    ['Optimism', 'ETH, USDC, USDT and other tokens', addresses.Ethereum],
+    ['Polygon PoS', 'POL, USDC, USDT and other tokens', addresses.Ethereum],
+    ['Solana', 'SOL, USDC, USDT and other tokens', addresses.Solana],
+    ['TRON', 'TRX, USDT and other tokens', addresses.TRON],
+    ['Zcash Shielded', 'ZEC', addresses.ZcashShielded],
+    ['Zcash Transparent', 'ZEC', addresses.Zcash],
   ];
   await network.click();
   const options = dialog.getByRole('option');
@@ -183,7 +183,7 @@ test('icon selector lists all networks and QR codes decode to supplied addresses
     await page.keyboard.press('Enter');
     await expect(walletLink).toHaveAttribute('data-activated-uri', walletUris[index]);
     expect(await decodeQR(dialog.getByRole('img', { name: `${name} receiving address QR code` }))).toBe(address);
-    if (index >= 8) {
+    if (['TRON', 'Dogecoin', 'Monero', 'Zcash Shielded', 'Zcash Transparent'].includes(name)) {
       await dialog.getByRole('button', { name: 'Copy address', exact: true }).click();
       expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(address);
     }
@@ -193,7 +193,7 @@ test('icon selector lists all networks and QR codes decode to supplied addresses
   await dialog.getByRole('tab', { name: 'Cash', exact: true }).click();
   await expect(dialog.locator('iframe')).toBeVisible();
   await dialog.getByRole('tab', { name: 'Crypto', exact: true }).click();
-  await expect(network).toContainText('Monero');
+  await expect(network).toContainText('Zcash Transparent');
   expect(calls).toHaveLength(1);
   await dialog.getByRole('button', { name: 'Close', exact: true }).click();
   await page.getByRole('button', { name: 'Support this project', exact: true }).click();
@@ -318,7 +318,7 @@ test('crypto keyboard selection preserves draft and restores opener focus', asyn
   await expect(network).toContainText('Bitcoin');
   await page.keyboard.press('End');
   await page.keyboard.press('Tab');
-  await expect(network).toContainText('Monero');
+  await expect(network).toContainText('Zcash Transparent');
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
   await expect(trigger).toBeFocused();

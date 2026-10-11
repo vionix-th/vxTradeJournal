@@ -350,3 +350,7 @@ Distinguish Zcash Transparent and Zcash Shielded in the shared selector, retaini
 ## 2026-10-11 — TRON and Dogecoin donations
 
 Add TRON and Dogecoin to the shared icon selector with the wallet owner's supplied addresses. TRON uses the owner-approved Trust Wallet native `trust://send` handoff for asset `c195`, without preset amount or HTTPS fallback; no generic `tron:` payment format is assumed. Dogecoin uses `dogecoin:`. Keep display, Copy and QR address-only. TRON's nonexclusive caption lists TRX, USDT and other tokens; do not promote discontinued USDC support there. Extend the existing themed outline icon set without dependencies or wallet connection.
+
+## 2026-10-11 — Alphabetical donation selector
+
+Keep Bitcoin and Ethereum Mainnet first, then list all remaining destinations alphabetically by displayed name. The maintained public configuration owns this order; no runtime sorting or locale-dependent order is needed for the shared proper network names. Keyboard navigation follows the displayed order, with End selecting Zcash Transparent.
