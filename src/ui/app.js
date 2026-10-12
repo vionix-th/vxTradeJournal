@@ -9,6 +9,7 @@ import { openSupportDialog } from './support.js';
 import { supportReminderNotice } from './support-reminder-notice.js';
 import { icon } from "./icons.js";
 import { brand, authFrame } from "./branding.js";
+import { workspaceShell } from "./workspace-shell.js";
 import { workspaceNavigation } from "./workspace-navigation.js";
 import { skillDownloadPanel } from "./skill-download.js";
 import { EditorLifecycle } from "./editor-lifecycle.js";
@@ -56,9 +57,6 @@ class JournalUI {
       show: supportReminderNotice,
     });
     this.desktopMedia = window.matchMedia("(min-width: 701px)");
-    this.desktopMedia.addEventListener("change", (event) => {
-      this.navigation?.setDesktop(event.matches);
-    });
     window.addEventListener("beforeunload", (e) => {
       if (this.dirty || this.lifecycle.busy) {
         e.preventDefault();
@@ -69,6 +67,8 @@ class JournalUI {
   get dirty() { return this.lifecycle.dirty; }
   set dirty(value) { this.lifecycle.dirty = value; }
   async loadUser(user) {
+    this.workspace?.destroy();
+    this.workspace = null;
     const generation = ++this.loadGeneration;
     this.pendingCompletion = null;
     this.lifecycle.reset();
@@ -145,7 +145,7 @@ class JournalUI {
         el("span", { class: "workspace-name" }, "Workspace", el("span", { class: "workspace-divider" }, "/"), "Trading journal"),
         el("span", { class: "privacy-label" }, icon("lock", 14), "Private workspace")), this.content);
     const reload = button(
-      [icon("refresh", 16), "Reload records"],
+      [icon("refresh", 16), el("span", {}, "Reload records")],
       () => this.reloadCurrent(),
       "session-action",
     );
@@ -160,7 +160,7 @@ class JournalUI {
         el("div", {}, el("strong", {}, "Personal workspace"), el("p", {}, this.user.email))),
       reload,
       button(
-        [icon("logout", 16), "Sign out"],
+        [icon("logout", 16), el("span", {}, "Sign out")],
         () => {
           if (this.canLeave()) {
             this.dirty = false;
@@ -181,12 +181,14 @@ class JournalUI {
       this.navigation.sessionSlot,
       this.navigation.projectActions,
     );
+    this.workspace?.destroy();
+    this.workspace = workspaceShell(sidebar, this.main, this.navigation, this.desktopMedia);
     root.replaceChildren(
       el("a", { class: "skip-link", href: "#main", onClick: (event) => {
         event.preventDefault();
         this.main.focus();
       } }, "Skip to journal"),
-      el("div", { class: "shell" }, sidebar, this.main),
+      this.workspace.shell,
     );
   }
   canLeave() {
@@ -214,7 +216,7 @@ class JournalUI {
     node.classList.add("view-stack");
     this.content.replaceChildren(node);
     this.main.querySelector("h1")?.focus({ preventScroll: true });
-    window.scrollTo(0, 0);
+    this.workspace?.resetScroll();
   }
   form(title, description, saveLabel, handler, { operationId = crypto.randomUUID() } = {}) {
     const errors = el("div", { class: "full form-errors" });

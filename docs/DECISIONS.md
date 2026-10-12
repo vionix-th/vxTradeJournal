@@ -1,5 +1,13 @@
 # Development decisions
 
+## 2026-10-13 — Integrate sidebar toggle into the workspace bar
+
+Refine [viewport-owned shell](#2026-10-13--let-the-application-shell-own-viewport-height): place collapse/expand before the workspace breadcrumb in the existing main header. Remove the standalone sidebar control row to reclaim vertical space and keep publisher identity first. Retain the 44px target, local preference and mobile exclusion; use main-header theme tokens. The workspace bar continues scrolling with main content.
+
+## 2026-10-13 — Let the application shell own viewport height
+
+Use a viewport-sized Grid shell above 700px, with naturally stretched sidebar and independently scrolling main/sidebar regions. This matches persistent application navigation and avoids coupling footer position to document length. Add an explicit, locally remembered 224px/64px collapse preference; retain compact document-scrolling navigation on smaller screens. Transfer scroll position across the breakpoint and preserve live editor DOM, drafts and focus. This changes website scroll ownership, so targeted layout, navigation and accessibility coverage is required; automated execution is deferred at the user’s request. CLI, persistence and financial contracts remain unchanged.
+
 ## 2026-10-11 — Release wallet support as 0.6.0
 
 Publish native wallet address links, expanded cryptocurrency destinations, alphabetical network selection and clearer donation controls as `0.6.0`. These are compatible website-only support additions; journal schema `2`, calculation version `1`, CLI/data contracts and persistence rules remain unchanged, with no conversion required. Verify the complete release and portable skill, then publish website and skill from the same tested clean commit through guarded deployment and annotated `v0.6.0` tag. Wallet handoff availability depends on the donor's installed wallet; QR and clipboard preserve raw addresses.

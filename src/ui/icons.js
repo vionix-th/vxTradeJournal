@@ -1,4 +1,7 @@
 const paths = {
+  download: ["M12 3v12m-5-5 5 5 5-5", "M4 16v5h16v-5"],
+  collapseSidebar: ["M3 3h18v18H3zM9 3v18", "m16 8-4 4 4 4"],
+  expandSidebar: ["M3 3h18v18H3zM9 3v18", "m13 8 4 4-4 4"],
   cash: ['M4 6h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z', 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z', 'M6 12h.01M18 12h.01'],
   crypto: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z', 'm12 7 4 5-4 5-4-5 4-5Z'],
   journal: ['M5 4h14v16H5z', 'M9 4v16', 'M12 8h4M12 12h4'],
