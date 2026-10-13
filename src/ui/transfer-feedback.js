@@ -36,7 +36,12 @@ export function transferFeedback({ transfer, operationId = () => undefined, onSt
     errorText.textContent = state.error ? `Last request failed: ${state.failureContext || (state.error.details?.export?.filePrepared ? 'Export data was prepared, but export did not complete; no download requested. ' : '')}${failureMessage(state.error)}` : '';
     observationText.hidden = !state.observation;
     const observed = state.observation;
-    observationText.textContent = observed ? `${observed.reason === 'active_export' && observed.ownedByCaller ? 'The previous export still reserves journal access. Check again before retrying.' : explanations[observed.reason] || explanations.status_unavailable}${observed.issue?.includes('matching') ? ' Recovery needs an app or CLI version matching this import.' : ''}${observed.reason.includes('import') && observed.phase ? ` ${transferPhaseLabel(observed.phase)}. ${Number.isInteger(observed.committedRecords) ? `${observed.committedRecords} records committed in the current phase.` : ''}` : ''}` : '';
+    const deletion = observed?.operationKind === 'accountDeletion';
+    const explanation = deletion && (observed.phase === 'cleanup' || observed.actions.includes('finish_cleanup')) ? `${observed.importStatus === 'rolledBack' ? 'Account deletion was cancelled and removed records restored.' : observed.importStatus === 'rejected' ? 'Account deletion was rejected before removing account records.' : 'Account and linked history were deleted.'} ${observed.cleanupComplete ? 'Temporary recovery records were removed. Finish cleanup to release journal access.' : 'Cleanup must finish before journal access returns.'}`
+      : deletion && observed.reason.includes('import') ? 'Account deletion is unfinished. Some linked records may already be removed. Inspect recovery before continuing.'
+      : observed?.reason === 'active_export' && observed.ownedByCaller ? 'The previous export still reserves journal access. Check again before retrying.'
+      : explanations[observed?.reason] || explanations.status_unavailable;
+    observationText.textContent = observed ? `${explanation}${observed.issue?.includes('matching') ? ' Recovery needs an app or CLI version matching this operation.' : ''}${observed.reason.includes('import') && observed.phase ? ` ${transferPhaseLabel(observed.phase, observed.operationKind)}. ${observed.phase !== 'cleanup' && Number.isInteger(observed.committedRecords) ? `${observed.committedRecords} records committed in the current phase.` : ''}` : ''}` : '';
     check.hidden = !state.error && !observed;
     check.disabled = state.pending;
     check.textContent = observed?.reason === 'active_export' || observed?.reason === 'active_import' ? 'Check again' : 'Check status';
@@ -44,7 +49,7 @@ export function transferFeedback({ transfer, operationId = () => undefined, onSt
     detailsBody.replaceChildren();
     const rows = [
       ['Request error', state.error ? `${state.error.code || 'REQUEST_FAILED'}: ${state.error.message}` : null],
-      ['Operation', observed?.operationId], ['Phase', observed?.phase], ['Import status', observed?.importStatus],
+      ['Operation', observed?.operationId], ['Operation type', observed?.operationKind], ['Phase', observed?.phase], ['Operation status', observed?.importStatus],
       ['Expiry (not a completion estimate)', observed?.expiresAt], ['Observed client time', observed?.observedClientTime],
       ['Status issue', observed?.issue],
       ['Export data prepared', state.error?.details?.export ? String(state.error.details.export.filePrepared) : null],
@@ -79,7 +84,7 @@ export function transferFeedback({ transfer, operationId = () => undefined, onSt
       const value = await action(); produced = true;
       if (!current(token)) return { ok: false, detached: true };
       await onSuccess(value);
-      if (current(token)) state = { ...state, success };
+      if (current(token)) state = { ...state, success: typeof success === 'function' ? success(value) : success };
       return { ok: true, value };
     } catch (error) {
       if (!current(token)) return { ok: false, detached: true };

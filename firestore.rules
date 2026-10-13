@@ -26,6 +26,10 @@ service cloud.firestore {
     && get(controlPath(uid)).data.phase in ['applying','rollingBack']
     && checkpointMoved(uid) && transferTarget(uid,key,deleting);
   }
+  function completedTransfer(uid,id) {
+   let session=getAfter(sessionPath(uid,id)).data;
+   return session.status in ['complete','rolledBack','rejected'] && (session.get('kind','import')!='accountDeletion' || session.get('cleanupComplete',false)==true);
+  }
   match /users/{uid}/_journal/control {
    allow get: if authenticatedOwner(uid);
    allow create,update: if available() && authenticatedOwner(uid) && request.resource.data.keys().hasOnly(['state','operationId','owner','fence','expiresAt','phase','cursor','checkpoint']) && request.resource.data.state in ['ready','snapshot','import'] && request.resource.data.expiresAt is timestamp && request.resource.data.expiresAt<=request.time+duration.value(180,'s') && request.resource.data.owner is string && request.resource.data.fence is int && request.resource.data.checkpoint is int && request.resource.data.cursor is int && request.resource.data.cursor>=0
@@ -33,12 +37,28 @@ service cloud.firestore {
     && ((!exists(controlPath(uid)) && admission() && request.resource.data.fence==1 && request.resource.data.checkpoint==1)
      || (exists(controlPath(uid)) && ((request.resource.data.owner==resource.data.owner && request.resource.data.fence==resource.data.fence && resource.data.expiresAt>request.time && request.resource.data.checkpoint in [resource.data.checkpoint,resource.data.checkpoint+1] && request.resource.data.operationId==resource.data.operationId)
       || (admission() && request.resource.data.fence==resource.data.fence+1 && request.resource.data.checkpoint==resource.data.checkpoint+1 && (resource.data.state=='ready' || (resource.data.state=='snapshot' && resource.data.expiresAt<=request.time) || (resource.data.state=='import' && resource.data.operationId==request.resource.data.operationId && (resource.data.owner==request.resource.data.owner || resource.data.expiresAt<=request.time)))))))
-    && (request.resource.data.state!='ready' || !exists(controlPath(uid)) || resource.data.state!='import' || getAfter(sessionPath(uid,resource.data.operationId)).data.status in ['complete','rolledBack','rejected']);
+    && (request.resource.data.state!='ready' || !exists(controlPath(uid)) || resource.data.state!='import' || completedTransfer(uid,resource.data.operationId));
+  }
+  function deletionTransition(uid,id,d) {
+   let old=get(sessionPath(uid,id)).data;
+   return (d.status==old.status && (old.status in ['complete','rolledBack','rejected'] ? d.diff(old).affectedKeys().hasOnly(['cleanupComplete']) : checkpointMoved(uid)))
+    || (old.status=='uploaded' && d.status=='rolledBack')
+    || (checkpointMoved(uid) && ((old.status=='uploaded' && d.status=='preparing')
+      || (old.status=='preparing' && d.status in ['applying','rolledBack','rejected'])
+      || (old.status=='applying' && d.status in ['complete','preparingRollback'])
+      || (old.status=='preparingRollback' && d.status=='rollingBack')
+      || (old.status=='rollingBack' && d.status=='rolledBack')));
+  }
+  function deletionSession(uid,id,d) {
+   return d.get('kind','import')!='accountDeletion' || (d.mode=='replace' && d.includeSettings==true && d.sourceChunks==0
+    && d.accountId is string && d.accountId.matches('^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$') && d.accountRevision is int && d.accountRevision>0
+    && (!(d.status in ['complete','rolledBack','rejected']) || d.backupAvailable==false)
+    && (exists(sessionPath(uid,id)) ? deletionTransition(uid,id,d) : (d.status=='uploaded' && exists(accountRef(uid,d.accountId)) && get(accountRef(uid,d.accountId)).data.archived && get(accountRef(uid,d.accountId)).data.revision==d.accountRevision)));
   }
   match /users/{uid}/imports/{id} {
    allow read: if authenticatedOwner(uid);
-   allow create,update: if available() && authenticatedOwner(uid) && request.auth.token.email_verified==true && request.resource.data.id==id && request.resource.data.uid==uid && request.resource.data.mode in ['add','replace'] && request.resource.data.status in ['uploading','uploaded','preparing','applying','preparingRollback','rollingBack','complete','rolledBack','rejected']
-    && (!exists(sessionPath(uid,id)) || (request.resource.data.sourceFingerprint==resource.data.sourceFingerprint && request.resource.data.previewFingerprint==resource.data.previewFingerprint && request.resource.data.mode==resource.data.mode && request.resource.data.includeSettings==resource.data.includeSettings && request.resource.data.receiptId==resource.data.receiptId && (resource.data.status in ['uploading','uploaded'] || checkpointMoved(uid) || (resource.data.status in ['complete','rolledBack','rejected'] && request.resource.data.status==resource.data.status))));
+   allow create,update: if available() && authenticatedOwner(uid) && request.auth.token.email_verified==true && request.resource.data.id==id && request.resource.data.uid==uid && deletionSession(uid,id,request.resource.data) && request.resource.data.mode in ['add','replace'] && request.resource.data.get('kind','import') in ['import','accountDeletion'] && request.resource.data.status in ['uploading','uploaded','preparing','applying','preparingRollback','rollingBack','complete','rolledBack','rejected']
+    && (!exists(sessionPath(uid,id)) || (request.resource.data.sourceFingerprint==resource.data.sourceFingerprint && request.resource.data.previewFingerprint==resource.data.previewFingerprint && request.resource.data.mode==resource.data.mode && request.resource.data.includeSettings==resource.data.includeSettings && request.resource.data.receiptId==resource.data.receiptId && request.resource.data.get('kind','import')==resource.data.get('kind','import') && request.resource.data.get('accountId',null)==resource.data.get('accountId',null) && request.resource.data.get('accountRevision',null)==resource.data.get('accountRevision',null) && (resource.data.status in ['uploading','uploaded'] || checkpointMoved(uid) || (resource.data.status in ['complete','rolledBack','rejected'] && request.resource.data.status==resource.data.status))));
    match /source/{chunk} {
     allow read: if authenticatedOwner(uid);
     allow create,update: if available() && authenticatedOwner(uid) && request.auth.token.email_verified==true && get(sessionPath(uid,id)).data.status=='uploading' && request.resource.data.index is int && request.resource.data.text is string && request.resource.data.text.size()<=65536;
@@ -60,17 +80,20 @@ service cloud.firestore {
   function meta(uid,id) { let d=request.resource.data;return d.id == id && d.uid == uid && d.schemaVersion == 2 && d.revision is int && d.revision >= 1 && iso(d.createdAt) && iso(d.updatedAt); }
   function revision() { return request.resource.data.revision == resource.data.revision + 1 && request.resource.data.createdAt == resource.data.createdAt; }
   function accountRef(uid,id) { return /databases/$(database)/documents/users/$(uid)/accounts/$(id); }
+  function archiveClearsDefault(uid,id) { let p=/databases/$(database)/documents/users/$(uid)/settings/preferences; return !existsAfter(p) || getAfter(p).data.defaultAccount!=id; }
   function tradeRef(uid,id) { return /databases/$(database)/documents/users/$(uid)/trades/$(id); }
-  function parentChange(uid,tid) { return existsAfter(tradeRef(uid,tid)) && (!exists(tradeRef(uid,tid)) || getAfter(tradeRef(uid,tid)).data.revision == get(tradeRef(uid,tid)).data.revision + 1); }
+  function activeTrade(uid,tid) { let a=accountRef(uid,get(tradeRef(uid,tid)).data.accountId); return exists(a) && !get(a).data.archived; }
+  function activeTradeAfter(uid,tid) { let a=accountRef(uid,getAfter(tradeRef(uid,tid)).data.accountId); return existsAfter(a) && !getAfter(a).data.archived; }
+  function parentChange(uid,tid) { return activeTradeAfter(uid,tid) && existsAfter(tradeRef(uid,tid)) && (!exists(tradeRef(uid,tid)) || getAfter(tradeRef(uid,tid)).data.revision == get(tradeRef(uid,tid)).data.revision + 1); }
   function correctionCreate(uid,tid,id) {
    let c=request.resource.data;
    return meta(uid,id) && c.keys().hasOnly(['id','uid','schemaVersion','calculationVersion','revision','createdAt','updatedAt','operationId','reason','changes'])
     && id==c.operationId && id.matches('^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$') && c.calculationVersion==1
     && c.updatedAt==c.createdAt && c.reason is string && c.reason.size()>0 && c.reason.size()<=1000 && c.reason.matches('(?s)\\S(?:.*\\S)?')
     && c.changes is list && c.changes.size()>0
-    && existsAfter(tradeRef(uid,tid)) && c.revision==getAfter(tradeRef(uid,tid)).data.revision;
+    && existsAfter(tradeRef(uid,tid)) && activeTradeAfter(uid,tid) && c.revision==getAfter(tradeRef(uid,tid)).data.revision;
   }
-  function parentDelete(uid,tid) { return !existsAfter(tradeRef(uid,tid)) || parentChange(uid,tid); }
+  function parentDelete(uid,tid) { return activeTrade(uid,tid) && (!existsAfter(tradeRef(uid,tid)) || parentChange(uid,tid)); }
   function strategySnapshot(d) { return d.keys().hasOnly(['id','uid','schemaVersion','revision','createdAt','updatedAt','name','purpose','markets','entryRules','exitRules','riskRules','archived']) && d.schemaVersion==2 && d.revision is int && d.revision>=1 && iso(d.createdAt) && iso(d.updatedAt) && shortText(d.name) && d.name.size()>0 && body(d.purpose) && body(d.markets) && body(d.entryRules) && body(d.exitRules) && body(d.riskRules) && d.archived is bool; }
   function normalLeg(uid,tid,id) {
    let d=request.resource.data;
@@ -106,7 +129,7 @@ service cloud.firestore {
   }
   match /users/{uid}/accounts/{id} {
    allow read: if owner(uid);
-   allow create,update: if writer(uid) && meta(uid,id) && request.resource.data.keys().hasOnly(['id','uid','schemaVersion','revision','createdAt','updatedAt','name','currency','archived','hasTrades']) && shortText(request.resource.data.name) && request.resource.data.name.size()>0 && code(request.resource.data.currency) && request.resource.data.archived is bool && request.resource.data.hasTrades is bool && (!exists(accountRef(uid,id)) || (revision() && (!resource.data.hasTrades || (request.resource.data.hasTrades && request.resource.data.currency==resource.data.currency))));
+   allow create,update: if writer(uid) && (!request.resource.data.archived || archiveClearsDefault(uid,id)) && meta(uid,id) && request.resource.data.keys().hasOnly(['id','uid','schemaVersion','revision','createdAt','updatedAt','name','currency','archived','hasTrades']) && shortText(request.resource.data.name) && request.resource.data.name.size()>0 && code(request.resource.data.currency) && request.resource.data.archived is bool && request.resource.data.hasTrades is bool && (!exists(accountRef(uid,id)) || (revision() && (!resource.data.hasTrades || (request.resource.data.hasTrades && request.resource.data.currency==resource.data.currency))));
    allow create,update: if transferWrite(uid,'accounts~'+id,false) && meta(uid,id) && request.resource.data.keys().hasOnly(['id','uid','schemaVersion','revision','createdAt','updatedAt','name','currency','archived','hasTrades']) && shortText(request.resource.data.name) && request.resource.data.name.size()>0 && code(request.resource.data.currency) && request.resource.data.archived is bool && request.resource.data.hasTrades is bool;
    allow delete: if transferWrite(uid,'accounts~'+id,true);
    allow delete: if false;
@@ -126,16 +149,16 @@ service cloud.firestore {
   }
   match /users/{uid}/settings/{id} {
    allow read: if owner(uid);
-   allow create,update: if writer(uid) && id=='preferences' && meta(uid,id) && request.resource.data.keys().hasOnly(['id','uid','schemaVersion','revision','createdAt','updatedAt','theme','timezone','defaultAccount']) && request.resource.data.theme in ['system','light','dark'] && shortText(request.resource.data.timezone) && (request.resource.data.defaultAccount==null || exists(accountRef(uid,request.resource.data.defaultAccount))) && (!exists(/databases/$(database)/documents/users/$(uid)/settings/$(id)) || revision());
+   allow create,update: if writer(uid) && id=='preferences' && meta(uid,id) && request.resource.data.keys().hasOnly(['id','uid','schemaVersion','revision','createdAt','updatedAt','theme','timezone','defaultAccount']) && request.resource.data.theme in ['system','light','dark'] && shortText(request.resource.data.timezone) && (request.resource.data.defaultAccount==null || (existsAfter(accountRef(uid,request.resource.data.defaultAccount)) && !getAfter(accountRef(uid,request.resource.data.defaultAccount)).data.archived)) && (!exists(/databases/$(database)/documents/users/$(uid)/settings/$(id)) || revision());
    allow create,update: if transferWrite(uid,'settings~'+id,false) && id=='preferences' && meta(uid,id) && request.resource.data.keys().hasOnly(['id','uid','schemaVersion','revision','createdAt','updatedAt','theme','timezone','defaultAccount']) && request.resource.data.theme in ['system','light','dark'] && shortText(request.resource.data.timezone) && (request.resource.data.defaultAccount==null || existsAfter(accountRef(uid,request.resource.data.defaultAccount)));
    allow delete: if transferWrite(uid,'settings~'+id,true);
   }
   match /users/{uid}/trades/{tid} {
    allow read: if owner(uid);
-   allow create,update: if writer(uid) && meta(uid,tid) && request.resource.data.keys().hasOnly(['id','uid','schemaVersion','revision','createdAt','updatedAt','accountId','accountCurrency','strategyId','strategySnapshot','rationale','review','tags','riskBudget','status','summary','openedAt','instruments','lastOperation']) && exists(accountRef(uid,request.resource.data.accountId)) && request.resource.data.accountCurrency == get(accountRef(uid,request.resource.data.accountId)).data.currency && getAfter(accountRef(uid,request.resource.data.accountId)).data.hasTrades && body(request.resource.data.rationale) && body(request.resource.data.review) && request.resource.data.tags is list && request.resource.data.tags.size()<=30 && optionalRate(request.resource.data.riskBudget) && request.resource.data.status in ['open','closed'] && request.resource.data.summary is map && (request.resource.data.strategyId==null || (exists(/databases/$(database)/documents/users/$(uid)/strategies/$(request.resource.data.strategyId)) && request.resource.data.strategySnapshot.id==request.resource.data.strategyId && request.resource.data.strategySnapshot.uid==uid && ((exists(tradeRef(uid,tid)) && resource.data.strategyId==request.resource.data.strategyId && request.resource.data.strategySnapshot==resource.data.strategySnapshot) || ((!exists(tradeRef(uid,tid)) || resource.data.strategyId!=request.resource.data.strategyId) && !get(/databases/$(database)/documents/users/$(uid)/strategies/$(request.resource.data.strategyId)).data.archived && request.resource.data.strategySnapshot==get(/databases/$(database)/documents/users/$(uid)/strategies/$(request.resource.data.strategyId)).data)))) && ((!exists(tradeRef(uid,tid)) && !get(accountRef(uid,request.resource.data.accountId)).data.archived) || (revision() && request.resource.data.accountId==resource.data.accountId));
+   allow create,update: if writer(uid) && activeTradeAfter(uid,tid) && meta(uid,tid) && request.resource.data.keys().hasOnly(['id','uid','schemaVersion','revision','createdAt','updatedAt','accountId','accountCurrency','strategyId','strategySnapshot','rationale','review','tags','riskBudget','status','summary','openedAt','instruments','lastOperation']) && exists(accountRef(uid,request.resource.data.accountId)) && request.resource.data.accountCurrency == get(accountRef(uid,request.resource.data.accountId)).data.currency && getAfter(accountRef(uid,request.resource.data.accountId)).data.hasTrades && body(request.resource.data.rationale) && body(request.resource.data.review) && request.resource.data.tags is list && request.resource.data.tags.size()<=30 && optionalRate(request.resource.data.riskBudget) && request.resource.data.status in ['open','closed'] && request.resource.data.summary is map && (request.resource.data.strategyId==null || (exists(/databases/$(database)/documents/users/$(uid)/strategies/$(request.resource.data.strategyId)) && request.resource.data.strategySnapshot.id==request.resource.data.strategyId && request.resource.data.strategySnapshot.uid==uid && ((exists(tradeRef(uid,tid)) && resource.data.strategyId==request.resource.data.strategyId && request.resource.data.strategySnapshot==resource.data.strategySnapshot) || ((!exists(tradeRef(uid,tid)) || resource.data.strategyId!=request.resource.data.strategyId) && !get(/databases/$(database)/documents/users/$(uid)/strategies/$(request.resource.data.strategyId)).data.archived && request.resource.data.strategySnapshot==get(/databases/$(database)/documents/users/$(uid)/strategies/$(request.resource.data.strategyId)).data)))) && ((!exists(tradeRef(uid,tid)) && !get(accountRef(uid,request.resource.data.accountId)).data.archived) || (revision() && request.resource.data.accountId==resource.data.accountId));
    allow create,update: if transferWrite(uid,'trades~'+tid,false) && meta(uid,tid) && request.resource.data.keys().hasOnly(['id','uid','schemaVersion','revision','createdAt','updatedAt','accountId','accountCurrency','strategyId','strategySnapshot','rationale','review','tags','riskBudget','status','summary','openedAt','instruments','lastOperation']) && exists(accountRef(uid,request.resource.data.accountId)) && request.resource.data.accountCurrency == get(accountRef(uid,request.resource.data.accountId)).data.currency && getAfter(accountRef(uid,request.resource.data.accountId)).data.hasTrades && body(request.resource.data.rationale) && body(request.resource.data.review) && request.resource.data.tags is list && request.resource.data.tags.size()<=30 && optionalRate(request.resource.data.riskBudget) && request.resource.data.status in ['open','closed'] && request.resource.data.summary is map && (request.resource.data.strategyId==null ? request.resource.data.strategySnapshot==null : (existsAfter(/databases/$(database)/documents/users/$(uid)/strategies/$(request.resource.data.strategyId)) && request.resource.data.strategySnapshot.id==request.resource.data.strategyId && request.resource.data.strategySnapshot.uid==uid && strategySnapshot(request.resource.data.strategySnapshot)));
    allow delete: if transferWrite(uid,'trades~'+tid,true);
-   allow delete: if writer(uid);
+   allow delete: if writer(uid) && activeTrade(uid,tid);
    match /legs/{id} {
     allow read: if owner(uid);
     allow create,update: if writer(uid) && normalLeg(uid,tid,id);
@@ -161,14 +184,14 @@ service cloud.firestore {
     allow read: if owner(uid);
     allow create: if writer(uid) && correctionCreate(uid,tid,id);
     allow create,update: if transferWrite(uid,'trades~'+tid+'~corrections~'+id,false) && request.resource.data.uid==uid && request.resource.data.id==id && request.resource.data.schemaVersion==2;
-    allow delete: if transferWrite(uid,'trades~'+tid+'~corrections~'+id,true) || (writer(uid) && !existsAfter(tradeRef(uid,tid)));
+    allow delete: if transferWrite(uid,'trades~'+tid+'~corrections~'+id,true) || (writer(uid) && activeTrade(uid,tid) && !existsAfter(tradeRef(uid,tid)));
    }
    match /operations/{id} {
     allow read: if owner(uid);
     allow create: if writer(uid) && parentChange(uid,tid) && request.resource.data.uid==uid && request.resource.data.id==id && request.resource.data.revision==getAfter(tradeRef(uid,tid)).data.revision;
     allow create,update: if transferWrite(uid,'trades~'+tid+'~operations~'+id,false) && request.resource.data.uid==uid && request.resource.data.id==id && request.resource.data.revision is int && request.resource.data.revision>=1;
     allow delete: if transferWrite(uid,'trades~'+tid+'~operations~'+id,true);
-    allow delete: if writer(uid) && !existsAfter(tradeRef(uid,tid));
+    allow delete: if writer(uid) && activeTrade(uid,tid) && !existsAfter(tradeRef(uid,tid));
    }
   }
  }

@@ -213,7 +213,7 @@ describe("transactional repository", () => {
     await expect(repo.saveTrade(t, "bad")).rejects.toThrow(/remaining/);
     expect((await repo.getTrade("t")).summary.accountNet).toBe("4");
   });
-  it("cascades trade deletion including child records and supports archived existing trades", async () => {
+  it("blocks archived trade writes until restore, then cascades trade deletion", async () => {
     const { account, instrument } = await fixtures();
     let t = await repo.saveTrade(
       createTrade({
@@ -228,7 +228,10 @@ describe("transactional repository", () => {
       archived: true,
     });
     await repo.saveEntity("instruments", { ...instrument, archived: true });
-    t = await repo.saveTrade({ ...t, review: "Still editable" }, "review");
+    await expect(repo.saveTrade({ ...t, review: 'Blocked' }, 'blocked-review')).rejects.toThrow(/Restore archived account/);
+    await expect(repo.deleteTrade(t)).rejects.toThrow(/Restore archived account/);
+    await repo.saveEntity('accounts', { ...(await repo.getEntity('accounts', account.id)), archived: false });
+    t = await repo.saveTrade({ ...t, review: 'Restored' }, 'review');
     await repo.deleteTrade(t);
     expect(await repo.getTrade("t")).toBeNull();
     expect(await repo.listChildren("t", "legs")).toEqual([]);

@@ -429,3 +429,69 @@ it('reports export contention through unchanged error codes and read-only doctor
   expect(diagnostic.body.data.journal.transfer.reason).toBe('active_export');
   expect(JSON.stringify(diagnostic.body.data.journal)).not.toContain('private-owner-token');
 });
+
+it('reports independently expected active-account currency totals and incomplete records', async () => {
+  const repo = await prerequisites({ instrument: true });
+  const { createTrade, PRESETS } = await import('../../src/domain/journal.js');
+  const main = await repo.getEntity('accounts', 'a');
+  const other = await repo.saveEntity('accounts', { id: 'other-usd', name: 'Other USD', currency: 'USD' });
+  const usdInstrument = await repo.getEntity('instruments', 'i');
+  async function closed(id, account, instrument, exitPrice) {
+    const value = createTrade({ id, account, instruments: [{ instrument, direction: 'long' }] });
+    value.executions = [
+      { id: `${id}-entry`, legId: value.legs[0].id, kind: 'entry', quantity: '1', price: '100', fees: '0', feeCurrency: instrument.currency, timestamp: '2026-01-01T00:00:00Z' },
+      { id: `${id}-exit`, legId: value.legs[0].id, kind: 'exit', quantity: '1', price: exitPrice, fees: '0', feeCurrency: instrument.currency, timestamp: '2026-01-02T00:00:00Z' },
+    ];
+    return repo.saveTrade(value, `${id}-operation`);
+  }
+  await closed('main-result', main, usdInstrument, '450');
+  await closed('other-result', other, usdInstrument, '200');
+  const same = await cli('journal overview');
+  expect(same.code).toBe(0);
+  expect(same.body.data).toMatchObject({ account: null, net: '450', currency: 'USD', total: 2, currencyTotals: [{ currency: 'USD', net: '450', complete: 2, incomplete: 0 }] });
+  const euro = await repo.saveEntity('accounts', { id: 'euro-reporting', name: 'Euro', currency: 'EUR' });
+  const { label: _label, ...preset } = PRESETS.equity;
+  const euroInstrument = await repo.saveEntity('instruments', { ...preset, id: 'euro-share', name: 'Euro share', symbol: 'EURSH', preset: 'equity', currency: 'EUR' });
+  await closed('euro-result', euro, euroInstrument, '75');
+  await closed('missing-fx', euro, usdInstrument, '150');
+  const mixed = await cli('journal overview');
+  expect(mixed.code).toBe(0);
+  expect(mixed.body.data).toMatchObject({ net: null, currency: null, total: 4, incomplete: 1, currencyTotals: [
+    { currency: 'EUR', net: '-25', complete: 1, incomplete: 1 }, { currency: 'USD', net: '450', complete: 2, incomplete: 0 },
+  ] });
+  await repo.saveEntity('accounts', { ...await repo.getEntity('accounts', other.id), archived: true });
+  const active = await cli('journal overview');
+  expect(active.body.data).toMatchObject({ total: 3, currencyTotals: [{ currency: 'EUR', net: '-25', complete: 1, incomplete: 1 }, { currency: 'USD', net: '350', complete: 1, incomplete: 0 }] });
+  const selected = await cli('journal overview', undefined, { account: euro.id });
+  expect(selected.body.data).toMatchObject({ net: '-25', currency: 'EUR', total: 2, incomplete: 1 });
+});
+it('manages archives explicitly and deletes linked history through accepted CLI preview', async () => {
+  const repo = await prerequisites({ instrument: true });
+  const { createTrade } = await import('../../src/domain/journal.js');
+  const account = await repo.getEntity('accounts', 'a');
+  const trade = await repo.saveTrade(createTrade({ id: 'archive-trade', account, instruments: [{ instrument: await repo.getEntity('instruments', 'i'), direction: 'long' }] }), 'archive-trade-operation');
+  await repo.saveEntity('settings', { ...await repo.getSettings(), defaultAccount: account.id });
+  const latest = await repo.getEntity('accounts', account.id);
+  const archived = await cli('accounts archive', undefined, { id: account.id, revision: latest.revision });
+  expect(archived.code).toBe(0);
+  expect((await cli('accounts list')).body.data).toEqual([]);
+  expect((await cli('accounts list', undefined, { archived: 'true' })).body.data).toHaveLength(1);
+  expect((await cli('journal list')).body.data.total).toBe(0);
+  expect((await cli('journal overview')).body.data).toMatchObject({ total: 0, net: null, currencyTotals: [] });
+  expect((await cli('settings get')).body.data.defaultAccount).toBeNull();
+  expect((await cli('trades get', undefined, { id: trade.id })).body.error.code).toBe('ACCOUNT_ARCHIVED');
+  expect((await cli('export')).body.data.accounts[0].archived).toBe(true);
+  const revision = archived.body.data.revision;
+  const preview = await cli('accounts delete', undefined, { id: account.id, revision, preview: true });
+  expect(preview.code).toBe(0);
+  expect(preview.body.data).toMatchObject({ tradeCount: 1, accountName: account.name });
+  expect((await cli('accounts delete', undefined, { id: account.id, revision })).code).toBe(2);
+  const options = { id: account.id, revision, 'accept-preview': preview.body.data.fingerprint, 'operation-id': 'cli-account-delete', yes: true };
+  const removed = await cli('accounts delete', undefined, options);
+  expect(removed.code).toBe(0);
+  expect(removed.body.data).toMatchObject({ deleted: true, kind: 'accountDeletion', status: 'complete' });
+  expect((await cli('accounts delete', undefined, options)).code).toBe(0);
+  expect(await repo.getEntity('accounts', account.id)).toBeNull();
+  expect(await repo.listChildren(trade.id, 'operations')).toEqual([]);
+  expect((await cli('import status', undefined, { 'operation-id': 'cli-account-delete' })).body.data).toMatchObject({ cleanupComplete: true, transfer: { operationKind: 'accountDeletion', reason: 'ready' } });
+});

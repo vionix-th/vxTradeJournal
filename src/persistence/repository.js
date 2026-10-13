@@ -90,7 +90,9 @@ export class Repository {
     return result.exists() ? result.data() : null;
   }
   async _getSettings() {
-    return (await this._getEntity("settings", "preferences")) || defaultSettings();
+    const preferences = (await this._getEntity('settings', 'preferences')) || defaultSettings();
+    const account = preferences.defaultAccount ? await this._getEntity('accounts', preferences.defaultAccount) : null;
+    return preferences.defaultAccount && (!account || account.archived) ? { ...preferences, defaultAccount: null } : preferences;
   }
   async _getTrade(id) {
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -118,12 +120,13 @@ export class Repository {
         ),
       );
     const trades = await Promise.all(parents.map((t) => this._getTrade(t.id)));
+    const preferences = settings.find((s) => s.id === 'preferences') || defaultSettings();
     return {
       accounts,
       instruments,
       strategies,
       trades: trades.filter(Boolean),
-      settings: settings.find((s) => s.id === "preferences") || defaultSettings(),
+      settings: preferences.defaultAccount && !accounts.some((account) => account.id === preferences.defaultAccount && !account.archived) ? { ...preferences, defaultAccount: null } : preferences,
     };
   }
   metadata(input, old = null) {
@@ -157,13 +160,17 @@ export class Repository {
         value.hasTrades = true;
       }
       if (type === "settings" && value.defaultAccount) {
+        const account = (await tx.get(this.ref('accounts', value.defaultAccount))).data();
         requireValue(
-          (await tx.get(this.ref("accounts", value.defaultAccount))).exists(),
-          "Default account does not belong to user",
+          account && !account.archived,
+          "Default account must be active and belong to user",
         );
       }
+      const preferences = type === 'accounts' && value.archived
+        ? (await tx.get(this.ref('settings', 'preferences'))).data() : null;
       const saved = this.metadata(value, old);
       tx.set(ref, saved);
+      if (preferences?.defaultAccount === value.id) tx.set(this.ref('settings', 'preferences'), this.metadata({ ...preferences, defaultAccount: null }, preferences));
       return saved;
     });
   }
@@ -297,6 +304,8 @@ export class Repository {
     await runTransaction(this.db, async (tx) => {
       const s = await tx.get(this.ref("trades", input.id));
       if (!s.exists()) return;
+      const account = (await tx.get(this.ref('accounts', s.data().accountId))).data();
+      requireValue(account && !account.archived, 'Restore archived account before editing trades');
       if (
         s.data().revision !== input.revision ||
         previous.revision !== input.revision

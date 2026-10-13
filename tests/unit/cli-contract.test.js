@@ -13,6 +13,8 @@ describe("agent command contract", () => {
     expect(parseArguments(["help"]).command).toBe("help");
   });
   it("requires revisions, durable operation ids and explicit deletion intent", () => {
+    expect(parseArguments(['accounts', 'delete', '--profile', 'auto', '--id', 'archived', '--revision', '3', '--preview']).options).toMatchObject({ revision: 3, preview: true });
+    expect(() => parseArguments(['accounts', 'delete', '--profile', 'auto', '--id', 'archived', '--preview'])).toThrow(/revision/i);
     expect(() => parseArguments(["executions", "add", "--profile", "auto", "--trade", "t", "--input", "-"])).toThrow(/revision/i);
     expect(() => parseArguments(["trades", "delete", "--profile", "auto", "--id", "t", "--revision", "2"])).toThrow(/yes/i);
     const parsed = parseArguments(["executions", "add", "--profile", "auto", "--trade", "t", "--revision", "2", "--operation-id", "op", "--input", "-"]);

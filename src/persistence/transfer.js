@@ -5,6 +5,7 @@ import { fingerprint } from '../application/fingerprint.js';
 import { SCHEMA_VERSION, CALCULATION_VERSION } from '../domain/journal.js';
 import { transferObservation } from '../application/transfer-status.js';
 import { schemaRegistry } from '../application/schema-evolution.js';
+import { accountDeletionPlan } from '../application/accounts.js';
 
 const TTL = 120000;
 const done = (status) => ['complete', 'rolledBack', 'rejected'].includes(status);
@@ -62,6 +63,39 @@ export class JournalTransfer {
     const { target: _target, ...preview } = await planImport(source, destination, { uid: this.uid, projectId: this.db.app.options.projectId, ...options });
     return preview;
   }
+  async previewAccountDeletion(accountId, revision) {
+    await this.repo.guard(async () => {});
+    const before = await this.collect();
+    validatePortable(rebuildJournal(before));
+    const { target: _target, ...preview } = accountDeletionPlan(before, accountId, revision);
+    return { ...preview, fingerprint: await fingerprint({ before, accountId, revision }) };
+  }
+  async deleteAccount(accountId, options) {
+    return this.outcome(options.operationId, async () => {
+      const { operationId: id, revision, acceptPreview, yes } = options;
+      if (!yes || !acceptPreview) throw new ImportError('INVALID_EXPORT', 'Account deletion requires an accepted preview and explicit confirmation.');
+      if (!this.repo.verified()) throw new ImportError('EMAIL_UNVERIFIED', 'Verify email before deleting an account.');
+      const ref = this.session(id);
+      if (!(await getDocFromServer(ref)).exists()) await this.repo.guard(async () => {});
+      await runTransaction(this.db, async (tx) => {
+        const existing = (await tx.get(ref)).data();
+        if (existing) {
+          if (existing.kind !== 'accountDeletion' || existing.accountId !== accountId || existing.accountRevision !== revision || existing.previewFingerprint !== acceptPreview) throw new ImportError('IMPORT_CONFLICT', 'Operation ID was already used with different deletion inputs.');
+          return;
+        }
+        const account = (await tx.get(this.repo.ref('accounts', accountId))).data();
+        if (!account?.archived || account.revision !== revision) throw new ImportError('IMPORT_PREVIEW_CHANGED', 'Account changed. Reload and confirm a new deletion preview.');
+        tx.set(ref, { id, uid: this.uid, kind: 'accountDeletion', accountId, accountRevision: revision, formatVersion: 1,
+          projectId: this.db.app.options.projectId, conversions: [], status: 'uploaded', mode: 'replace', includeSettings: true,
+          previewFingerprint: acceptPreview, sourceFingerprint: acceptPreview, schemaVersion: SCHEMA_VERSION, calculationVersion: CALCULATION_VERSION,
+          startedAt: new Date().toISOString(), receiptId: crypto.randomUUID(), owner: this.owner,
+          uploadExpiresAt: Timestamp.fromMillis(Date.now() + TTL), sourceChunks: 0, backupAvailable: false });
+      });
+      const session = await this.status(id);
+      if (session.status === 'rejected') throw new ImportError(session.rejectionCode || 'IMPORT_PREVIEW_CHANGED', 'Deletion preview was rejected. Reload and confirm a new preview.');
+      return this.resume(id);
+    });
+  }
   async fenced(operation) {
     await assertDatabaseReady(this.db);
     const fence = this.fence;
@@ -95,14 +129,15 @@ export class JournalTransfer {
   }
   async inspect(id) {
     const control = (await getDocFromServer(this.control())).data() || null;
-    const operationId = control?.state === 'import' ? control.operationId : id;
+    const candidateId = control?.state === 'import' ? control.operationId : id || (control?.state === 'ready' ? control.operationId : undefined);
     let session = null;
-    if (operationId) session = (await getDocFromServer(this.session(operationId))).data() || null;
+    if (candidateId) session = (await getDocFromServer(this.session(candidateId))).data() || null;
+    const operationId = control?.state === 'import' ? control.operationId : id || session?.id;
     const compatible = !session || this.recoveryCompatible(session);
     return transferObservation(control, session, { operationId, compatible, ownedByCaller: control?.owner === this.owner });
   }
   recoveryCompatible(session) {
-    return session.schemaVersion === SCHEMA_VERSION && session.calculationVersion === CALCULATION_VERSION && session.formatVersion === 1 && session.projectId === this.db.app.options.projectId && Array.isArray(session.conversions) && session.conversions.every((step) => schemaRegistry.migrations.some((registered) => step.id === registered.id && step.checksum === registered.checksum));
+    return [undefined, 'import', 'accountDeletion'].includes(session.kind) && session.schemaVersion === SCHEMA_VERSION && session.calculationVersion === CALCULATION_VERSION && session.formatVersion === 1 && session.projectId === this.db.app.options.projectId && Array.isArray(session.conversions) && session.conversions.every((step) => schemaRegistry.migrations.some((registered) => step.id === registered.id && step.checksum === registered.checksum));
   }
   feedback(error, progress) {
     try { this.onFeedback?.({ error, progress }); }
@@ -218,13 +253,14 @@ export class JournalTransfer {
     if (!this.repo.verified()) throw new ImportError('EMAIL_UNVERIFIED', 'Verify email before importing.');
     const session = await this.upload(file, options);
     if (session.status === 'rejected') {
-      await this.cleanup(options.operationId, false);
+      await this.cleanup(options.operationId, false, session.kind);
       throw new ImportError(session.rejectionCode || 'IMPORT_CONFLICT', 'This operation was rejected. Generate and accept a new preview with a new operation ID.', { conflicts: session.conflicts || [] });
     }
-    if (done(session.status)) { await this.cleanup(options.operationId, session.backupAvailable); return session; }
+    if (done(session.status)) { await this.cleanup(options.operationId, session.backupAvailable, session.kind); return session; }
     return this.resume(options.operationId);
   }
   async prepare(id, session) {
+    if (session.kind === 'accountDeletion') return this.prepareAccountDeletion(id, session);
     const source = await this.source(id, session), before = await this.collect();
     validatePortable(rebuildJournal(before));
     const plan = await planImport(source, before, { uid: this.uid, projectId: this.db.app.options.projectId, mode: session.mode, includeSettings: session.includeSettings });
@@ -247,6 +283,27 @@ export class JournalTransfer {
       const parent = target.get(`trades/${trade.id}`); parent.lastOperation = session.receiptId;
       target.set(`trades/${trade.id}/operations/${session.receiptId}`, { uid: this.uid, id: session.receiptId, revision: parent.revision, createdAt: session.startedAt, requestFingerprint: session.sourceFingerprint });
     }
+    await this.stageRecords(id, before, target);
+  }
+  async prepareAccountDeletion(id, session) {
+    const before = await this.collect();
+    validatePortable(rebuildJournal(before));
+    if (await fingerprint({ before, accountId: session.accountId, revision: session.accountRevision }) !== session.previewFingerprint) {
+      await this.fenced(async (tx, control) => {
+        tx.update(this.session(id), { status: 'rejected', rejectionCode: 'IMPORT_PREVIEW_CHANGED', backupAvailable: false });
+        tx.set(this.control(), { ...control, phase: 'cleanup', checkpoint: control.checkpoint + 1 });
+      });
+      const error = new ImportError('IMPORT_PREVIEW_CHANGED', 'Journal changed. Reload and confirm a new account deletion preview.');
+      try { await this.finishDeletion(id, await this.status(id)); }
+      catch (failure) { error.details = { secondaryErrors: [{ stage: 'cleanup', code: failure.code || 'CLEANUP_FAILED', message: failure.message }] }; }
+      throw error;
+    }
+    const plan = accountDeletionPlan(before, session.accountId, session.accountRevision, session.startedAt);
+    validatePortable(rebuildJournal(plan.target));
+    await this.stageRecords(id, before, new Map(plan.target.map((record) => [record.path, record.data])));
+  }
+  async stageRecords(id, before, target) {
+    const old = new Map(before.map((record) => [record.path, record.data]));
     const rows = [];
     for (const path of [...new Set([...old.keys(), ...target.keys()])].sort()) {
       const before = old.get(path) || null, after = target.get(path) || null;
@@ -291,15 +348,31 @@ export class JournalTransfer {
     if (!await same(await this.collect(), desired)) throw new ImportError('IMPORT_RECOVERY_REQUIRED', 'Target verification failed; journal remains unavailable.');
     validatePortable(rebuildJournal(desired));
     await this.fenced(async (tx, current) => {
-      tx.update(this.session(id), { status: rollback ? 'rolledBack' : 'complete', finishedAt: new Date().toISOString(), backupAvailable: !rollback && (await tx.get(this.session(id))).data().mode === 'replace' });
-      tx.set(this.control(), { ...current, state: 'ready', phase: rollback ? 'rolledBack' : 'complete', checkpoint: current.checkpoint + 1 });
+      const session = (await tx.get(this.session(id))).data();
+      tx.update(this.session(id), { status: rollback ? 'rolledBack' : 'complete', finishedAt: new Date().toISOString(), backupAvailable: !rollback && session.mode === 'replace' && session.kind !== 'accountDeletion' });
+      tx.set(this.control(), { ...current, state: session.kind === 'accountDeletion' ? 'import' : 'ready', phase: session.kind === 'accountDeletion' ? 'cleanup' : rollback ? 'rolledBack' : 'complete', checkpoint: current.checkpoint + 1 });
     });
     return this.status(id);
   }
   async resume(id) { return this.outcome(id, () => this._resume(id)); }
+  async finishDeletion(id, session) {
+    await this.cleanup(id, false, session.kind);
+    if (session.active) await this.fenced(async (tx, control) => {
+      if (control.state !== 'import' || control.phase !== 'cleanup' || control.operationId !== id) throw new ImportError('IMPORT_BUSY', 'Deletion cleanup ownership changed. Check status before retrying.');
+      tx.set(this.control(), { ...control, state: 'ready', phase: session.status, checkpoint: control.checkpoint + 1 });
+    });
+    return this.status(id);
+  }
   async _resume(id) {
     let session = await this.status(id);
-    if (done(session.status)) { await this.cleanup(id, session.backupAvailable); return session; }
+    if (done(session.status) && session.kind === 'accountDeletion') {
+      if (!session.active) return this.finishDeletion(id, session);
+      if (!this.recoveryCompatible(session)) throw new ImportError('UNSUPPORTED_EXPORT_VERSION', 'Deletion cleanup requires a matching client contract.');
+      await this.claim(id, true); const stop = this.heartbeat();
+      try { return await this.finishDeletion(id, session); }
+      finally { await stop(); }
+    }
+    if (done(session.status)) { await this.cleanup(id, session.backupAvailable, session.kind); return session; }
     if (!this.recoveryCompatible(session)) throw new ImportError('UNSUPPORTED_EXPORT_VERSION', 'Import recovery requires matching project, contract, schema, calculation and conversion checksums.');
     if (session.status === 'uploading') throw new ImportError('IMPORT_RECOVERY_REQUIRED', 'Upload incomplete; reselect source file before applying. Journal is unchanged.');
     if (session.status === 'preparingRollback') return this.rollback(id, true);
@@ -308,7 +381,8 @@ export class JournalTransfer {
       if (['uploaded', 'preparing'].includes(session.status)) { await this.fenced(async (tx, current) => { tx.update(this.session(id), { status: 'preparing' }); tx.set(this.control(), { ...current, checkpoint: current.checkpoint + 1 }); }); await this.prepare(id, session); session = await this.status(id); }
       const rows = await this.storedRows(id, session);
       const result = await this.runRows(id, rows, session.status === 'rollingBack');
-      await this.cleanup(id, result.backupAvailable);
+      if (result.kind === 'accountDeletion') return await this.finishDeletion(id, result);
+      await this.cleanup(id, result.backupAvailable, result.kind);
       return result;
     } finally { await stop(); }
   }
@@ -316,17 +390,18 @@ export class JournalTransfer {
   async _rollback(id, yes) {
     if (!yes) throw new ImportError('INVALID_EXPORT', 'Rollback requires explicit confirmation.');
     let session = await this.status(id);
-    if (['rolledBack', 'rejected'].includes(session.status)) { await this.cleanup(id, false); return session; }
-    if (session.status === 'complete') throw new ImportError('IMPORT_CONFLICT', 'Completed import requires recovery export and a new replacement preview.');
+    if (['rolledBack', 'rejected'].includes(session.status)) { if (session.kind === 'accountDeletion') return this._resume(id); await this.cleanup(id, false, session.kind); return session; }
+    if (session.status === 'complete') throw new ImportError('IMPORT_CONFLICT', session.kind === 'accountDeletion' ? 'Completed account deletion cannot be rolled back. Finish cleanup to release journal access.' : 'Completed import requires recovery export and a new replacement preview.');
     if (['uploading', 'uploaded'].includes(session.status) && !session.active) {
       await runTransaction(this.db, async (tx) => { await tx.get(this.session(id)); tx.update(this.session(id), { status: 'rolledBack', backupAvailable: false }); });
-      await this.cleanup(id, false); return this.status(id);
+      await this.cleanup(id, false, session.kind); return this.status(id);
     }
     await this.claim(id, true); const stop = this.heartbeat();
     try {
-      if (session.status === 'preparing') {
-        await this.fenced(async (tx, current) => { tx.update(this.session(id), { status: 'rolledBack', backupAvailable: false }); tx.set(this.control(), { ...current, state: 'ready', phase: 'rolledBack', checkpoint: current.checkpoint + 1 }); });
-        await this.cleanup(id, false); return this.status(id);
+      if (session.status === 'preparing' || session.kind === 'accountDeletion' && session.status === 'uploaded') {
+        await this.fenced(async (tx, current) => { tx.update(this.session(id), { status: 'rolledBack', backupAvailable: false }); tx.set(this.control(), { ...current, state: session.kind === 'accountDeletion' ? 'import' : 'ready', phase: session.kind === 'accountDeletion' ? 'cleanup' : 'rolledBack', checkpoint: current.checkpoint + 1 }); });
+        if (session.kind === 'accountDeletion') return await this.finishDeletion(id, await this.status(id));
+        await this.cleanup(id, false, session.kind); return this.status(id);
       }
       const rows = await this.storedRows(id, session);
       if (session.status !== 'rollingBack') {
@@ -336,7 +411,9 @@ export class JournalTransfer {
         const restoreHash = await fingerprint(rows.map((r) => ({ path: r.path, data: r.restore })).sort((a, b) => a.path.localeCompare(b.path)));
         await this.fenced(async (tx, current) => { tx.update(this.session(id), { status: 'rollingBack', restoreHash }); tx.set(this.control(), { ...current, phase: 'rollingBack', cursor: 0, checkpoint: current.checkpoint + 1 }); });
       }
-      const result = await this.runRows(id, rows, true); await this.cleanup(id, false); return result;
+      const result = await this.runRows(id, rows, true);
+      if (result.kind === 'accountDeletion') return await this.finishDeletion(id, result);
+      await this.cleanup(id, false, session.kind); return result;
     } finally { await stop(); }
   }
   async backups() { return (await getDocsFromServer(collection(this.db, 'users', this.uid, 'imports'))).docs.map((d) => d.data()).filter((s) => s.backupAvailable && s.status === 'complete').map(({ id, startedAt, finishedAt, rowCount, schemaVersion }) => ({ id, startedAt, finishedAt, rowCount, schemaVersion })); }
@@ -346,9 +423,14 @@ export class JournalTransfer {
     const rows = await this.storedRows(id, session);
     return createExport(rebuildJournal(rows.filter((r) => r.before !== null).map((r) => ({ path: r.path, data: r.before }))), undefined, { schemaVersion: session.schemaVersion, calculationVersion: session.calculationVersion });
   }
-  async cleanup(id, retain) {
+  async cleanup(id, retain, kind) {
     for (const item of (await getDocsFromServer(collection(this.session(id), 'source'))).docs) await deleteDoc(item.ref);
     if (!retain) for (const item of (await getDocsFromServer(this.rows(id))).docs) await deleteDoc(item.ref);
+    if (kind !== 'accountDeletion') return;
+    await runTransaction(this.db, async (tx) => {
+      const session = (await tx.get(this.session(id))).data();
+      if (session?.kind === 'accountDeletion' && done(session.status) && !session.cleanupComplete) tx.update(this.session(id), { cleanupComplete: true });
+    });
   }
   async deleteBackup(id, yes) {
     if (!yes) throw new ImportError('INVALID_EXPORT', 'Backup deletion requires explicit confirmation.');

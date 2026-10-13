@@ -41,18 +41,19 @@ for (const action of ["login", "register", "reset"]) add(`auth ${action}`, "auth
 });
 for (const action of ["status", "verify", "logout"]) add(`auth ${action}`, "auth", `${action} the selected profile session`, { action });
 for (const [type, fields] of Object.entries(entityFields)) {
-  add(`${type} list`, "entity", `List owned ${type}`, { type, action: "list", options: ["search", "archived"] });
+  add(`${type} list`, "entity", type === 'accounts' ? 'List active accounts; explicitly select archived or all for management' : `List owned ${type}`, { type, action: "list", options: ["search", "archived"] });
   add(`${type} get`, "entity", `Get an owned ${type} record`, { type, action: "get", options: ["id"], requiredOptions: ["id"] });
   add(`${type} create`, "entity", `Create ${type} using a stable ID`, { type, action: "create", options: mutationOptions, input: object({ id: identifier, ...fields }, type === "accounts" ? ["id", "name", "currency"] : type === "instruments" ? ["id", "name", "preset"] : ["id", "name"]), requiresInput: true });
   for (const action of ["update", "archive", "unarchive"]) add(`${type} ${action}`, "entity", `${action} an owned ${type} record`, {
     type, action, options: ["id", "revision", ...mutationOptions], requiredOptions: ["id", "revision"], input: object(fields), requiresInput: action === "update",
   });
 }
+add('accounts delete', 'accountDelete', 'Preview or permanently delete an archived account and its linked history', { options: ['id', 'revision', 'preview', 'dry-run', 'accept-preview', 'operation-id', 'yes'], requiredOptions: ['id', 'revision'] });
 add("instruments presets", "presets", "Inspect editable preset examples", { offline: true });
 add("instruments preview", "instrumentPreview", "Validate instrument configuration and calculation capabilities", { options: ["input"], input: object(instrument, ["name", "preset"]), requiresInput: true });
 add("strategies trades", "linkedTrades", "List trade summaries linked to a strategy", { options: ["id"], requiredOptions: ["id"] });
-add("journal list", "journal", "Filter journal summaries, ordered by newest activity", { options: ["search", "account", "market", "status", "strategy", "tag", "from", "to", "page", "page-size", "timezone"] });
-add("journal overview", "overview", "Counts and one-account realized results", { options: ["account"] });
+add("journal list", "journal", "Filter active-account journal summaries, ordered by newest activity", { options: ["search", "account", "market", "status", "strategy", "tag", "from", "to", "page", "page-size", "timezone"] });
+add("journal overview", "overview", "Active-account counts and complete realized results grouped by reporting currency", { options: ["account"] });
 add("trades corrections", "corrections", "Read correction history grouped by operation", { options: ["id", "page", "page-size"], requiredOptions: ["id"] });
 add("trades get", "tradeRead", "Read complete source records and current calculations", { options: ["id"], requiredOptions: ["id"] });
 add("trades create", "tradeWrite", "Create a trade with up to six legs", {
@@ -78,7 +79,7 @@ add("operations get", "receipt", "Check whether a trade operation committed", { 
 add("calculate trade", "tradeRead", "Replay source history without changing persisted summaries", { options: ["id"], requiredOptions: ["id"] });
 add("calculate size", "size", "Compute single-leg linear sizing with decimal arithmetic", { options: ["trade", "leg"], requiredOptions: ["trade", "leg"] });
 add("settings get", "settings", "Read display preferences", { action: "get" });
-add("settings update", "settings", "Update preferences and owned default account", { action: "update", options: ["revision", ...mutationOptions], requiredOptions: ["revision"], input: object({ theme: string({ enum: ["system", "light", "dark"] }), timezone: string(), defaultAccount: nullable(identifier) }), requiresInput: true });
+add("settings update", "settings", "Update preferences and active owned default account", { action: "update", options: ["revision", ...mutationOptions], requiredOptions: ["revision"], input: object({ theme: string({ enum: ["system", "light", "dark"] }), timezone: string(), defaultAccount: nullable(identifier) }), requiresInput: true });
 add("export", "export", "Export complete versioned journal source data", { options: ["output", "overwrite"] });
 add('export verify', 'verifyExport', 'Verify portable integrity, versions and replay without journal writes', { offline: true, options: ['input'], requiresInput: true, input: { type: 'object', additionalProperties: true, properties: {} } });
 const portableInput = { type: 'object', additionalProperties: true, properties: {} };
@@ -86,7 +87,7 @@ for (const action of ['preview', 'apply']) add(`import ${action}`, 'import', `${
   action, options: ['input', 'mode', 'include-settings', ...(action === 'apply' ? ['accept-preview', 'operation-id', 'yes'] : [])],
   requiredOptions: ['mode', ...(action === 'apply' ? ['accept-preview', 'operation-id'] : [])], requiresInput: true, input: portableInput,
 });
-for (const action of ['status', 'resume', 'rollback']) add(`import ${action}`, 'import', action === 'status' ? 'Inspect journal transfer availability and durable import recovery actions' : `${action} a durable journal import`, { action, options: ['operation-id', ...(action === 'rollback' ? ['yes'] : [])], requiredOptions: action === 'status' ? [] : ['operation-id', ...(action === 'rollback' ? ['yes'] : [])] });
+for (const action of ['status', 'resume', 'rollback']) add(`import ${action}`, 'import', action === 'status' ? 'Inspect journal transfer availability and import/deletion recovery actions' : `${action} a durable journal import or account deletion`, { action, options: ['operation-id', ...(action === 'rollback' ? ['yes'] : [])], requiredOptions: action === 'status' ? [] : ['operation-id', ...(action === 'rollback' ? ['yes'] : [])] });
 add('backup list', 'backup', 'List private retained journal recovery backups', { action: 'list' });
 add('backup export', 'backup', 'Download recovery backup as portable journal JSON', { action: 'export', options: ['operation-id', 'output', 'overwrite'], requiredOptions: ['operation-id'] });
 add('backup delete', 'backup', 'Permanently delete a completed recovery backup', { action: 'delete', options: ['operation-id', 'yes'], requiredOptions: ['operation-id', 'yes'] });

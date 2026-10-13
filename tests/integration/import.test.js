@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { beforeAll, afterAll, beforeEach, it, expect } from 'vitest';
 import { initializeTestEnvironment, assertFails } from '@firebase/rules-unit-testing';
-import { doc, getDoc, getDocs, collection, setDoc, Timestamp, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection, setDoc, deleteDoc, Timestamp, writeBatch } from 'firebase/firestore';
 import { Repository } from '../../src/persistence/repository.js';
 import { JournalTransfer } from '../../src/persistence/transfer.js';
 import { createTrade, calculateTrade } from '../../src/domain/journal.js';
@@ -24,11 +24,127 @@ async function source({ history = false } = {}) {
     trade.adjustments = [{ id: 'adjustment', amount: '-0.10', currency: 'GBP', rate: '1.25', reason: 'Historical charge', timestamp: '2020-01-02T01:00:00Z' }];
   }
   trade = await repo.saveTrade(trade, 'original-receipt');
+  if (history) {
+    trade.executions[1].orderReference = 'historical-broker-reference';
+    trade = await repo.saveTrade(trade, 'correct-reference', null, { correctionReason: 'Record historical broker reference' });
+  }
   await repo.saveEntity('instruments', { ...instrument, pointValue: '10', archived: true });
   await repo.saveEntity('accounts', { ...(await repo.getEntity('accounts', 'a')), archived: true });
   if (history) await repo.saveEntity('strategies', { ...strategy, name: 'Current strategy', archived: true });
   return { file: await transfer.export(), trade };
 }
+async function deletionOptions(operationId) {
+  const account = await repo.getEntity('accounts', 'a');
+  const preview = await transfer.previewAccountDeletion(account.id, account.revision);
+  return { revision: account.revision, acceptPreview: preview.fingerprint, operationId, yes: true };
+}
+it('deletes archived account source and all nested history without rewriting unrelated records', async () => {
+  const { file } = await source({ history: true });
+  expect(file.accounts[0].archived).toBe(true);
+  expect(file.trades[0].adjustments).toHaveLength(1);
+  expect(file.trades[0].corrections).toHaveLength(1);
+  const other = await repo.saveEntity('accounts', { id: 'other', name: 'Other', currency: 'EUR' });
+  const instrument = await repo.getEntity('instruments', 'i');
+  const result = await transfer.deleteAccount('a', await deletionOptions('delete-account'));
+  expect(result).toMatchObject({ status: 'complete', kind: 'accountDeletion', backupAvailable: false });
+  expect(await repo.getEntity('accounts', 'a')).toBeNull();
+  expect(await repo.getTrade('t')).toBeNull();
+  for (const type of ['legs', 'executions', 'adjustments', 'corrections', 'operations']) expect(await repo.listChildren('t', type)).toEqual([]);
+  expect(await repo.getEntity('accounts', other.id)).toEqual(other);
+  expect(await repo.getEntity('instruments', instrument.id)).toEqual(instrument);
+  expect((await getDocs(transfer.rows('delete-account'))).empty).toBe(true);
+  expect(await transfer.status('delete-account')).toMatchObject({ cleanupComplete: true });
+  expect(await transfer.backups()).toEqual([]);
+});
+it('resumes interrupted deletion with same operation and fences ordinary writes and competing owners', async () => {
+  await source({ history: true });
+  const options = await deletionOptions('interrupted-delete');
+  transfer.onCheckpoint = () => { throw new Error('Deletion interrupted'); };
+  await expect(transfer.deleteAccount('a', options)).rejects.toMatchObject({ writeOutcome: { state: 'partial' } });
+  await expect(repo.load()).rejects.toMatchObject({ code: 'JOURNAL_IMPORT_IN_PROGRESS' });
+  await expect(new JournalTransfer(repo).resume(options.operationId)).rejects.toMatchObject({ code: 'IMPORT_BUSY' });
+  let account;
+  await env.withSecurityRulesDisabled(async (context) => { account = (await getDoc(doc(context.firestore(), 'users/alice/accounts/a'))).data(); });
+  await assertFails(setDoc(repo.ref('accounts', 'a'), { ...account, revision: account.revision + 1, archived: false }));
+  transfer.onCheckpoint = null;
+  expect((await transfer.deleteAccount('a', options)).status).toBe('complete');
+  expect(await repo.getEntity('accounts', 'a')).toBeNull();
+});
+it('rolls back partial deletion with historical values intact and unrelated revisions unchanged', async () => {
+  const { trade } = await source({ history: true });
+  const other = await repo.saveEntity('accounts', { id: 'other', name: 'Other', currency: 'EUR' });
+  transfer.onCheckpoint = () => { throw new Error('Stop deletion'); };
+  await expect(transfer.deleteAccount('a', await deletionOptions('cancel-delete'))).rejects.toThrow('Stop deletion');
+  transfer.onCheckpoint = null;
+  expect((await transfer.rollback('cancel-delete', true)).status).toBe('rolledBack');
+  const restored = await repo.getTrade('t');
+  expect(calculateTrade(restored).accountNet).toBe('3.675');
+  expect(restored.executions.map((item) => [item.id, item.price, item.fees, item.feeRate])).toEqual(trade.executions.map((item) => [item.id, item.price, item.fees, item.feeRate]));
+  expect((await repo.getEntity('accounts', 'a')).archived).toBe(true);
+  expect(await repo.getEntity('accounts', other.id)).toEqual(other);
+  expect((await getDocs(transfer.rows('cancel-delete'))).empty).toBe(true);
+});
+it('rejects stale deletion previews before touching journal source', async () => {
+  await source();
+  const options = await deletionOptions('stale-delete');
+  await repo.saveEntity('accounts', { id: 'other', name: 'Other', currency: 'USD' });
+  await expect(transfer.deleteAccount('a', options)).rejects.toMatchObject({ code: 'IMPORT_PREVIEW_CHANGED' });
+  expect(await repo.getTrade('t')).not.toBeNull();
+  expect((await transfer.status(options.operationId)).status).toBe('rejected');
+});
+it('retries completed deletion cleanup without recreating removed records', async () => {
+  await source();
+  const options = await deletionOptions('cleanup-delete');
+  const cleanup = transfer.cleanup.bind(transfer);
+  transfer.cleanup = async () => { throw new Error('Cleanup unavailable'); };
+  await expect(transfer.deleteAccount('a', options)).rejects.toMatchObject({ writeOutcome: { state: 'applied' } });
+  expect(await transfer.inspect(options.operationId)).toMatchObject({ operationKind: 'accountDeletion', actions: ['finish_cleanup', 'check_status'] });
+  await expect(repo.load()).rejects.toMatchObject({ code: 'JOURNAL_IMPORT_IN_PROGRESS' });
+  await env.withSecurityRulesDisabled(async (context) => { expect((await getDoc(doc(context.firestore(), 'users/alice/accounts/a'))).exists()).toBe(false); });
+  await expect(new JournalTransfer(repo).export()).rejects.toMatchObject({ code: 'IMPORT_BUSY' });
+  const control = (await getDoc(transfer.control())).data();
+  await assertFails(setDoc(transfer.control(), { ...control, state: 'ready', phase: 'complete' }));
+  transfer.cleanup = cleanup;
+  expect((await transfer.deleteAccount('a', options)).status).toBe('complete');
+  expect((await getDocs(transfer.rows(options.operationId))).empty).toBe(true);
+});
+it('cancels deletion interrupted immediately after claim before manifest preparation', async () => {
+  await source();
+  const before = await repo.getEntity('accounts', 'a');
+  const options = await deletionOptions('claim-gap');
+  const fenced = transfer.fenced.bind(transfer);
+  transfer.fenced = async () => { throw new Error('Preparing request interrupted'); };
+  await expect(transfer.deleteAccount('a', options)).rejects.toThrow('Preparing request interrupted');
+  expect(await transfer.status(options.operationId)).toMatchObject({ status: 'uploaded', active: true });
+  transfer.fenced = fenced;
+  expect((await transfer.rollback(options.operationId, true)).status).toBe('rolledBack');
+  expect(await repo.getEntity('accounts', 'a')).toEqual(before);
+});
+it('requires archived ownership and confirmation, and blocks direct archived trade writes', async () => {
+  await source();
+  const options = await deletionOptions('guarded-delete');
+  await expect(transfer.deleteAccount('a', { ...options, yes: false })).rejects.toThrow('explicit confirmation');
+  const otherOwner = new Repository(env.authenticatedContext('bob', { email_verified: true }).firestore(), 'bob');
+  await expect(new JournalTransfer(otherOwner).previewAccountDeletion('a', options.revision)).rejects.toThrow('Account not found');
+  await assertFails(deleteDoc(repo.ref('accounts', 'a')));
+  await assertFails(deleteDoc(repo.ref('trades', 't')));
+  const parent = (await getDoc(repo.ref('trades', 't'))).data();
+  await assertFails(setDoc(repo.ref('trades', 't'), { ...parent, revision: parent.revision + 1, review: 'Direct update' }));
+  const unverified = new JournalTransfer(new Repository(env.authenticatedContext('alice', { email_verified: false }).firestore(), 'alice', () => false));
+  await expect(unverified.deleteAccount('a', options)).rejects.toMatchObject({ code: 'EMAIL_UNVERIFIED' });
+  await repo.saveEntity('accounts', { ...await repo.getEntity('accounts', 'a'), archived: false });
+  await expect(transfer.previewAccountDeletion('a', options.revision + 1)).rejects.toThrow('Archive account');
+});
+it('clears archived defaults atomically and rejects archived preference selections', async () => {
+  await source();
+  let account = await repo.getEntity('accounts', 'a');
+  account = await repo.saveEntity('accounts', { ...account, archived: false });
+  const preferences = await repo.saveEntity('settings', { ...await repo.getSettings(), defaultAccount: account.id });
+  await assertFails(setDoc(repo.ref('accounts', 'a'), { ...account, archived: true, revision: account.revision + 1 }));
+  await repo.saveEntity('accounts', { ...account, archived: true });
+  expect((await getDoc(repo.ref('settings', 'preferences'))).data()).toMatchObject({ defaultAccount: null, revision: preferences.revision + 1 });
+  await expect(repo.saveEntity('settings', { ...await repo.getSettings(), defaultAccount: account.id })).rejects.toThrow('Default account must be active');
+});
 it('round trips historical data to another owner and retries completed imports', async () => {
   const { file, trade } = await source();
   const target = new Repository(env.authenticatedContext('bob', { email_verified: true }).firestore(), 'bob');

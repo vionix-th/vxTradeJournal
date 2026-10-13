@@ -5,6 +5,15 @@ const control = (state, expiry = now + 120000) => ({ state, operationId: 'operat
 const session = (status) => ({ id: 'operation', status, uploadExpiresAt: new Date(now - 1000).toISOString() });
 
 describe('read-only transfer observation', () => {
+  it('identifies deletion recovery and completed cleanup without exposing ownership', () => {
+    const deleting = { ...session('applying'), kind: 'accountDeletion' };
+    expect(transferObservation(control('import', now), deleting, { now })).toMatchObject({ operationKind: 'accountDeletion', reason: 'interrupted_import', actions: ['resume_import', 'rollback_import', 'check_status'] });
+    expect(transferObservation(control('ready'), { ...session('complete'), kind: 'accountDeletion' }, { now, operationId: 'operation' }).actions).toEqual(['finish_cleanup', 'check_status']);
+    expect(transferObservation(control('ready'), { ...session('complete'), kind: 'accountDeletion', cleanupComplete: true }, { now, operationId: 'operation' }).actions).toEqual(['retry_export', 'check_status']);
+    const cleanup = { ...control('import', now - 1), phase: 'cleanup' };
+    expect(transferObservation(cleanup, { ...session('complete'), kind: 'accountDeletion' }, { now })).toMatchObject({ reason: 'interrupted_import', actions: ['finish_cleanup', 'check_status'] });
+    expect(transferObservation({ ...cleanup, expiresAt: new Date(now + 120000).toISOString() }, { ...session('complete'), kind: 'accountDeletion' }, { now }).actions).toEqual(['check_status']);
+  });
   it('recognizes pristine and explicitly ready journals without recovery actions', () => {
     for (const metadata of [null, control('ready')]) expect(transferObservation(metadata, null, { now })).toMatchObject({ reason: 'ready', actions: ['retry_export', 'check_status'] });
   });

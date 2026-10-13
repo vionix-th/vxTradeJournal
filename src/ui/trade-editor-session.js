@@ -24,7 +24,7 @@ export class TradeEditorSession {
     this.disclosures = new Map();
     this.editableValues = {
       id: baseRecord?.id || id,
-      accountId: baseRecord?.accountId || data.settings.defaultAccount || data.accounts.find((account) => !account.archived)?.id,
+      accountId: baseRecord?.accountId || data.accounts.find((account) => account.id === data.settings.defaultAccount && !account.archived)?.id || data.accounts.find((account) => !account.archived)?.id,
       strategyId: baseRecord?.strategyId || "",
       rationale: raw(baseRecord?.rationale),
       review: raw(baseRecord?.review),

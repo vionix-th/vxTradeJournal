@@ -1,6 +1,22 @@
 import { test, expect } from '@playwright/test';
 import { setup } from './fixtures.js';
 
+test('resuming an ongoing rollback announces restoration rather than import completion', async ({ page }) => {
+  await page.goto('/');
+  const id = await page.evaluate(async () => {
+    const { recoveryPanel } = await import('/src/ui/import-editor.js');
+    const panel = recoveryPanel({ transfer: {
+      inspect: async () => ({ reason: 'interrupted_import', phase: 'rollingBack', operationId: 'restoration', actions: ['resume_import', 'rollback_import', 'check_status'] }),
+      resume: async () => ({ status: 'rolledBack' }),
+    }, operationId: 'restoration', complete: async () => {} });
+    panel.id = 'restoration-feedback-fixture'; document.body.append(panel);
+    return panel.id;
+  });
+  const panel = page.locator(`#${id}`);
+  await panel.getByRole('button', { name: 'Resume import', exact: true }).click();
+  await expect(panel.getByRole('status')).toHaveText('Original journal restored.');
+});
+
 async function settings(page) {
   const control = page.getByRole('button', { name: 'Settings', exact: true });
   if (!await control.isVisible()) await page.getByRole('button', { name: 'More', exact: true }).click();

@@ -51,7 +51,7 @@ for (const width of [375, 800, 1280]) test(`replacement preview, backup and inte
   try { await admin.db.doc(`users/${uid}/_journal/control`).update({ expiresAt: new Date(0) }); }
   finally { await admin.close(); }
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Journal import incomplete', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Journal operation incomplete', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Import recovery', exact: true })).toBeVisible();
   await page.screenshot({ path: `test-results/import-recovery-${width}.png`, fullPage: true });
   await page.getByRole('button', { name: 'Resume import', exact: true }).focus(); await page.keyboard.press('Enter');

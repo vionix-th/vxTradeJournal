@@ -1,3 +1,4 @@
+import { el, button, empty } from './components.js';
 import {
   accountEditor, instrumentEditor, strategyEditor, tradeEditor,
   executionEditor, adjustmentEditor, settingsEditor,
@@ -14,7 +15,7 @@ const currentEntity = (ui, type, record) => record?.id
   : record;
 const withTrade = (ui, arg, render) => {
   const trade = ui.data.trades.find((item) => item.id === arg.tradeId);
-  if (trade) render(trade);
+  if (trade && !ui.data.accounts.find((account) => account.id === trade.accountId)?.archived) render(trade);
   else tradeView(ui, arg.tradeId);
 };
 
@@ -56,6 +57,12 @@ export const routePolicies = {
     render: (ui, arg) => {
       const current = arg?.id ? ui.data.trades.find((record) => record.id === arg.id) : null;
       if (arg?.id && !current) return tradeView(ui, arg.id);
+      const existing = current || ui.data.trades.find((record) => record.id === tradeSession(arg)?.id);
+      if (existing && ui.data.accounts.find((account) => account.id === existing.accountId)?.archived) return tradeView(ui, existing.id);
+      if (!existing && !ui.data.accounts.some((account) => !account.archived)) {
+        ui.show(el('div', {}, empty('No active accounts', 'Create or restore an account before recording a trade.', button('Manage accounts', () => ui.go('accounts')))));
+        return;
+      }
       const session = tradeSession(arg) || new TradeEditorSession({
         baseRecord: current, data: ui.data,
         defaultInstrumentId: ui.recentInstruments().find((instrument) => !instrument.archived && !instrument.draft)?.id,

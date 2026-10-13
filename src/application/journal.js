@@ -1,4 +1,5 @@
 import { assertLegCapacity } from "../domain/leg-capacity.js";
+import { activeJournal } from './accounts.js';
 import {
   normalizeStrategy,
   D,
@@ -23,8 +24,8 @@ export function prepareTradeResult(input, data, previous = null) {
     "Reporting currency does not match account",
   );
   requireValue(
-    previous || !account.archived,
-    "Archived account cannot start trades",
+    !account.archived,
+    "Restore archived account before editing trades",
   );
   requireValue(
     !previous || previous.accountId === trade.accountId,
@@ -142,11 +143,11 @@ export function filterJournal(
     page,
   };
 }
-export function aggregateAccount(trades, accountId) {
+function aggregateTrades(trades) {
   let total = new D(0),
     count = 0;
   const incomplete = [];
-  for (const t of trades.filter((t) => t.accountId === accountId)) {
+  for (const t of trades) {
     if (t.summary.complete) {
       total = total.plus(t.summary.accountNet);
       count++;
@@ -154,19 +155,38 @@ export function aggregateAccount(trades, accountId) {
   }
   return { total: total.toFixed(), count, incomplete };
 }
-/** Overview money is scoped to one account; counts can span all accounts. */
+export function aggregateAccount(trades, accountId) {
+  return aggregateTrades(trades.filter((trade) => trade.accountId === accountId));
+}
+/** Report complete account-currency results without inventing cross-currency rates. */
 export function journalOverview(trades, accounts, accountId = "") {
+  ({ trades, accounts } = activeJournal({ trades, accounts }));
   const account = accountId
     ? accounts.find((a) => a.id === accountId) || null
     : accounts.length === 1 ? accounts[0] : null;
-  const scoped = account ? trades.filter((t) => t.accountId === account.id) : trades;
-  const aggregate = account ? aggregateAccount(scoped, account.id) : null;
+  requireValue(!accountId || account, 'Account not found');
+  const selectedAccounts = accountId ? [account] : accounts;
+  const scoped = accountId ? trades.filter((t) => t.accountId === account.id) : trades;
+  const currencies = new Map(selectedAccounts.map((a) => [a.id, a.currency]));
+  const groups = new Map(selectedAccounts.map((a) => [a.currency, []]));
+  for (const trade of scoped) {
+    const currency = currencies.get(trade.accountId);
+    requireValue(currency !== undefined, 'Trade account not found');
+    groups.get(currency).push(trade);
+  }
+  const currencyTotals = [...groups.keys()].sort().map((currency) => {
+    const aggregate = aggregateTrades(groups.get(currency));
+    return { currency, net: aggregate.total, complete: aggregate.count, incomplete: aggregate.incomplete.length };
+  });
+  const only = currencyTotals.length === 1 ? currencyTotals[0] : null;
   return {
     total: scoped.length,
     open: scoped.filter((t) => t.status === "open").length,
     closed: scoped.filter((t) => t.status === "closed").length,
     account,
-    net: aggregate?.total ?? null,
+    net: only?.net ?? null,
+    currency: only?.currency ?? null,
+    currencyTotals,
     incomplete: scoped.filter((t) => !t.summary.complete).length,
   };
 }

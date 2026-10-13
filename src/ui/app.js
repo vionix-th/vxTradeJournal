@@ -1,3 +1,4 @@
+import { activeJournal } from '../application/accounts.js';
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/inter/latin-500.css";
 import "@fontsource/inter/latin-600.css";
@@ -67,6 +68,9 @@ class JournalUI {
   get dirty() { return this.lifecycle.dirty; }
   set dirty(value) { this.lifecycle.dirty = value; }
   async loadUser(user) {
+    this.journalFilterView?.dispose();
+    this.journalFilterView = null;
+    this.journalFiltersState = null;
     this.workspace?.destroy();
     this.workspace = null;
     const generation = ++this.loadGeneration;
@@ -111,7 +115,7 @@ class JournalUI {
       if (generation !== this.loadGeneration) return;
       if (e.code === 'JOURNAL_IMPORT_IN_PROGRESS') {
         root.replaceChildren(el('div', { class: 'auth-shell' }, el('div', { class: 'auth-card' },
-          el('h1', {}, 'Journal import incomplete'),
+          el('h1', {}, 'Journal operation incomplete'),
           recoveryPanel({ transfer: new JournalTransfer(this.repo), operationId: e.details.operationId, complete: () => this.loadUser(auth.currentUser), run: (action) => this.lifecycle.run(action, async () => {}) }),
           button('Sign out', () => signOut(auth), 'button secondary'))));
         return;
@@ -201,6 +205,8 @@ class JournalUI {
     this.lifecycle.retainArg(arg);
   }
   renderRoute(route, arg) {
+    this.journalFilterView?.dispose();
+    this.journalFilterView = null;
     const navRoute = routePolicies[route]?.navigationSection || route;
     for (const n of root.querySelectorAll("[data-route], [data-navigation-section]")) {
       if ((n.dataset.route || n.dataset.navigationSection) === navRoute) n.setAttribute("aria-current", "page");
@@ -367,7 +373,7 @@ class JournalUI {
     }).format(new Date(value));
   }
   recentInstruments() {
-    return recentInstruments(this.data.instruments, this.data.trades);
+    return recentInstruments(this.data.instruments, activeJournal(this.data).trades);
   }
   authPage(mode = "signin", message = null) {
     const errors = el("div");

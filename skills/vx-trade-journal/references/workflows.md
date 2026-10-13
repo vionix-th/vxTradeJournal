@@ -72,9 +72,26 @@ If a command times out, inspect `operations get --profile <profile> --trade <id>
 
 FX rates are reporting-currency units per source-currency unit. Read the account and snapshot currencies rather than inferring either from symbols. Missing fee/result conversion rates may remain null and mark results incomplete; supply a known historical rate later through `executions update` using the current parent revision and a new operation ID. Entry fills do not realize a closing result, but their incurred fees still require conversion when foreign.
 
+## Archive, restore and delete accounts
+
+`accounts list --profile dev` shows active accounts. Use `--archived true` for archived accounts or `--archived all` for management. Archive with current `--id` and `--revision`; linked history disappears from journal results, totals, suggestions and defaults. Restore with `accounts unarchive` before viewing or editing its trades. Both preserve source records. Exports retain archives for backup.
+
+Deletion permanently removes the archived account and its linked trades, executions, adjustments, corrections and receipts. Preview first, report the account name and trade count, and obtain authorization for this destructive scope. Apply only the accepted snapshot:
+
+```sh
+node /path/to/vx-trade-journal/scripts/vxjournal.mjs accounts delete --profile dev --id archived-account --revision 3 --preview
+node /path/to/vx-trade-journal/scripts/vxjournal.mjs accounts delete --profile dev --id archived-account --revision 3 --accept-preview 0000000000000000000000000000000000000000000000000000000000000000 --operation-id delete-account-1 --yes
+```
+
+The all-zero fingerprint is a placeholder; replace it and the sample revision with actual preview inputs. Preserve operation ID and inputs on retries. Unrelated records and revisions remain unchanged. Inspect `import status --profile dev --operation-id delete-account-1` after interruption: `transfer.operationKind` identifies account deletion. Supported `resume_import`/`rollback_import` actions use existing `import resume`/`import rollback --yes`; rollback cancels incomplete deletion and restores removed records. `finish_cleanup` means live deletion completed (or cancellation/rejection is settled), but final cleanup/ownership release remains; use `import resume` with that ID to finish cleanup. Verified live deletion cannot be rolled back, including during final cleanup. Journal access returns after cleanup and ownership release; committedRecords retains the preceding source-record checkpoint and does not count deleted staging files. Previously downloaded files and independent recovery backups remain separate copies.
+
+## Journal overview
+
+Run `journal overview --profile dev` for counts and complete monetary results across active accounts; archived history is excluded. Add `--account <id>` for one account. Results use account reporting currencies; `currencyTotals` is sorted by currency and reports exact decimal `net`, `complete` count and `incomplete` excluded count per unit. Top-level `net` is populated only for a single currency, identified by `currency`; both are null for mixed currencies. Never add USD and USDC or other distinct units without an explicit conversion policy. Empty currency groups show zero, while no accounts produces no monetary unit. Incomplete trades are omitted, including foreign results lacking required rates. Journal search/status/date filters affect history rather than these account-scoped totals. Website Realized net uses the same source expectations and totals.
+
 ## Export
 
-Run `export --profile dev --output <path>` after checking the profile. The export contains complete owned journal source data and version metadata; it excludes authentication secrets. If the path already exists, choose a different path or explicitly use `--overwrite` only when replacement is intended.
+Run `export --profile dev --output <path>` after checking the profile. The export retains archived accounts and history and contains complete owned journal source data and version metadata; it excludes authentication secrets. If the path already exists, choose a different path or explicitly use `--overwrite` only when replacement is intended.
 
 Verify downloaded JSON without authentication or journal writes:
 

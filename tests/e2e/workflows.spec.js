@@ -110,13 +110,9 @@ for (const viewport of [
       .click();
     await expect(page.getByTestId("trade-status")).toHaveText("Open");
     await page.getByRole("button", { name: "Journal", exact: true }).click();
-    await page.getByText("More filters", { exact: true }).click();
     await page
       .getByLabel("Filter status", { exact: true })
       .selectOption("closed");
-    await page
-      .getByRole("button", { name: "Apply filters", exact: true })
-      .click();
     await expect(
       page.getByRole("heading", { name: "No matching trades", exact: true }),
     ).toBeVisible();

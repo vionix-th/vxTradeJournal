@@ -129,6 +129,16 @@ main#main { min-width: 0; min-height: 0; overflow-y: auto; background: var(--sur
 .actions, .toolbar, .inline, .split { display: flex; align-items: center; gap: 10px; }
 .actions, .toolbar, .inline { flex-wrap: wrap; }
 .journal-data-actions { justify-content: flex-end; }
+.account-tabs { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-bottom: var(--space-md); }
+.account-tab[aria-selected="true"] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.account-list { display: grid; gap: var(--space-md); min-width: 0; }
+.account-delete-confirmation { display: grid; gap: var(--space-sm); }
+.account-delete-confirmation .actions { margin-top: var(--space-xs); }
+.account-list .actions { flex-wrap: wrap; }
+.account-list .record-panel { min-width: 0; overflow-wrap: anywhere; }
+.account-list .section-heading { flex-wrap: wrap; }
+.account-list .section-heading > h2 { min-width: 0; flex: 1 1 200px; }
+.account-list .section-heading > .actions { flex: 0 1 auto; }
 .split { justify-content: space-between; }
 .button { display: inline-flex; justify-content: center; align-items: center; gap: 8px; min-height: 44px; padding: 10px 16px; border: 1px solid #6255d9; border-radius: 7px; background: #6255d9; color: #fff; font-size: 12px; font-weight: 500; text-decoration: none; transition: background-color .15s, border-color .15s; }
 .button:hover { background: #5043c4; border-color: #5043c4; }
@@ -197,6 +207,8 @@ main#main { min-width: 0; min-height: 0; overflow-y: auto; background: var(--sur
 .overview-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; font-weight: 500; }
 .overview-icon { color: var(--muted); }
 .overview-value { display: block; margin: 16px 0 7px; font-size: 28px; line-height: 1.2; letter-spacing: -.9px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.overview-currency-totals { display: grid; gap: 8px; font-size: 22px; line-height: 1.25; }
+.overview-currency-total { min-width: 0; overflow-wrap: anywhere; }
 .overview-caption { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
 form { min-width: 0; }
 .field { display: grid; gap: 7px; min-width: 0; align-content: start; }
@@ -234,15 +246,21 @@ input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; accent-
 .details > summary::after { content: ''; width: 6px; height: 6px; margin-left: 4px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg) translateY(-2px); }
 .details[open] > summary::after { transform: rotate(225deg) translate(-1px, -1px); }
 .details[open] > .form-grid { margin-top: 12px; }
-.journal-filters { position: relative; display: grid; grid-template-columns: minmax(140px, 1fr) minmax(130px, 180px) auto auto; align-items: center; gap: var(--space-xs); margin-bottom: 0; }
-.journal-filters > .field > label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.journal-filters { display: grid; gap: 12px; min-width: 0; margin: 0; container-type: inline-size; }
+.journal-filter-band { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); align-items: start; gap: 12px; min-width: 0; }
+.journal-date-range { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.journal-filter-clear { align-self: start; margin-top: 25px; min-height: 44px; }
+.journal-filters label { overflow-wrap: anywhere; }
 .search-field { position: relative; }
 .search-field input[type="search"] { padding-left: 38px; }
-.search-field > svg { position: absolute; left: 12px; top: 13px; color: var(--muted); pointer-events: none; }
-.journal-filters > .details > summary { padding: 8px 12px; border: 1px solid var(--border); border-radius: 7px; background: var(--panel); white-space: nowrap; }
-.journal-filters > .details > .form-grid { position: absolute; z-index: 5; top: 100%; right: 0; width: min(620px, 100%); margin: 8px 0 0; padding: 20px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); box-shadow: 0 12px 32px #151a2c1a; }
-.filter-actions { display: flex; gap: 4px; }
-.filter-actions .button { white-space: nowrap; padding-inline: 12px; }
+.search-field > svg { position: absolute; left: 12px; bottom: 13px; color: var(--muted); pointer-events: none; }
+@container (min-width: 332px) {
+  .journal-date-range { grid-column: span 2; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.tag-suggestions { position: fixed; inset: auto; margin: 0; padding: 4px; border: 1px solid var(--border); border-radius: 7px; overflow-y: auto; overscroll-behavior: contain; background: var(--panel); color: var(--text); box-shadow: 0 8px 24px #10162926; }
+.tag-suggestion { display: flex; align-items: center; min-height: 44px; padding: 10px 12px; border-radius: 4px; font-size: 13px; cursor: pointer; overflow-wrap: anywhere; }
+.tag-suggestion:hover, .tag-suggestion.is-active { background: var(--accent-soft); color: var(--accent); }
+.tag-suggestions-empty { margin: 0; min-height: 44px; padding: 12px; color: var(--muted); font-size: 12px; }
 .history-panel { border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); overflow: hidden; }
 .history-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 22px; }
 .history-heading h2 { display: flex; align-items: center; gap: 9px; margin: 0; font-size: 14px; }
@@ -324,8 +342,6 @@ tbody tr:hover { background: var(--raised); }
   .sidebar { padding-inline: 12px; }
   .page-content { padding: 28px 24px 40px; }
   .workspace-bar { padding-inline: 24px; }
-  .journal-filters { grid-template-columns: minmax(140px, 1fr) minmax(130px, 180px) auto; }
-  .filter-actions { grid-column: 1 / -1; justify-content: flex-end; }
   .overview-card { padding: 18px; }
   .overview-value { font-size: 25px; }
   .strategy-cell { max-width: 110px; overflow-wrap: anywhere; }
@@ -366,11 +382,6 @@ tbody tr:hover { background: var(--raised); }
   .overview-icon { display: inline; }
   .overview-value { margin-top: 12px; font-size: 25px; }
   .overview-caption { font-size: 10px; }
-  .journal-filters { grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
-  .journal-filters > .search-field { grid-column: 1 / -1; }
-  .journal-filters > .details[open] { grid-column: 1 / -1; grid-row: 3; }
-  .journal-filters > .details > .form-grid { position: static; width: 100%; margin-top: 10px; padding: 16px; box-shadow: none; }
-  .filter-actions { grid-column: 1 / -1; justify-content: flex-end; }
   .history-heading { padding: 18px; }
   .history-heading > span { display: none; }
   .desktop-table { display: none; }

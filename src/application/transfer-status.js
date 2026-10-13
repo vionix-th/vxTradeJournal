@@ -10,6 +10,7 @@ export function transferObservation(control, session = null, { now = Date.now(),
     reason: 'status_unavailable', observedClientTime: new Date(now).toISOString(),
     actions: ['check_status'],
   };
+  if (session?.kind === 'accountDeletion') result.operationKind = 'accountDeletion';
   const unavailable = (issue) => ({ ...result, issue });
   if (control && !['ready', 'snapshot', 'import'].includes(control.state)) return unavailable('Invalid transfer state.');
   if (control) {
@@ -28,6 +29,12 @@ export function transferObservation(control, session = null, { now = Date.now(),
   }
   if (operationId && !session) return unavailable('Import operation metadata is missing.');
   if (control?.state === 'import') {
+    if (session?.kind === 'accountDeletion' && session.id === control.operationId && terminal.has(session.status) && control.phase === 'cleanup') {
+      return { ...result, reason: result.leaseActive ? 'active_import' : 'interrupted_import', importStatus: session.status,
+        cleanupComplete: !!session.cleanupComplete,
+        actions: compatible && (ownedByCaller || !result.leaseActive) ? ['finish_cleanup', 'check_status'] : ['check_status'],
+        ...(!compatible ? { issue: 'Recovery requires a client matching the deletion contract.' } : {}) };
+    }
     if (!session || session.id !== control.operationId || !statuses.has(session.status) || terminal.has(session.status)) return unavailable('Import control and operation metadata disagree.');
     const phases = { uploaded: ['preparing'], preparing: ['preparing'], applying: ['applying', 'verifying'], preparingRollback: ['preparingRollback'], rollingBack: ['rollingBack', 'verifyingRollback'] };
     if (!phases[session.status]?.includes(control.phase) || Number.isInteger(session.rowCount) && control.cursor > session.rowCount) return unavailable('Import phase or record checkpoint disagrees with the operation.');
@@ -50,13 +57,14 @@ export function transferObservation(control, session = null, { now = Date.now(),
     }
   }
   // No control document is the established pristine-journal contract, not missing import metadata.
-  return { ...result, reason: 'ready', actions: ['retry_export', 'check_status'] };
+  return { ...result, reason: 'ready', actions: session?.kind === 'accountDeletion' && session.status === 'complete' && !session.cleanupComplete ? ['finish_cleanup', 'check_status'] : ['retry_export', 'check_status'] };
 }
 
-export const transferPhaseLabel = (phase) => ({
+export const transferPhaseLabel = (phase, kind) => kind === 'accountDeletion' && ['preparing', 'applying', 'verifying'].includes(phase) ? ({ preparing: 'Preparing account deletion', applying: 'Deleting account records', verifying: 'Checking account deletion' }[phase]) : ({
   preparing: 'Preparing journal records', applying: 'Applying journal records',
   verifying: 'Checking imported journal', preparingRollback: 'Preparing restoration',
   rollingBack: 'Restoring journal records', verifyingRollback: 'Checking restored journal',
+  cleanup: 'Removing temporary recovery records',
   uploading: 'Uploading import file', uploaded: 'Import file uploaded',
   complete: 'Complete', rolledBack: 'Restored', rejected: 'Import rejected',
 }[phase] || 'Checking transfer status');

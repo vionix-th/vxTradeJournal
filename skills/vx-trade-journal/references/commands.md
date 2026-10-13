@@ -20,7 +20,7 @@ This inventory is generated from the executable catalogue. Required options are 
 | `auth status` | status the selected profile session | `--profile` |
 | `auth verify` | verify the selected profile session | `--profile` |
 | `auth logout` | logout the selected profile session | `--profile` |
-| `accounts list` | List owned accounts | `--profile` |
+| `accounts list` | List active accounts; explicitly select archived or all for management | `--profile` |
 | `accounts get` | Get an owned accounts record | `--profile`, `--id` |
 | `accounts create` | Create accounts using a stable ID | `--profile`, `--input` |
 | `accounts update` | update an owned accounts record | `--profile`, `--id`, `--revision`, `--input` |
@@ -38,11 +38,12 @@ This inventory is generated from the executable catalogue. Required options are 
 | `strategies update` | update an owned strategies record | `--profile`, `--id`, `--revision`, `--input` |
 | `strategies archive` | archive an owned strategies record | `--profile`, `--id`, `--revision` |
 | `strategies unarchive` | unarchive an owned strategies record | `--profile`, `--id`, `--revision` |
+| `accounts delete` | Preview or permanently delete an archived account and its linked history | `--profile`, `--id`, `--revision` |
 | `instruments presets` | Inspect editable preset examples | None |
 | `instruments preview` | Validate instrument configuration and calculation capabilities | `--profile`, `--input` |
 | `strategies trades` | List trade summaries linked to a strategy | `--profile`, `--id` |
-| `journal list` | Filter journal summaries, ordered by newest activity | `--profile` |
-| `journal overview` | Counts and one-account realized results | `--profile` |
+| `journal list` | Filter active-account journal summaries, ordered by newest activity | `--profile` |
+| `journal overview` | Active-account counts and complete realized results grouped by reporting currency | `--profile` |
 | `trades corrections` | Read correction history grouped by operation | `--profile`, `--id` |
 | `trades get` | Read complete source records and current calculations | `--profile`, `--id` |
 | `trades create` | Create a trade with up to six legs | `--profile`, `--operation-id`, `--input` |
@@ -68,14 +69,14 @@ This inventory is generated from the executable catalogue. Required options are 
 | `calculate trade` | Replay source history without changing persisted summaries | `--profile`, `--id` |
 | `calculate size` | Compute single-leg linear sizing with decimal arithmetic | `--profile`, `--trade`, `--leg` |
 | `settings get` | Read display preferences | `--profile` |
-| `settings update` | Update preferences and owned default account | `--profile`, `--revision`, `--input` |
+| `settings update` | Update preferences and active owned default account | `--profile`, `--revision`, `--input` |
 | `export` | Export complete versioned journal source data | `--profile` |
 | `export verify` | Verify portable integrity, versions and replay without journal writes | `--input` |
 | `import preview` | preview portable journal JSON with add-only or replacement mode | `--profile`, `--mode`, `--input` |
 | `import apply` | apply portable journal JSON with add-only or replacement mode | `--profile`, `--mode`, `--accept-preview`, `--operation-id`, `--input` |
-| `import status` | Inspect journal transfer availability and durable import recovery actions | `--profile` |
-| `import resume` | resume a durable journal import | `--profile`, `--operation-id` |
-| `import rollback` | rollback a durable journal import | `--profile`, `--operation-id`, `--yes` |
+| `import status` | Inspect journal transfer availability and import/deletion recovery actions | `--profile` |
+| `import resume` | resume a durable journal import or account deletion | `--profile`, `--operation-id` |
+| `import rollback` | rollback a durable journal import or account deletion | `--profile`, `--operation-id`, `--yes` |
 | `backup list` | List private retained journal recovery backups | `--profile` |
 | `backup export` | Download recovery backup as portable journal JSON | `--profile`, `--operation-id` |
 | `backup delete` | Permanently delete a completed recovery backup | `--profile`, `--operation-id`, `--yes` |

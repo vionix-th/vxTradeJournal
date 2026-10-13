@@ -7,6 +7,7 @@ import { newTrade, editTrade, replaceLegs, editLeg, putExecution, putAdjustment,
 import { fingerprint } from "../application/fingerprint.js";
 import { CliError } from "./errors.js";
 import { recentInstruments } from "../application/instruments.js";
+import { activeJournal } from '../application/accounts.js';
 
 const normalizers = { accounts: normalizeAccount, instruments: normalizeInstrument, strategies: normalizeStrategy };
 const required = (record, label = "Record") => {
@@ -30,19 +31,29 @@ async function references(repo, trade) {
   ]);
   return { accounts: account ? [account] : [], instruments: instruments.filter(Boolean), strategies: strategy ? [strategy] : [] };
 }
-async function getTrade(repo, id) { return required(await repo.getTrade(id), "Trade"); }
+function activeAccount(account) {
+  required(account, 'Account');
+  if (account.archived) throw new CliError('ACCOUNT_ARCHIVED', 'Restore archived account before viewing or editing its trades.', 4, { accountId: account.id, actions: ['unarchive_account'] });
+  return account;
+}
+async function getTrade(repo, id) {
+  const trade = required(await repo.getTrade(id), 'Trade');
+  activeAccount(await repo.getEntity('accounts', trade.accountId));
+  return trade;
+}
 
 async function entity({ repo, spec, options, input }) {
   const { type, action } = spec;
   if (action === "list") {
     let items = await repo.list(type);
+    if (type === 'accounts' && options.archived === undefined) items = items.filter((item) => !item.archived);
     if (options.archived && options.archived !== "all") items = items.filter((i) => i.archived === (options.archived === "true"));
     if (options.search) {
       const q = options.search.toLowerCase();
       items = items.filter((i) => [i.name, i.symbol, i.market, i.venue, i.underlying, i.expiry, i.strike, i.optionType].filter(Boolean).join(" ").toLowerCase().includes(q));
     }
     if (type === "instruments") {
-      const trades = await repo.list("trades");
+      const trades = activeJournal({ accounts: await repo.list('accounts'), trades: await repo.list('trades') }).trades;
       const linked = await Promise.all(trades.map(async (trade) => ({ ...trade, legs: await repo.listChildren(trade.id, "legs") })));
       items = recentInstruments(items, linked);
     }
@@ -119,7 +130,14 @@ async function tradeWrite({ command, spec, repo, options, input }) {
 
 export const handlers = {
   verifyExport: ({ input }) => verifyExport(input),
-  corrections: async ({ repo, options }) => { required(await repo.getTrade(options.id), 'Trade'); return repo.getCorrections(options.id, options.page || 1, options['page-size'] || 12); },
+  corrections: async ({ repo, options }) => { await getTrade(repo, options.id); return repo.getCorrections(options.id, options.page || 1, options['page-size'] || 12); },
+  accountDelete: async ({ repo, options }) => {
+    const transfer = new JournalTransfer(repo);
+    if (options.preview || options['dry-run']) return transfer.previewAccountDeletion(options.id, options.revision);
+    if (!options.yes || !options['operation-id'] || !options['accept-preview']) throw new CliError('VALIDATION', 'Deletion requires --yes, --operation-id and --accept-preview from accounts delete --preview.');
+    const result = await transfer.deleteAccount(options.id, { revision: options.revision, acceptPreview: options['accept-preview'], operationId: options['operation-id'], yes: true });
+    return { ...result, deleted: result.status === 'complete' };
+  },
   entity,
   tradeWrite,
   presets: async () => PRESETS,
@@ -129,18 +147,21 @@ export const handlers = {
   },
   linkedTrades: async ({ repo, options }) => {
     required(await repo.getEntity("strategies", options.id), "Strategy");
-    return (await repo.list("trades")).filter((t) => t.strategyId === options.id);
+    return activeJournal({ accounts: await repo.list('accounts'), trades: await repo.list('trades') }).trades.filter((t) => t.strategyId === options.id);
   },
   journal: async ({ repo, options }) => {
     for (const key of ["from", "to"]) if (options[key] && !isCalendarDate(options[key])) throw new CliError("VALIDATION", `Invalid --${key} date.`);
     if (options.from && options.to && options.from > options.to) throw new CliError("VALIDATION", "Opening-date range is reversed.");
     if (options.status && !["open", "closed"].includes(options.status)) throw new CliError("VALIDATION", "Status must be open or closed.");
     const settings = await repo.getSettings();
-    return filterJournal(await repo.list("trades"), options, options.page || 1, options["page-size"] || 12, options.timezone || settings.timezone);
+    const accounts = await repo.list('accounts');
+    if (options.account) activeAccount(accounts.find((account) => account.id === options.account));
+    const visible = activeJournal({ accounts, trades: await repo.list('trades') });
+    return filterJournal(visible.trades, options, options.page || 1, options["page-size"] || 12, options.timezone || settings.timezone);
   },
   overview: async ({ repo, options }) => {
     const accounts = await repo.list("accounts");
-    if (options.account) required(accounts.find((a) => a.id === options.account), "Account");
+    if (options.account) activeAccount(accounts.find((a) => a.id === options.account));
     return journalOverview(await repo.list("trades"), accounts, options.account);
   },
   tradeRead: async ({ repo, options }) => {
@@ -158,7 +179,7 @@ export const handlers = {
     await repo.deleteTrade(trade);
     return { deleted: true, id: trade.id };
   },
-  receipt: async ({ repo, options }) => required(await repo.getOperation(options.trade, options["operation-id"]), "Operation receipt"),
+  receipt: async ({ repo, options }) => { await getTrade(repo, options.trade); return required(await repo.getOperation(options.trade, options['operation-id']), 'Operation receipt'); },
   size: async ({ repo, options }) => {
     const trade = await getTrade(repo, options.trade);
     if (trade.legs.length !== 1) throw new CliError("VALIDATION", "Automatic sizing applies only to single-leg linear trades.");

@@ -10,23 +10,30 @@ export function downloadJournal(file, name = 'vxTradeJournal') {
 }
 export function recoveryPanel({ transfer, operationId, complete, run = async (action) => action() }) {
   let activeId = operationId;
-  let resume, rollback, back;
+  let resume, rollback, back, title;
+  let deletion = false, cleanup = false;
   const feedback = transferFeedback({ transfer, operationId: () => activeId, onState: (state) => {
     if (state.observation?.operationId) activeId = state.observation.operationId;
+    deletion = state.observation?.operationKind === 'accountDeletion';
+    cleanup = !!state.observation?.actions.includes('finish_cleanup');
+    if (title) title.textContent = deletion ? 'Account deletion recovery' : 'Import recovery';
     for (const [control, action] of [[resume, 'resume_import'], [rollback, 'rollback_import']]) {
       if (!control) continue;
-      control.hidden = !state.observation?.actions.includes(action);
+      control.hidden = !state.observation?.actions.includes(action) && !(control === resume && cleanup);
       control.disabled = state.pending;
     }
+    if (resume) resume.textContent = cleanup ? 'Finish deletion cleanup' : deletion ? 'Resume account deletion' : 'Resume import';
+    if (rollback) rollback.textContent = deletion ? 'Cancel deletion and restore records' : 'Roll back import';
     if (back) { back.hidden = state.observation?.reason !== 'ready'; back.disabled = state.pending; }
   } });
   const execute = async (restore) => {
     if (feedback.pending) return;
-    if (restore && !confirm('Restore journal contents from before this import? Import-created records will be removed.')) return;
-    transfer.onCheckpoint = ({ cursor }) => feedback.progress(`${restore ? 'Restoring' : 'Applying'} journal records… ${cursor} records committed in this phase.`);
+    const isDeletion = deletion;
+    if (restore && !confirm(deletion ? 'Cancel this account deletion and restore records removed so far?' : 'Restore journal contents from before this import? Import-created records will be removed.')) return;
+    transfer.onCheckpoint = ({ cursor, rollback }) => feedback.progress(`${rollback ? 'Restoring' : isDeletion ? 'Deleting' : 'Applying'} journal records… ${cursor} records committed in this phase.`);
     const outcome = await feedback.execute(() => run(() => restore ? transfer.rollback(activeId, true) : transfer.resume(activeId)), {
-      progress: restore ? 'Restoring original journal…' : 'Resuming import…',
-      success: restore ? 'Original journal restored.' : 'Import completed.',
+      progress: cleanup ? 'Removing temporary recovery records…' : restore ? 'Restoring original journal…' : isDeletion ? 'Continuing account deletion…' : 'Resuming import…',
+      success: (result) => result.status === 'rolledBack' ? 'Original journal restored.' : result.status === 'rejected' ? 'Request rejected; recovery cleanup finished.' : isDeletion ? 'Account and linked history deleted; cleanup finished.' : 'Import completed.',
     });
     if (outcome.ok && ['complete', 'rolledBack', 'rejected'].includes(outcome.value.status)) await complete();
   };
@@ -35,6 +42,7 @@ export function recoveryPanel({ transfer, operationId, complete, run = async (ac
   back = button('Return to journal', complete, 'button secondary'); back.hidden = true;
   for (const control of [resume, rollback]) control.setAttribute('aria-describedby', feedback.host.id);
   const host = section('Import recovery', feedback.host, el('div', { class: 'actions' }, resume, rollback, back));
+  title = host.querySelector('h2');
   void feedback.inspect();
   return host;
 }
