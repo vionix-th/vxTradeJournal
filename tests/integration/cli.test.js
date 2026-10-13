@@ -72,7 +72,10 @@ it('supports import preview, conflict errors, replacement and recovery backup co
   const preview = await cli('import preview', exported.body.data, { mode: 'replace' });
   const applied = await cli('import apply', exported.body.data, { mode: 'replace', yes: true, 'accept-preview': preview.body.data.fingerprint, 'operation-id': 'replace-import' });
   expect(applied.code, JSON.stringify(applied.body)).toBe(0);
-  expect((await cli('import status', undefined, { 'operation-id': 'replace-import' })).body.data.status).toBe('complete');
+  const status = await cli('import status', undefined, { 'operation-id': 'replace-import' });
+  expect(status.body.data.status).toBe('complete');
+  expect(status.body.data.transfer).toMatchObject({ reason: 'ready', importStatus: 'complete', actions: ['retry_export', 'check_status'] });
+  expect(status.body.data.owner).toBeUndefined();
   expect((await cli('backup list')).body.data.map((b) => b.id)).toEqual(['replace-import']);
   expect((await cli('backup export', undefined, { 'operation-id': 'replace-import' })).body.data.accounts[0].name).toBe('Changed');
   expect((await cli('backup delete', undefined, { 'operation-id': 'replace-import', yes: true })).code).toBe(0);
@@ -409,3 +412,20 @@ it('exposes correction requirements, structured rejection and offline backup ver
   expect(verified.body).toMatchObject({ ok: true, data: { integrity: 'verified', counts: { corrections: 1 }, targetVersions: { schema: 2 } } });
   expect(await native.getTrade('audit')).toEqual(applied.body.data.trade);
 }, 60000);
+
+it('reports export contention through unchanged error codes and read-only doctor diagnostics', async () => {
+  await prerequisites();
+  await env.withSecurityRulesDisabled(async (context) => {
+    const { setDoc, doc, Timestamp } = await import('firebase/firestore');
+    await setDoc(doc(context.firestore(), 'users', uid, '_journal', 'control'), { state: 'snapshot', operationId: 'competing-export', owner: 'private-owner-token', fence: 1, checkpoint: 1, cursor: 0, phase: 'preparing', expiresAt: Timestamp.fromMillis(Date.now() + 120000) });
+  });
+  const blocked = await cli('export');
+  expect(blocked.code).toBe(5);
+  expect(blocked.body).toMatchObject({ ok: false, error: { code: 'IMPORT_BUSY', transfer: { reason: 'active_export', operationId: 'competing-export', actions: ['check_status'] } } });
+  expect(blocked.body.data).toBeUndefined();
+  expect(JSON.stringify(blocked.body)).not.toContain('private-owner-token');
+  const diagnostic = await cli('doctor');
+  expect(diagnostic.code).toBe(0);
+  expect(diagnostic.body.data.journal.transfer.reason).toBe('active_export');
+  expect(JSON.stringify(diagnostic.body.data.journal)).not.toContain('private-owner-token');
+});

@@ -13,7 +13,7 @@ This inventory is generated from the executable catalogue. Required options are 
 | `schema` | Machine-readable command contracts | None |
 | `version` | Application, CLI, schema and calculation versions | None |
 | `ids` | Generate stable IDs before submitting creates | None |
-| `doctor` | Check runtime, project, saved authentication and database compatibility | `--profile` |
+| `doctor` | Check runtime, project, saved authentication, database compatibility and journal transfer availability | `--profile` |
 | `auth login` | login a Firebase user session using stdin or a hidden terminal prompt | `--profile` |
 | `auth register` | register a Firebase user session using stdin or a hidden terminal prompt | `--profile` |
 | `auth reset` | reset a Firebase user session | `--profile` |
@@ -73,7 +73,7 @@ This inventory is generated from the executable catalogue. Required options are 
 | `export verify` | Verify portable integrity, versions and replay without journal writes | `--input` |
 | `import preview` | preview portable journal JSON with add-only or replacement mode | `--profile`, `--mode`, `--input` |
 | `import apply` | apply portable journal JSON with add-only or replacement mode | `--profile`, `--mode`, `--accept-preview`, `--operation-id`, `--input` |
-| `import status` | status a durable journal import | `--profile` |
+| `import status` | Inspect journal transfer availability and durable import recovery actions | `--profile` |
 | `import resume` | resume a durable journal import | `--profile`, `--operation-id` |
 | `import rollback` | rollback a durable journal import | `--profile`, `--operation-id`, `--yes` |
 | `backup list` | List private retained journal recovery backups | `--profile` |

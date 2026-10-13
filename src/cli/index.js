@@ -141,7 +141,7 @@ export async function run(args = process.argv.slice(2)) {
         const user = saved ? await session.token() : null;
         let database = { compatible: null, status: "unchecked" };
         if (user) { connection = await connectJournal(config, user); database = await databaseStatus(connection.repo.db); }
-        data = { database, journal: connection ? await new JournalTransfer(connection.repo).status() : { state: 'unchecked' }, node: process.versions.node, version, commit, useEmulators: config.useEmulators, sessionDirectory: session.store.root, session: user ? { uid: user.uid, email: user.email, emailVerified: user.emailVerified } : null };
+        data = { database, journal: connection ? await new JournalTransfer(connection.repo).report() : { state: 'unchecked' }, node: process.versions.node, version, commit, useEmulators: config.useEmulators, sessionDirectory: session.store.root, session: user ? { uid: user.uid, email: user.email, emailVerified: user.emailVerified } : null };
       } else {
         const user = await session.token();
 

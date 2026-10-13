@@ -13,6 +13,7 @@ import {
   money,
 } from "../domain/journal.js";
 import { JournalTransfer } from '../persistence/transfer.js';
+import { transferFeedback } from './transfer-feedback.js';
 import { downloadJournal } from './import-editor.js';
 import { newTrade, editTrade, replaceLegs, putExecution, putAdjustment, correctSnapshot } from "../application/operations.js";
 import {
@@ -659,13 +660,15 @@ export function settingsEditor(ui) {
       ],
     }),
   );
-  const exportButton = button("Export JSON", async () => {
-    try {
-      downloadJournal(await new JournalTransfer(ui.repo).export());
-    } catch (e) {
-      form.errors.replaceChildren(notice(e.message, "error"));
-    }
-  }, "button secondary");
+  const transfer = new JournalTransfer(ui.repo);
+  let exportButton;
+  const feedback = transferFeedback({ transfer, onState: (state) => {
+    if (exportButton) exportButton.disabled = state.pending || !!state.observation && !state.observation.actions.includes('retry_export');
+  } });
+  exportButton = button("Export JSON", () => feedback.execute(
+    () => ui.lifecycle.run(() => transfer.export(), async () => {}),
+    { progress: 'Preparing export…', success: 'Export file prepared. Download requested.', onSuccess: downloadJournal, successFailure: 'Export file was prepared, but download could not be requested. ' },
+  ), "button secondary", { "aria-describedby": feedback.host.id });
   form.node.append(
     section(
       "Journal data",
@@ -677,6 +680,7 @@ export function settingsEditor(ui) {
       el("div", { class: "actions journal-data-actions" },
         exportButton,
         button('Import journal and recovery', () => ui.go('importEditor'), 'button secondary')),
+      feedback.host,
     ),
   );
   ui.show(form.node);

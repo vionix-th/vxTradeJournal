@@ -178,7 +178,7 @@ export const handlers = {
     const choice = { mode: options.mode, includeSettings: !!options['include-settings'], acceptPreview: options['accept-preview'], operationId: options['operation-id'], yes: !!options.yes };
     if (spec.action === 'preview') return transfer.preview(input, choice);
     if (spec.action === 'apply') return transfer.apply(input, choice);
-    if (spec.action === 'status') return transfer.status(options['operation-id']);
+    if (spec.action === 'status') return transfer.report(options['operation-id']);
     if (spec.action === 'resume') return transfer.resume(options['operation-id']);
     return transfer.rollback(options['operation-id'], options.yes);
   },

@@ -3,6 +3,7 @@ import { assertDatabaseReady } from './availability.js';
 import { createExport, readExport, planImport, flattenJournal, rebuildJournal, rowId, ImportError, IMPORT_MAX_BYTES, assertJSON, validatePortable } from '../application/portable.js';
 import { fingerprint } from '../application/fingerprint.js';
 import { SCHEMA_VERSION, CALCULATION_VERSION } from '../domain/journal.js';
+import { transferObservation } from '../application/transfer-status.js';
 import { schemaRegistry } from '../application/schema-evolution.js';
 
 const TTL = 120000;
@@ -35,7 +36,7 @@ const order = (row) => {
   return row.after === null ? 100 - rank : rank;
 };
 export class JournalTransfer {
-  constructor(repo) { this.repo = repo; this.db = repo.db; this.uid = repo.uid; this.owner = crypto.randomUUID(); this.onCheckpoint = null; }
+  constructor(repo) { this.repo = repo; this.db = repo.db; this.uid = repo.uid; this.owner = crypto.randomUUID(); this.onCheckpoint = null; this.onFeedback = null; }
   control() { return doc(this.db, 'users', this.uid, '_journal', 'control'); }
   session(id) { if (!identifier.test(id)) throw new ImportError('INVALID_EXPORT', 'Invalid import operation ID.'); return doc(this.db, 'users', this.uid, 'imports', id); }
   ref(path) { return doc(this.db, 'users', this.uid, ...path.split('/')); }
@@ -92,21 +93,59 @@ export class JournalTransfer {
       tx.set(this.control(), { state: snapshot ? 'snapshot' : 'import', operationId: id, owner: this.owner, fence: this.fence, expiresAt: Timestamp.fromMillis(Date.now() + TTL), phase: continuing ? control.phase : 'preparing', cursor: continuing ? control.cursor : 0, checkpoint: (control?.checkpoint || 0) + 1 });
     });
   }
-  async export() {
-    const id = crypto.randomUUID(); await this.claim(id, false, true); const stop = this.heartbeat();
+  async inspect(id) {
+    const control = (await getDocFromServer(this.control())).data() || null;
+    const operationId = control?.state === 'import' ? control.operationId : id;
+    let session = null;
+    if (operationId) session = (await getDocFromServer(this.session(operationId))).data() || null;
+    const compatible = !session || this.recoveryCompatible(session);
+    return transferObservation(control, session, { operationId, compatible, ownedByCaller: control?.owner === this.owner });
+  }
+  recoveryCompatible(session) {
+    return session.schemaVersion === SCHEMA_VERSION && session.calculationVersion === CALCULATION_VERSION && session.formatVersion === 1 && session.projectId === this.db.app.options.projectId && Array.isArray(session.conversions) && session.conversions.every((step) => schemaRegistry.migrations.some((registered) => step.id === registered.id && step.checksum === registered.checksum));
+  }
+  feedback(error, progress) {
+    try { this.onFeedback?.({ error, progress }); }
+    catch (failure) { error.details = { ...error.details, secondaryErrors: [...(error.details?.secondaryErrors || []), { stage: 'feedback', code: failure.code || 'FEEDBACK_FAILED', message: failure.message }] }; }
+  }
+  async diagnose(error, id) {
+    this.feedback(error, 'Checking transfer status…');
+    const secondaryErrors = error.details?.secondaryErrors || [];
     try {
+      const observation = await this.inspect(error.details?.operationId || id);
+      error.details = { ...error.details, transfer: observation };
+    } catch (failure) {
+      secondaryErrors.push({ stage: 'inspection', code: failure.code || 'STATUS_UNAVAILABLE', message: failure.message });
+      error.details = { ...error.details, transfer: { reason: 'status_unavailable', observedClientTime: new Date().toISOString(), actions: ['check_status'] } };
+    }
+    if (secondaryErrors.length) error.details.secondaryErrors = secondaryErrors;
+    return error;
+  }
+  async export() {
+    const id = crypto.randomUUID();
+    let claimed = false, filePrepared = false, stop;
+    try {
+      await this.claim(id, false, true); claimed = true; stop = this.heartbeat();
       const journal = rebuildJournal(await this.collect()); validatePortable(journal);
-      const file = await createExport(journal);
+      const file = await createExport(journal); filePrepared = true;
+      await stop(); stop = null;
       await this.fenced(async (tx, control) => tx.set(this.control(), { ...control, state: 'ready', phase: 'complete' }));
       return file;
     } catch (error) {
-      await this.fenced(async (tx, control) => tx.set(this.control(), { ...control, state: 'ready', phase: 'complete' })).catch(() => {});
-      throw error;
-    } finally { await stop(); }
+      error.details = { ...error.details, export: { filePrepared, downloadRequested: false } };
+      this.feedback(error, 'Checking export outcome…');
+      if (stop) { await stop(); stop = null; }
+      if (claimed) {
+        try { await this.fenced(async (tx, control) => tx.set(this.control(), { ...control, state: 'ready', phase: 'complete' })); }
+        catch (failure) { error.details = { ...error.details, secondaryErrors: [...(error.details?.secondaryErrors || []), { stage: 'cleanup', code: failure.code || 'CLEANUP_FAILED', message: failure.message }] }; }
+      }
+      throw await this.diagnose(error);
+    } finally { if (stop) await stop(); }
   }
   async outcome(id, operation) {
     try { return await operation(); }
     catch (error) {
+      this.feedback(error, 'Checking import outcome…');
       if (!error.writeOutcome) {
         let state = 'unknown';
         try {
@@ -114,18 +153,29 @@ export class JournalTransfer {
           if (['complete', 'rolledBack'].includes(session.status)) state = 'applied';
           else if (['rollingBack', 'preparingRollback'].includes(session.status) || session.active && (session.cursor > 0 || ['verifying', 'verifyingRollback'].includes(session.phase))) state = 'partial';
           else state = 'not_applied';
-        } catch (failure) { if (failure.code === 'IMPORT_NOT_FOUND') state = 'not_applied'; }
+        } catch (failure) {
+          if (failure.code === 'IMPORT_NOT_FOUND') state = 'not_applied';
+          else error.details = { ...error.details, secondaryErrors: [...(error.details?.secondaryErrors || []), { stage: 'outcome inspection', code: failure.code || 'STATUS_UNAVAILABLE', message: failure.message }] };
+        }
         error.writeOutcome = { state };
       }
+      throw error.details?.transfer ? error : await this.diagnose(error, id);
+    }
+  }
+  async report(id) {
+    try { return { ...await this.status(id), transfer: await this.inspect(id) }; }
+    catch (error) {
+      error.details = { ...error.details, transfer: { reason: 'status_unavailable', observedClientTime: new Date().toISOString(), actions: ['check_status'], ...(id ? { operationId: id } : {}) } };
       throw error;
     }
   }
   async status(id) {
-    if (!id) { const control = (await getDocFromServer(this.control())).data(); return control || { state: 'ready' }; }
+    if (!id) { const control = (await getDocFromServer(this.control())).data(); const { owner: _owner, ...publicControl } = control || { state: 'ready' }; return publicControl; }
     const session = (await getDocFromServer(this.session(id))).data();
     if (!session) throw new ImportError('IMPORT_NOT_FOUND', 'Import operation was not found.');
     const control = (await getDocFromServer(this.control())).data();
-    return { ...session, active: control?.state === 'import' && control.operationId === id, phase: control?.operationId === id ? control.phase : session.status, cursor: control?.operationId === id ? control.cursor : session.rowCount || 0 };
+    const { owner: _owner, ...publicSession } = session;
+    return { ...publicSession, active: control?.state === 'import' && control.operationId === id, phase: control?.operationId === id ? control.phase : session.status, cursor: control?.operationId === id ? control.cursor : session.rowCount || 0 };
   }
   async upload(file, options) {
     const source = await readExport(file), id = options.operationId;
@@ -250,7 +300,7 @@ export class JournalTransfer {
   async _resume(id) {
     let session = await this.status(id);
     if (done(session.status)) { await this.cleanup(id, session.backupAvailable); return session; }
-    if (session.schemaVersion !== SCHEMA_VERSION || session.calculationVersion !== CALCULATION_VERSION || session.formatVersion !== 1 || session.projectId !== this.db.app.options.projectId || session.conversions.some((step) => !schemaRegistry.migrations.some((registered) => step.id === registered.id && step.checksum === registered.checksum))) throw new ImportError('UNSUPPORTED_EXPORT_VERSION', 'Import recovery requires matching project, contract, schema, calculation and conversion checksums.');
+    if (!this.recoveryCompatible(session)) throw new ImportError('UNSUPPORTED_EXPORT_VERSION', 'Import recovery requires matching project, contract, schema, calculation and conversion checksums.');
     if (session.status === 'uploading') throw new ImportError('IMPORT_RECOVERY_REQUIRED', 'Upload incomplete; reselect source file before applying. Journal is unchanged.');
     if (session.status === 'preparingRollback') return this.rollback(id, true);
     await this.claim(id, true); const stop = this.heartbeat();

@@ -35,7 +35,7 @@ add("help", "help", "Discover command groups and options", { offline: true, opti
 add("schema", "schema", "Machine-readable command contracts", { offline: true, options: ["command"] });
 add("version", "version", "Application, CLI, schema and calculation versions", { offline: true });
 add("ids", "ids", "Generate stable IDs before submitting creates", { offline: true, options: ["count"] });
-add("doctor", "doctor", "Check runtime, project, saved authentication and database compatibility");
+add("doctor", "doctor", "Check runtime, project, saved authentication, database compatibility and journal transfer availability");
 for (const action of ["login", "register", "reset"]) add(`auth ${action}`, "auth", `${action} a Firebase user session${action === "reset" ? "" : " using stdin or a hidden terminal prompt"}`, {
   action, options: ["input", "email"], input: object({ email: string(), ...(action === "reset" ? {} : { password: string() }) }),
 });
@@ -86,7 +86,7 @@ for (const action of ['preview', 'apply']) add(`import ${action}`, 'import', `${
   action, options: ['input', 'mode', 'include-settings', ...(action === 'apply' ? ['accept-preview', 'operation-id', 'yes'] : [])],
   requiredOptions: ['mode', ...(action === 'apply' ? ['accept-preview', 'operation-id'] : [])], requiresInput: true, input: portableInput,
 });
-for (const action of ['status', 'resume', 'rollback']) add(`import ${action}`, 'import', `${action} a durable journal import`, { action, options: ['operation-id', ...(action === 'rollback' ? ['yes'] : [])], requiredOptions: action === 'status' ? [] : ['operation-id', ...(action === 'rollback' ? ['yes'] : [])] });
+for (const action of ['status', 'resume', 'rollback']) add(`import ${action}`, 'import', action === 'status' ? 'Inspect journal transfer availability and durable import recovery actions' : `${action} a durable journal import`, { action, options: ['operation-id', ...(action === 'rollback' ? ['yes'] : [])], requiredOptions: action === 'status' ? [] : ['operation-id', ...(action === 'rollback' ? ['yes'] : [])] });
 add('backup list', 'backup', 'List private retained journal recovery backups', { action: 'list' });
 add('backup export', 'backup', 'Download recovery backup as portable journal JSON', { action: 'export', options: ['operation-id', 'output', 'overwrite'], requiredOptions: ['operation-id'] });
 add('backup delete', 'backup', 'Permanently delete a completed recovery backup', { action: 'delete', options: ['operation-id', 'yes'], requiredOptions: ['operation-id', 'yes'] });

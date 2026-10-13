@@ -112,7 +112,7 @@ class JournalUI {
       if (e.code === 'JOURNAL_IMPORT_IN_PROGRESS') {
         root.replaceChildren(el('div', { class: 'auth-shell' }, el('div', { class: 'auth-card' },
           el('h1', {}, 'Journal import incomplete'),
-          recoveryPanel({ transfer: new JournalTransfer(this.repo), operationId: e.details.operationId, complete: () => this.loadUser(auth.currentUser) }),
+          recoveryPanel({ transfer: new JournalTransfer(this.repo), operationId: e.details.operationId, complete: () => this.loadUser(auth.currentUser), run: (action) => this.lifecycle.run(action, async () => {}) }),
           button('Sign out', () => signOut(auth), 'button secondary'))));
         return;
       }

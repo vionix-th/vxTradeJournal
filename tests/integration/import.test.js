@@ -226,3 +226,23 @@ it('downloads retained schema-1 backups unchanged and converts them only when re
   expect(restored.corrections).toEqual([]);
   expect((await transfer.backupExport('retained-v1')).schemaVersion).toBe(1);
 });
+
+it('reports competing export metadata without changing its fence or exposing owner tokens', async () => {
+  const exporter = new JournalTransfer(repo);
+  await exporter.claim('live-export', false, true);
+  const competitor = new JournalTransfer(repo);
+  let error;
+  try { await competitor.export(); } catch (failure) { error = failure; }
+  expect(error).toMatchObject({ code: 'IMPORT_BUSY', details: { transfer: { reason: 'active_export', operationId: 'live-export', actions: ['check_status'] }, export: { filePrepared: false, downloadRequested: false } } });
+  expect(JSON.stringify(error.details)).not.toContain(exporter.owner);
+  const after = await getDoc(exporter.control());
+  expect(after.data()).toMatchObject({ owner: exporter.owner, fence: 1, state: 'snapshot' });
+});
+
+it('classifies missing import operation metadata without offering recovery writes', async () => {
+  await env.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'users', 'alice', '_journal', 'control'), { state: 'import', operationId: 'missing', owner: 'owner', fence: 1, checkpoint: 1, cursor: 0, phase: 'preparing', expiresAt: Timestamp.fromMillis(0) });
+  });
+  expect(await transfer.inspect()).toMatchObject({ reason: 'status_unavailable', actions: ['check_status'] });
+  expect((await getDoc(transfer.control())).data().state).toBe('import');
+});

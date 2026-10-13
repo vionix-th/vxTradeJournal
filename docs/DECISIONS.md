@@ -1,5 +1,9 @@
 # Development decisions
 
+## 2026-10-13 — Separate transfer feedback from journal availability
+
+Retain snapshot leases and fenced import recovery, but classify read-only availability separately from pending activity and the last request result. Share additive diagnostics across website, import status and doctor; omit internal owner tokens. Use one feedback controller for export/import/recovery, existing pending-operation navigation guards, explicit status/retry actions and inspect-derived recovery controls. Preserve original errors when inspection or cleanup fails and disclose export preparation without claiming download completion. This addresses opaque messaging and duplicate requests; production export failure remains unconfirmed. No production repair, rules/schema change or deployment is included. Automated tests remain deferred at the user’s instruction.
+
 ## 2026-10-13 — Integrate sidebar toggle into the workspace bar
 
 Refine [viewport-owned shell](#2026-10-13--let-the-application-shell-own-viewport-height): place collapse/expand before the workspace breadcrumb in the existing main header. Remove the standalone sidebar control row to reclaim vertical space and keep publisher identity first. Retain the 44px target, local preference and mobile exclusion; use main-header theme tokens. The workspace bar continues scrolling with main content.
