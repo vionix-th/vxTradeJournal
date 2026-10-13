@@ -1,5 +1,11 @@
 # Development decisions
 
+## 2026-10-14 — Prepare journal workspace release 0.7.0
+
+Release viewport-owned navigation, transfer feedback/recovery, live journal filters, account archiving/deletion and lifecycle-date comparison as `0.7.0`, a minor increment for new capabilities during `0.x` development. Include the verification-layer redesign and sidebar breakpoint fixes. Persistence impact is compatible operational metadata additions and changed ownership/deletion rules; schema `2`, calculation `1` and portable source format remain unchanged, with no record conversion or index change required. CLI adds explicit archive/deletion and chronology controls while retaining default list/JSON contracts; installed skills require replacement and locked dependency installation.
+
+Run the complete release gate and hosted build against the clean release commit. Publish matching website, rules and skill through guarded deployment, retaining its ten-minute rules propagation maintenance barrier. Tag the tested commit with immutable annotated `v0.7.0`; production publication requires existing privileged Application Default Credentials. Native Safari/iPad, real email delivery and actual screen-reader behavior retain their documented verification limits.
+
 
 ## 2026-10-14 — Assign test contracts to their owning layer
 
