@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { setup } from './fixtures.js';
+import { test, expect, setup } from './fixtures.js';
 async function eligible(page) {
   await page.evaluate(() => {
     localStorage.setItem('vxTradeJournal.support-reminders', JSON.stringify({ version: 1,
@@ -18,12 +17,13 @@ for (const width of [320, 390, 768, 1440]) {
     await eligible(page);
     const card = page.getByRole('status', { name: 'Support reminder' });
     await expect(card).toBeVisible();
-    await page.waitForTimeout(6500);
+    await page.clock.install();
+    await page.clock.runFor(6500);
     await expect(card).toBeVisible();
     expect(requests).toBe(0);
     const url = page.url();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await page.screenshot({ path: `/tmp/trade-reminder-${width}.png` });
+    await page.screenshot({ path: test.info().outputPath(`/tmp/trade-reminder-${width}.png`.split("/").pop()) });
     await card.getByRole('button', { name: 'Support', exact: true }).click();
     await expect(card).toHaveCount(0);
     await page.getByRole('dialog', { name: 'Support vxTradeJournal' }).getByRole('button', { name: 'Close', exact: true }).click();

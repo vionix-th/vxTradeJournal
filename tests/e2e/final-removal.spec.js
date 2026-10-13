@@ -1,8 +1,7 @@
-import { test, expect } from "@playwright/test";
-import { setup } from "./fixtures.js";
+import { test, expect, setup } from "./fixtures.js";
 import { openTradeDraft } from "./audit-editor-fixtures.js";
 
-for (const width of [375, 800, 1280]) test(`persisted leg removal prerequisites remain usable at ${width}px`, async ({ page, request }) => {
+for (const width of [800]) test(`persisted leg removal prerequisites remain usable at ${width}px`, async ({ page, request }) => {
   await page.setViewportSize({ width, height: 900 });
   await setup(page, request);
   await openTradeDraft(page);
@@ -24,7 +23,7 @@ for (const width of [375, 800, 1280]) test(`persisted leg removal prerequisites 
   await second.getByLabel("Quantity", { exact: true }).fill("1");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   await page.evaluate(() => window.scrollTo(0, 0));
-  await page.screenshot({ path: `test-results/final-removal-${width}.png`, fullPage: true });
+  await page.screenshot({ path: test.info().outputPath(`test-results/final-removal-${width}.png`.split("/").pop()), fullPage: true });
   await second.getByRole("button", { name: "Remove leg", exact: true }).click();
   await expect(first.getByRole("button", { name: "Remove leg", exact: true })).toHaveAccessibleDescription(/one leg/);
   await page.getByLabel("Correction reason", { exact: true }).fill("Remove unused saved leg");

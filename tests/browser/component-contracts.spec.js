@@ -1,8 +1,6 @@
-import { test, expect } from "@playwright/test";
-
+import { test, expect } from './fixtures.js';
 async function componentFixture(page) {
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
   await page.evaluate(async () => {
     const { el, button, decimalField, checkbox, details } = await import("/src/ui/components.js");
     const budget = decimalField("Risk budget", "budget", "125.50", {
@@ -34,7 +32,17 @@ async function componentFixture(page) {
   });
 }
 
-for (const width of [375, 800, 1280]) {
+for (const width of [320, 838, 1440]) test(`field labels, errors and actions remain usable at ${width}px`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 700 }); await componentFixture(page);
+  await page.getByRole('button', { name: 'Show error', exact: true }).click();
+  await expect(page.getByLabel('Risk budget', { exact: true })).toHaveAccessibleDescription(/Risk budget must be positive/);
+  for (const control of [page.getByLabel('Risk budget', { exact: true }), page.getByRole('button', { name: 'Clear error', exact: true })]) {
+    await expect(control).toBeVisible(); expect((await control.boundingBox()).height).toBeGreaterThanOrEqual(44);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+for (const width of [800]) {
   test(`field and disclosure contracts at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await componentFixture(page);

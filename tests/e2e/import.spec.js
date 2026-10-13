@@ -1,6 +1,5 @@
-import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
-import { setup } from './fixtures.js';
+import { test, expect, setup } from './fixtures.js';
 import { connectAdmin } from '../../scripts/database/admin.js';
 
 async function settings(page) {
@@ -25,7 +24,7 @@ for (const width of [375, 800, 1280]) test(`replacement preview, backup and inte
   await expect(page.getByRole('heading', { name: 'Import preview', exact: true })).toBeVisible();
   await expect(page.getByText(/1 document deletions/)).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-  await page.screenshot({ path: `test-results/import-preview-${width}.png`, fullPage: true });
+  await page.screenshot({ path: test.info().outputPath(`test-results/import-preview-${width}.png`.split("/").pop()), fullPage: true });
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'Apply import', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Journal', exact: true })).toBeVisible();
@@ -53,7 +52,7 @@ for (const width of [375, 800, 1280]) test(`replacement preview, backup and inte
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Journal operation incomplete', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Import recovery', exact: true })).toBeVisible();
-  await page.screenshot({ path: `test-results/import-recovery-${width}.png`, fullPage: true });
+  await page.screenshot({ path: test.info().outputPath(`test-results/import-recovery-${width}.png`.split("/").pop()), fullPage: true });
   await page.getByRole('button', { name: 'Resume import', exact: true }).focus(); await page.keyboard.press('Enter');
   await expect(page.getByRole('heading', { name: 'Journal', exact: true })).toBeVisible();
 });

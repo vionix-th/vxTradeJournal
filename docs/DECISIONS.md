@@ -1,5 +1,20 @@
 # Development decisions
 
+
+## 2026-10-14 — Assign test contracts to their owning layer
+
+Preserve independently specified domain arithmetic, actual persistence/security and CLI contracts while separating browser component/layout checks from complete application journeys. Mount production presentation modules in a test-only harness that rejects emulator requests. Ordinary application fixtures create verified, individually owned synthetic users and normalized records through guarded auto-profile administration; dedicated authentication cases retain the actual UI flow. Record original declaration destinations before reducing repeated width-independent work.
+
+Run isolated browser cases with four workers and emulator-backed cases sequentially with zero retries. Execute global maintenance checks after ordinary browser cases regardless of their outcome, preserving combined failure status. Replace real sleeps with controlled clocks and use per-test artifact paths. This is test execution policy; it does not establish the cause of earlier multiworker permission denials or change production ownership behavior.
+
+Collect separate unit/in-process integration V8 coverage, including uncovered source. Evaluate gaps against contracts; CLI subprocesses, DOM behavior and native devices retain separate evidence. No blanket coverage percentage gate or production test switches are introduced. Bound verification to affected checks, one complete gate and one focused rerun per failure signature; recurring emulator denials remain unresolved rather than launching further infrastructure experiments. See [test responsibilities](TESTING.md).
+
+## 2026-10-13 — Verify the accumulated journal changes before pushing
+
+Execute the previously deferred unit, emulator, CLI and browser coverage after authorization. Align fixtures with active-account editing, configured timezone, native select interaction and current cleanup diagnostics; add explicit expired-export fencing, stale-feedback and expanded-sidebar contracts. Browser regressions confirmed the inherited intermediate-width rule narrowed the expanded sidebar to 212px, hiding the focused toggle lost keyboard focus, and layout-triggered scroll events erased the saved offset before the new scroll owner took over. Remove the width override, retain the pre-layout focus owner for navigation restoration with prevented scrolling, and ignore scroll capture until layout and tracked mode agree, extending [viewport-owned shell](#2026-10-13--let-the-application-shell-own-viewport-height).
+
+Use focused failures and reruns first, then one complete accumulated-batch checkpoint because account rules, fenced recovery, shared reporting and navigation span the verification suites. Synthetic auto-profile emulators keep development and production records outside test scope. Record executed results and native-device limits separately from the permanent acceptance mapping; deployment and release preparation remain separate work.
+
 ## 2026-10-13 — Compare trades by opening and closing chronology
 
 Supersede activity-first website history with Opened/newest by default and permanent sorting controls, while retaining CLI's existing activity default. Share a read-only timeline and date-basis matching; preserve unfilled creation fallback and label it Created/Not entered. Current position status determines whether final exit/settlement supplies closing time; descriptive edits and adjustments cannot substitute for execution chronology. Keep these dates out of persisted financial projections, export and calculation contracts, avoiding a migration or duplicate replay.

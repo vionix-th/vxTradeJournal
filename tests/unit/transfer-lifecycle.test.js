@@ -6,7 +6,7 @@ it('retries rejected operations as errors without reopening their journal', asyn
   transfer.upload = vi.fn(async () => ({ status: 'rejected', rejectionCode: 'IMPORT_PREVIEW_CHANGED', conflicts: [] }));
   transfer.cleanup = vi.fn(async () => {});
   await expect(transfer.apply({}, { operationId: 'rejected' })).rejects.toMatchObject({ code: 'IMPORT_PREVIEW_CHANGED' });
-  expect(transfer.cleanup).toHaveBeenCalledWith('rejected', false);
+  expect(transfer.cleanup).toHaveBeenCalledWith('rejected', false, undefined);
 });
 
 it('classifies transfer failures from durable checkpoints and keeps uncertainty explicit', async () => {

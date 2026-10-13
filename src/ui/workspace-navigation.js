@@ -38,8 +38,7 @@ export function workspaceNavigation(go, desktop, session, reload) {
   const projectActions = projectInformation({ beforeOpen: close, getOpener: (control) => desktop ? control : more });
   const actions = [...projectActions.children];
   nav.append(settings, more, menu);
-  function setDesktop(value) {
-    const focused = document.activeElement;
+  function setDesktop(value, focused = document.activeElement) {
     const actionFocused = focused === settings || focused === reload || actions.includes(focused) || session.contains(focused);
     close();
     desktop = value;
@@ -57,8 +56,8 @@ export function workspaceNavigation(go, desktop, session, reload) {
       menu.append(session);
       menu.insertBefore(reload, menuActions);
     }
-    if (actionFocused) (desktop ? focused : more).focus();
-    else if (desktop && focused === more) settings.focus();
+    if (actionFocused) (desktop ? focused : more).focus({ preventScroll: true });
+    else if (desktop && focused === more) settings.focus({ preventScroll: true });
   }
   setDesktop(desktop);
   return { nav, projectActions, sessionSlot, more, setDesktop };

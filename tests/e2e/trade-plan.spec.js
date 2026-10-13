@@ -1,5 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { setup } from "./fixtures.js";
+import { test, expect, setup } from "./fixtures.js";
 async function instrument(page, name, unit, currency = "USD", preset = "equity") {
   await page.getByRole("button", { name: "Instruments", exact: true }).click();
   await page.getByRole("button", { name: "New instrument", exact: true }).click();
@@ -58,7 +57,7 @@ for (const width of [1280, 996, 375]) {
     await page.getByRole("button", { name: "Save instrument", exact: true }).click();
     await expect(leg(page).getByLabel("Entry price", { exact: true })).toHaveValue("10");
     await expect(leg(page).getByLabel("Risk budget", { exact: true })).toBeVisible();
-    await page.screenshot({ path: `test-results/trade-plan-${width}.png`, fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(`test-results/trade-plan-${width}.png`.split("/").pop()), fullPage: true });
     await page.getByRole("button", { name: "Save trade", exact: true }).click();
     await page.getByRole("button", { name: "Edit trade", exact: true }).click();
     await expect(leg(page).getByLabel("Entry price", { exact: true })).toBeVisible();
@@ -125,5 +124,5 @@ test("units follow currency pairs, manual models and historical snapshots", asyn
   await openSizing(leg(page));
   await expect(leg(page).getByLabel("Conversion rate", { exact: true })).toHaveAccessibleDescription("1 EUR = rate USD");
   await page.evaluate(() => window.scrollTo(0, 0));
-  await page.screenshot({ path: "test-results/trade-plan-dark.png", fullPage: true });
+  await page.screenshot({ path: test.info().outputPath("test-results/trade-plan-dark.png".split("/").pop()), fullPage: true });
 });

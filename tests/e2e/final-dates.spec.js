@@ -1,5 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { setup } from "./fixtures.js";
+import { test, expect, setup } from "./fixtures.js";
 import { savedTrade } from "./audit-editor-fixtures.js";
 
 test("unfilled trade appears in its creation-day journal filter", async ({ page, request }) => {

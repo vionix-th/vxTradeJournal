@@ -1,7 +1,8 @@
 import { readyDatabase } from "../helpers/database.js";
 import { readFileSync } from "node:fs";
 import { beforeAll, afterAll, beforeEach, describe, it, expect } from "vitest";
-import { initializeTestEnvironment } from "@firebase/rules-unit-testing";
+import { initializeTestEnvironment, assertFails } from "@firebase/rules-unit-testing";
+import { doc, getDoc } from 'firebase/firestore';
 import { Repository } from "../../src/persistence/repository.js";
 import { createTrade, calculateTrade } from "../../src/domain/journal.js";
 import { filterJournal, exportJournal } from "../../src/application/journal.js";
@@ -27,6 +28,20 @@ beforeEach(async () => {
     "alice",
     () => true,
   );
+});
+it('admits concurrent independent owner writes and still denies foreign journal reads', async () => {
+  const actors = Array.from({ length: 8 }, () => crypto.randomUUID());
+  const repositories = actors.map((uid) => new Repository(env.authenticatedContext(uid, { email_verified: true }).firestore(), uid));
+  await Promise.all(repositories.map(async (owned) => {
+    await owned.saveEntity('accounts', { id: 'a', name: 'Independent account', currency: 'USD' });
+    await owned.saveEntity('instruments', { id: 'i', name: 'Independent share', symbol: 'OWN', market: 'Equities', preset: 'equity', model: 'linear',
+      quantityUnit: 'shares', quantityIncrement: '1', priceIncrement: '0.01', pointValue: '1', currency: 'USD' });
+  }));
+  for (const [index, owned] of repositories.entries()) {
+    expect(await owned.list('accounts')).toMatchObject([{ id: 'a', uid: actors[index], name: 'Independent account', currency: 'USD', revision: 1 }]);
+    expect(await owned.list('instruments')).toMatchObject([{ id: 'i', uid: actors[index], symbol: 'OWN', revision: 1 }]);
+    await assertFails(getDoc(doc(owned.db, 'users', actors[(index + 1) % actors.length], 'accounts', 'a')));
+  }
 });
 async function fixtures() {
   const account = await repo.saveEntity("accounts", {

@@ -60,6 +60,8 @@ try {
   const manifest = JSON.parse(await readFile(join(installed, "package.json")));
   assert.ok(!String(await readFile(executable, "utf8")).includes("firebase-admin"), "Bundled CLI must remain user-scoped");
   assert.deepEqual(Object.keys(manifest.dependencies).sort(), ["decimal.js", "firebase"]);
-  await command(process.execPath, [join(root, "scripts/test.js"), "cli"], { env: { ...process.env, VXJ_CLI_EXECUTABLE: executable } });
+  // Installed CLI processes need behavioral acceptance, not coverage of the
+  // repository-side fixture setup. Preserve the owning integration report.
+  await command(process.execPath, [join(root, "scripts/test.js"), "cli"], { env: { ...process.env, VXJ_CLI_EXECUTABLE: executable, VXJ_COVERAGE: '0' } });
   console.log("Portable skill ZIP extraction, contracts, fresh dependency install, references and emulator workflows passed.");
 } finally { await rm(temporary, { recursive: true, force: true }); }

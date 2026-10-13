@@ -1,5 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { setup } from "./fixtures.js";
+import { test, expect, setup } from "./fixtures.js";
 import { openTradeDraft, savedTrade } from "./audit-editor-fixtures.js";
 
 for (const existing of [false, true]) test(`accepted Cancel reconstructs ${existing ? "existing" : "new"} trade on Back`, async ({ page, request }) => {

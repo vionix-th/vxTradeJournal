@@ -1,0 +1,61 @@
+import { test, expect, setup } from './fixtures.js';
+async function journal(page,_request,count=1){await setup(page);await page.evaluate(count=>window.harness.mountWorkspace(window.harness.journalData(count)),count);}
+const countBadge=page=>page.getByRole('region',{name:'Trades',exact:true}).locator('.count-badge');
+test('tag suggestions use all journal tags and keyboard selection preserves exact values', async ({ page, request }) => {
+  await journal(page, request, 25);
+  const tag = page.getByRole('combobox', { name: 'Filter tag', exact: true });
+  await tag.focus();
+  const list = page.getByRole('listbox', { name: 'Tag suggestions', exact: true });
+  await expect(list.getByRole('option')).toHaveText(['blue', 'red']);
+  await tag.fill('BL');
+  await expect(list.getByRole('option')).toHaveText(['blue']);
+  await tag.press('ArrowDown');
+  const active = await tag.getAttribute('aria-activedescendant');
+  await expect(page.locator(`[id="${active}"]`)).toHaveText('blue');
+  await tag.press('Enter');
+  await expect(tag).toHaveValue('blue');
+  await expect(tag).toBeFocused();
+  await expect(tag).toHaveAttribute('aria-expanded', 'false');
+  await expect(countBadge(page)).toHaveText('12');
+  await page.getByLabel('Filter status', { exact: true }).selectOption('closed');
+  await expect(countBadge(page)).toHaveText('0');
+  await tag.fill('');
+  await expect(list.getByRole('option')).toHaveText(['blue', 'red']);
+  await tag.press('Escape');
+  await expect(tag).toHaveAttribute('aria-expanded', 'false');
+  await expect(tag).toBeFocused();
+  await tag.click();
+  await expect(list).toBeVisible();
+  await page.getByLabel('Filter account', { exact: true }).focus();
+  await expect(tag).toHaveAttribute('aria-expanded', 'false');
+});
+
+test('long tag suggestion list stays inside viewport and scrolls to virtual focus', async ({ page }) => {
+  await page.setViewportSize({ width: 838, height: 924 });
+  await page.goto('/');
+  await page.evaluate(async () => {
+    const { field } = await import('/src/ui/components.js');
+    const { tagAutocomplete } = await import('/src/ui/tag-autocomplete.js');
+    const tag = field('Test tag', 'test-tag', '');
+    tag.node.style.cssText = 'position:fixed;left:200px;bottom:16px;width:180px;';
+    document.body.append(tag.node);
+    window.syntheticTag = tagAutocomplete(tag, [{ tags: Array.from({ length: 30 }, (_, index) => `Tag ${String(index).padStart(2, '0')} ${'long-unbroken-label'.repeat(6)}`) }], () => {});
+    tag.control.focus();
+  });
+  const tag = page.getByRole('combobox', { name: 'Test tag', exact: true });
+  const menu = page.locator('.tag-suggestions:popover-open');
+  const bounds = await menu.boundingBox();
+  expect(bounds.x).toBeGreaterThanOrEqual(0); expect(bounds.y).toBeGreaterThanOrEqual(0);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(838);
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(924);
+  await expect(menu.getByRole('option')).toHaveCount(30);
+  await tag.fill('not-present');
+  await expect(page.getByText('No matching tags', { exact: true })).toBeVisible();
+  await tag.fill('');
+  for (let index = 0; index < 30; index++) await tag.press('ArrowDown');
+  const row = page.locator(`[id="${await tag.getAttribute('aria-activedescendant')}"]`);
+  const rowBounds = await row.boundingBox(), menuBounds = await menu.boundingBox();
+  expect(rowBounds.y).toBeGreaterThanOrEqual(menuBounds.y);
+  expect(rowBounds.y + rowBounds.height).toBeLessThanOrEqual(menuBounds.y + menuBounds.height);
+  await page.screenshot({ path: test.info().outputPath('test-results/journal-tag-long-suggestions.png'.split("/").pop()) });
+});

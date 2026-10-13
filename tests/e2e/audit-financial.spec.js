@@ -1,5 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { setup } from "./fixtures.js";
+import { test, expect, setup } from "./fixtures.js";
 import { openTradeDraft } from "./audit-editor-fixtures.js";
 
 test("short partial covers reproduce the PRD gross result and reload", async ({ page, request }) => {
@@ -73,7 +72,7 @@ test("snapshot currency correction clears obsolete result and planning conversio
     await leg.locator("summary").filter({ hasText: /^Position sizing$/ }).click();
   await expect(leg.getByLabel("Conversion rate", { exact: true })).toHaveValue("");
   await expect(leg.getByRole("status")).toContainText("conversion rate");
-  await page.screenshot({ path: "test-results/audit-fx-correction.png", fullPage: true });
+  await page.screenshot({ path: test.info().outputPath("test-results/audit-fx-correction.png".split("/").pop()), fullPage: true });
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
   await page.getByRole("button", { name: "Instruments", exact: true }).click();
   await page.getByRole("button", { name: "Edit instrument", exact: true }).click();

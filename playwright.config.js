@@ -1,17 +1,17 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  testDir: './tests/e2e',
+  testDir: './tests',
   fullyParallel: true,
-  // One Firestore emulator serves all browser workers. Bound concurrent rule
-  // evaluation and auth setup rather than deriving load from host core count.
   workers: 4,
   projects: [
-    { name: 'journal', testIgnore: '**/database-availability.spec.js' },
-    { name: 'database', testMatch: '**/database-availability.spec.js', dependencies: ['journal'], fullyParallel: false },
+    { name: 'browser', testMatch: '**/browser/*.spec.js' },
+    { name: 'journal', testMatch: '**/e2e/*.spec.js', testIgnore: '**/database-availability.spec.js', workers: 1, fullyParallel: false },
+    { name: 'database', testMatch: '**/e2e/database-availability.spec.js', workers: 1, fullyParallel: false },
   ],
   forbidOnly: Boolean(process.env.CI),
-  retries: process.env.CI ? 2 : 0,
+  retries: 0,
+  outputDir: `test-results/${process.env.VXJ_BROWSER_PHASE || 'browser'}`,
   reporter: 'list',
   use: { baseURL: 'http://127.0.0.1:5175', trace: 'retain-on-failure', ...devices['Desktop Chrome'] },
   webServer: {

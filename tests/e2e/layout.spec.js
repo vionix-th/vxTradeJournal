@@ -1,6 +1,5 @@
-import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-import { setup } from "./fixtures.js";
+import { test, expect, setup } from "./fixtures.js";
 
 for (const width of [320, 910, 1280]) {
   test(`settings journal data actions at ${width}px`, async ({ page, request }) => {
@@ -46,7 +45,7 @@ for (const width of [320, 910, 1280]) {
     }
     expect(Math.abs(importLayout.bounds.right - layout.group.right)).toBeLessThanOrEqual(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-    await page.screenshot({ path: `test-results/settings-journal-data-${width}.png`, fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(`test-results/settings-journal-data-${width}.png`.split("/").pop()), fullPage: true });
 
     await saveButton.focus();
     await page.keyboard.press("Tab");
@@ -104,12 +103,12 @@ for (const width of [1280, 375]) {
     expect(searchGap, "search help and cards have intentional separation").toBeGreaterThanOrEqual(16);
     const widthCheck = await page.evaluate(() => ({ width: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth }));
     expect(widthCheck.scroll).toBeLessThanOrEqual(widthCheck.width);
-    await page.screenshot({ path: `test-results/catalogue-aligned-${width}.png`, fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(`test-results/catalogue-aligned-${width}.png`.split("/").pop()), fullPage: true });
     await page.getByRole("button", { name: "Strategies", exact: true }).click();
     await page.getByRole("button", { name: "New strategy", exact: true }).click();
     await page.getByLabel("Strategy name", { exact: true }).fill("Breakout");
     await page.getByRole("button", { name: "Save strategy", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Breakout", exact: true })).toBeVisible();
-    await page.screenshot({ path: `test-results/strategy-aligned-${width}.png`, fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(`test-results/strategy-aligned-${width}.png`.split("/").pop()), fullPage: true });
   });
 }

@@ -1,5 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { setup } from "./fixtures.js";
+import { test, expect, setup } from "./fixtures.js";
 import { connectAdmin } from "../../scripts/database/admin.js";
 import { metadata } from "../../scripts/database/schema.js";
 // Global database state requires this project to run after ordinary browser coverage.
@@ -17,7 +16,7 @@ for (const width of [375, 800, 1280]) test(`maintenance preserves editor draft a
     await expect(page.getByRole("alert")).toContainText("database maintenance");
     await expect(page.getByLabel("Account name", { exact: true })).toHaveValue("Retained draft");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-    await page.screenshot({ path: `test-results/database-draft-${width}.png`, fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(`test-results/database-draft-${width}.png`.split("/").pop()), fullPage: true });
     await admin.db.doc("_system/database").set(metadata());
     await page.getByRole("button", { name: "Save account", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Accounts", exact: true })).toBeVisible();
@@ -26,7 +25,7 @@ for (const width of [375, 800, 1280]) test(`maintenance preserves editor draft a
     await page.reload();
     await expect(page.getByRole("heading", { name: "Journal unavailable" })).toBeVisible();
     await expect(page.getByRole("alert")).toContainText("database maintenance");
-    await page.screenshot({ path: `test-results/database-unavailable-${width}.png`, fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(`test-results/database-unavailable-${width}.png`.split("/").pop()), fullPage: true });
     await admin.db.doc("_system/database").set(metadata(3));
     await page.getByRole("button", { name: "Retry loading", exact: true }).click();
     await expect(page.getByRole("alert")).toContainText("schemas differ");

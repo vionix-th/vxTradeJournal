@@ -1,0 +1,5557 @@
+[
+  {
+    "path": "tests/unit/account-lifecycle.test.js",
+    "line": 6,
+    "contract": "'excludes archived history while leaving source data intact'",
+    "layer": "unit",
+    "replacements": [
+      "'excludes archived history while leaving source data intact'"
+    ],
+    "targets": [
+      "tests/unit/account-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/account-lifecycle.test.js",
+    "line": 21,
+    "contract": "'removes precisely account and linked history; clears its default'",
+    "layer": "unit",
+    "replacements": [
+      "'removes precisely account and linked history; clears its default'"
+    ],
+    "targets": [
+      "tests/unit/account-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/account-lifecycle.test.js",
+    "line": 30,
+    "contract": "'requires archived state and exact revision before planning deletion'",
+    "layer": "unit",
+    "replacements": [
+      "'requires archived state and exact revision before planning deletion'"
+    ],
+    "targets": [
+      "tests/unit/account-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/application.test.js",
+    "line": 30,
+    "contract": "\"rejects off-increment plans during preparation without changing the draft\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects off-increment plans during preparation without changing the draft\""
+    ],
+    "targets": [
+      "tests/unit/application.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/application.test.js",
+    "line": 37,
+    "contract": "\"prepares a detached persistence projection and full calculation together\"",
+    "layer": "unit",
+    "replacements": [
+      "\"prepares a detached persistence projection and full calculation together\""
+    ],
+    "targets": [
+      "tests/unit/application.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/application.test.js",
+    "line": 57,
+    "contract": "\"filters each dimension then paginates by newest activity\"",
+    "layer": "unit",
+    "replacements": [
+      "\"filters each dimension then paginates by newest activity\""
+    ],
+    "targets": [
+      "tests/unit/application.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/application.test.js",
+    "line": 85,
+    "contract": "\"aggregates only one account and identifies incomplete results\"",
+    "layer": "unit",
+    "replacements": [
+      "\"aggregates only one account and identifies incomplete results\""
+    ],
+    "targets": [
+      "tests/unit/application.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/application.test.js",
+    "line": 109,
+    "contract": "\"exports reconstructible source records without auth secrets\"",
+    "layer": "unit",
+    "replacements": [
+      "\"exports reconstructible source records without auth secrets\""
+    ],
+    "targets": [
+      "tests/unit/application.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/application.test.js",
+    "line": 130,
+    "contract": "\"requires account and instrument ownership before new trade, snapshots active definitions\"",
+    "layer": "unit",
+    "replacements": [
+      "\"requires account and instrument ownership before new trade, snapshots active definitions\""
+    ],
+    "targets": [
+      "tests/unit/application.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/application.test.js",
+    "line": 160,
+    "contract": "\"rejects existing leg instrument replacement but permits snapshot correction\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects existing leg instrument replacement but permits snapshot correction\""
+    ],
+    "targets": [
+      "tests/unit/application.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/application.test.js",
+    "line": 176,
+    "contract": "\"stores current strategy definition when newly linked and rejects silent snapshot changes\"",
+    "layer": "unit",
+    "replacements": [
+      "\"stores current strategy definition when newly linked and rejects silent snapshot changes\""
+    ],
+    "targets": [
+      "tests/unit/application.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/application.test.js",
+    "line": 211,
+    "contract": "\"keeps execution history out of persisted summary cache\"",
+    "layer": "unit",
+    "replacements": [
+      "\"keeps execution history out of persisted summary cache\""
+    ],
+    "targets": [
+      "tests/unit/application.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/application.test.js",
+    "line": 240,
+    "contract": "\"filters by local opening day across UTC midnight\"",
+    "layer": "unit",
+    "replacements": [
+      "\"filters by local opening day across UTC midnight\""
+    ],
+    "targets": [
+      "tests/unit/application.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/auto-target.test.js",
+    "line": 4,
+    "contract": "'restricts fixture administration to explicit automated endpoints and project'",
+    "layer": "unit",
+    "replacements": [
+      "'restricts fixture administration to explicit automated endpoints and project'"
+    ],
+    "targets": [
+      "tests/unit/auto-target.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/cli-auth.test.js",
+    "line": 7,
+    "contract": "\"restores sessions whose refresh metadata uses a project number\"",
+    "layer": "unit",
+    "replacements": [
+      "\"restores sessions whose refresh metadata uses a project number\""
+    ],
+    "targets": [
+      "tests/unit/cli-auth.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/cli-auth.test.js",
+    "line": 16,
+    "contract": "\"rejects changed user identities before persisting any token\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects changed user identities before persisting any token\""
+    ],
+    "targets": [
+      "tests/unit/cli-auth.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/cli-auth.test.js",
+    "line": 23,
+    "contract": "\"redacts authentication service errors and invalid refresh tokens\"",
+    "layer": "unit",
+    "replacements": [
+      "\"redacts authentication service errors and invalid refresh tokens\""
+    ],
+    "targets": [
+      "tests/unit/cli-auth.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/cli-contract.test.js",
+    "line": 4,
+    "contract": "'accepts explicit journal chronology and rejects unsupported values'",
+    "layer": "unit",
+    "replacements": [
+      "'accepts explicit journal chronology and rejects unsupported values'"
+    ],
+    "targets": [
+      "tests/unit/cli-contract.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/cli-contract.test.js",
+    "line": 11,
+    "contract": "\"rejects new trade payloads above atomic six-leg capacity\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects new trade payloads above atomic six-leg capacity\""
+    ],
+    "targets": [
+      "tests/unit/cli-contract.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/cli-contract.test.js",
+    "line": 16,
+    "contract": "\"requires explicit environments and rejects unexpected options\"",
+    "layer": "unit",
+    "replacements": [
+      "\"requires explicit environments and rejects unexpected options\""
+    ],
+    "targets": [
+      "tests/unit/cli-contract.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/cli-contract.test.js",
+    "line": 22,
+    "contract": "\"requires revisions, durable operation ids and explicit deletion intent\"",
+    "layer": "unit",
+    "replacements": [
+      "\"requires revisions, durable operation ids and explicit deletion intent\""
+    ],
+    "targets": [
+      "tests/unit/cli-contract.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/cli-contract.test.js",
+    "line": 30,
+    "contract": "\"validates decimal strings, nested planning and caller-owned fields\"",
+    "layer": "unit",
+    "replacements": [
+      "\"validates decimal strings, nested planning and caller-owned fields\""
+    ],
+    "targets": [
+      "tests/unit/cli-contract.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/cli-contract.test.js",
+    "line": 38,
+    "contract": "\"provides machine-readable contracts for every dispatched workflow\"",
+    "layer": "unit",
+    "replacements": [
+      "\"provides machine-readable contracts for every dispatched workflow\""
+    ],
+    "targets": [
+      "tests/unit/cli-contract.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/conversion-state.test.js",
+    "line": 4,
+    "contract": "\"retains only an unchanged foreign pair and makes matching currencies automatic\"",
+    "layer": "unit",
+    "replacements": [
+      "\"retains only an unchanged foreign pair and makes matching currencies automatic\""
+    ],
+    "targets": [
+      "tests/unit/conversion-state.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/corrections.test.js",
+    "line": 9,
+    "contract": "'ignores new records, metadata and key order; tracks saved fields and deletion without mutation'",
+    "layer": "unit",
+    "replacements": [
+      "'ignores new records, metadata and key order; tracks saved fields and deletion without mutation'"
+    ],
+    "targets": [
+      "tests/unit/corrections.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/corrections.test.js",
+    "line": 31,
+    "contract": "'requires bounded nonblank reasons and exposes safe structured errors'",
+    "layer": "unit",
+    "replacements": [
+      "'requires bounded nonblank reasons and exposes safe structured errors'"
+    ],
+    "targets": [
+      "tests/unit/corrections.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/corrections.test.js",
+    "line": 38,
+    "contract": "'groups and paginates operations; validates owner and exact identity'",
+    "layer": "unit",
+    "replacements": [
+      "'groups and paginates operations; validates owner and exact identity'"
+    ],
+    "targets": [
+      "tests/unit/corrections.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/corrections.test.js",
+    "line": 54,
+    "contract": "'replays 32 seeded histories against independent arithmetic and stable tie ordering'",
+    "layer": "unit",
+    "replacements": [
+      "'replays 32 seeded histories against independent arithmetic and stable tie ordering'"
+    ],
+    "targets": [
+      "tests/unit/corrections.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/database-evolution.test.js",
+    "line": 11,
+    "contract": "'rejects schema deployment while any user import remains active without writes'",
+    "layer": "unit",
+    "replacements": [
+      "'rejects schema deployment while any user import remains active without writes'"
+    ],
+    "targets": [
+      "tests/unit/database-evolution.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/database-evolution.test.js",
+    "line": 17,
+    "contract": "\"uses adjacent schema steps independent of application versions\"",
+    "layer": "unit",
+    "replacements": [
+      "\"uses adjacent schema steps independent of application versions\""
+    ],
+    "targets": [
+      "tests/unit/database-evolution.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/database-evolution.test.js",
+    "line": 26,
+    "contract": "\"fails closed on missing, unsupported, maintenance and mismatched schemas\"",
+    "layer": "unit",
+    "replacements": [
+      "\"fails closed on missing, unsupported, maintenance and mismatched schemas\""
+    ],
+    "targets": [
+      "tests/unit/database-evolution.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/database-evolution.test.js",
+    "line": 32,
+    "contract": "\"pins production and rejects emulator overrides or foreign demo endpoints\"",
+    "layer": "unit",
+    "replacements": [
+      "\"pins production and rejects emulator overrides or foreign demo endpoints\""
+    ],
+    "targets": [
+      "tests/unit/database-evolution.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/database-evolution.test.js",
+    "line": 38,
+    "contract": "\"preflight never writes and requires explicit baseline\"",
+    "layer": "unit",
+    "replacements": [
+      "\"preflight never writes and requires explicit baseline\""
+    ],
+    "targets": [
+      "tests/unit/database-evolution.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/database-evolution.test.js",
+    "line": 45,
+    "contract": "\"fences expired owners and requires explicit matching resume\"",
+    "layer": "unit",
+    "replacements": [
+      "\"fences expired owners and requires explicit matching resume\""
+    ],
+    "targets": [
+      "tests/unit/database-evolution.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/database-evolution.test.js",
+    "line": 57,
+    "contract": "\"checkpoint and conversion commit together; interrupted chain resumes\"",
+    "layer": "unit",
+    "replacements": [
+      "\"checkpoint and conversion commit together; interrupted chain resumes\""
+    ],
+    "targets": [
+      "tests/unit/database-evolution.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/database-evolution.test.js",
+    "line": 78,
+    "contract": "\"Hosting failure keeps maintenance and verified publication precedes reopening\"",
+    "layer": "unit",
+    "replacements": [
+      "\"Hosting failure keeps maintenance and verified publication precedes reopening\""
+    ],
+    "targets": [
+      "tests/unit/database-evolution.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/database-evolution.test.js",
+    "line": 93,
+    "contract": "\"snapshot failure prevents migration and Hosting publication, preserving maintenance\"",
+    "layer": "unit",
+    "replacements": [
+      "\"snapshot failure prevents migration and Hosting publication, preserving maintenance\""
+    ],
+    "targets": [
+      "tests/unit/database-evolution.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/database-evolution.test.js",
+    "line": 103,
+    "contract": "\"interrupted bootstrap retains backup obligation and uncertain rules require republication\"",
+    "layer": "unit",
+    "replacements": [
+      "\"interrupted bootstrap retains backup obligation and uncertain rules require republication\""
+    ],
+    "targets": [
+      "tests/unit/database-evolution.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/database-evolution.test.js",
+    "line": 116,
+    "contract": "\"compares resume identity by values rather than Firestore map key order\"",
+    "layer": "unit",
+    "replacements": [
+      "\"compares resume identity by values rather than Firestore map key order\""
+    ],
+    "targets": [
+      "tests/unit/database-evolution.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/database-evolution.test.js",
+    "line": 124,
+    "contract": "\"rejects privileged migration writes that move journal records to another owner\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects privileged migration writes that move journal records to another owner\""
+    ],
+    "targets": [
+      "tests/unit/database-evolution.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/database-evolution.test.js",
+    "line": 133,
+    "contract": "\"resumes mixed-version records after a mid-step chunk interruption\"",
+    "layer": "unit",
+    "replacements": [
+      "\"resumes mixed-version records after a mid-step chunk interruption\""
+    ],
+    "targets": [
+      "tests/unit/database-evolution.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/database-evolution.test.js",
+    "line": 154,
+    "contract": "'registers preserving schema 1 to 2 correction-history transition'",
+    "layer": "unit",
+    "replacements": [
+      "'registers preserving schema 1 to 2 correction-history transition'"
+    ],
+    "targets": [
+      "tests/unit/database-evolution.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/database-snapshot.test.js",
+    "line": 10,
+    "contract": "\"round trips lossless values and rejects unsupported or unsafe values\"",
+    "layer": "unit",
+    "replacements": [
+      "\"round trips lossless values and rejects unsupported or unsafe values\""
+    ],
+    "targets": [
+      "tests/unit/database-snapshot.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/database-snapshot.test.js",
+    "line": 16,
+    "contract": "\"snapshots missing-parent descendants and restores exact journal contents\"",
+    "layer": "unit",
+    "replacements": [
+      "\"snapshots missing-parent descendants and restores exact journal contents\""
+    ],
+    "targets": [
+      "tests/unit/database-snapshot.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/database-snapshot.test.js",
+    "line": 38,
+    "contract": "\"rejects malformed typed values even when envelope hash could be recomputed\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects malformed typed values even when envelope hash could be recomputed\""
+    ],
+    "targets": [
+      "tests/unit/database-snapshot.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/database-snapshot.test.js",
+    "line": 42,
+    "contract": "\"repeats interrupted restoration without reopening partial data\"",
+    "layer": "unit",
+    "replacements": [
+      "\"repeats interrupted restoration without reopening partial data\""
+    ],
+    "targets": [
+      "tests/unit/database-snapshot.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/dev-startup.test.js",
+    "line": 76,
+    "contract": "\"automatically prepares retained development data without an operator command\"",
+    "layer": "unit",
+    "replacements": [
+      "\"automatically prepares retained development data without an operator command\""
+    ],
+    "targets": [
+      "tests/unit/dev-startup.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/dev-startup.test.js",
+    "line": 92,
+    "contract": "\"preserves initialization failure exit status after graceful Firebase shutdown\"",
+    "layer": "unit",
+    "replacements": [
+      "\"preserves initialization failure exit status after graceful Firebase shutdown\""
+    ],
+    "targets": [
+      "tests/unit/dev-startup.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/dev-startup.test.js",
+    "line": 99,
+    "contract": "\"keeps an initialized dev database running until operator interruption\"",
+    "layer": "unit",
+    "replacements": [
+      "\"keeps an initialized dev database running until operator interruption\""
+    ],
+    "targets": [
+      "tests/unit/dev-startup.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/dev-startup.test.js",
+    "line": 117,
+    "contract": "\"stops the automatic upgrade before asking Firebase to export retained state\"",
+    "layer": "unit",
+    "replacements": [
+      "\"stops the automatic upgrade before asking Firebase to export retained state\""
+    ],
+    "targets": [
+      "tests/unit/dev-startup.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/development-database.test.js",
+    "line": 17,
+    "contract": "\"automatically registers and upgrades retained schema-1 records after private backup without changing financial values\"",
+    "layer": "unit",
+    "replacements": [
+      "\"automatically registers and upgrades retained schema-1 records after private backup without changing financial values\""
+    ],
+    "targets": [
+      "tests/unit/development-database.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/development-database.test.js",
+    "line": 31,
+    "contract": "\"creates the required schema for a genuinely empty database and makes repeat startup a no-op\"",
+    "layer": "unit",
+    "replacements": [
+      "\"creates the required schema for a genuinely empty database and makes repeat startup a no-op\""
+    ],
+    "targets": [
+      "tests/unit/development-database.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/development-database.test.js",
+    "line": 43,
+    "contract": "\"automatically resumes the same interrupted adjacent chain and reuses its original recovery file\"",
+    "layer": "unit",
+    "replacements": [
+      "\"automatically resumes the same interrupted adjacent chain and reuses its original recovery file\""
+    ],
+    "targets": [
+      "tests/unit/development-database.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/development-database.test.js",
+    "line": 75,
+    "contract": "\"keeps failed legacy validation in maintenance with backup and unchanged journal records\"",
+    "layer": "unit",
+    "replacements": [
+      "\"keeps failed legacy validation in maintenance with backup and unchanged journal records\""
+    ],
+    "targets": [
+      "tests/unit/development-database.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/development-database.test.js",
+    "line": 85,
+    "contract": "\"rejects unknown schemas, missing paths and competing live runs without changing database state\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects unknown schemas, missing paths and competing live runs without changing database state\""
+    ],
+    "targets": [
+      "tests/unit/development-database.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/development-database.test.js",
+    "line": 97,
+    "contract": "\"never mutates data or creates recovery files during development dry run\"",
+    "layer": "unit",
+    "replacements": [
+      "\"never mutates data or creates recovery files during development dry run\""
+    ],
+    "targets": [
+      "tests/unit/development-database.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/development-database.test.js",
+    "line": 106,
+    "contract": "\"rejects production automatic upgrade and ambiguous legacy commands before database access\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects production automatic upgrade and ambiguous legacy commands before database access\""
+    ],
+    "targets": [
+      "tests/unit/development-database.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/development-database.test.js",
+    "line": 117,
+    "contract": "\"keeps an interrupted automatic upgrade guarded and resumes after the last verified step\"",
+    "layer": "unit",
+    "replacements": [
+      "\"keeps an interrupted automatic upgrade guarded and resumes after the last verified step\""
+    ],
+    "targets": [
+      "tests/unit/development-database.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/development-database.test.js",
+    "line": 135,
+    "contract": "\"does not overwrite an upgrade completed between preflight and lease acquisition\"",
+    "layer": "unit",
+    "replacements": [
+      "\"does not overwrite an upgrade completed between preflight and lease acquisition\""
+    ],
+    "targets": [
+      "tests/unit/development-database.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 60,
+    "contract": "\"reproduces scaled entry fixture independently\"",
+    "layer": "unit",
+    "replacements": [
+      "\"reproduces scaled entry fixture independently\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 89,
+    "contract": "\"uses short direction\"",
+    "layer": "unit",
+    "replacements": [
+      "\"uses short direction\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 98,
+    "contract": "\"preserves fees, signed adjustments, separate historical conversion rates\"",
+    "layer": "unit",
+    "replacements": [
+      "\"preserves fees, signed adjustments, separate historical conversion rates\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 130,
+    "contract": "\"keeps missing manual result unknown and charges fees once\"",
+    "layer": "unit",
+    "replacements": [
+      "\"keeps missing manual result unknown and charges fees once\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 150,
+    "contract": "\"marks missing FX incomplete instead of zero, preserves native amount\"",
+    "layer": "unit",
+    "replacements": [
+      "\"marks missing FX incomplete instead of zero, preserves native amount\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 165,
+    "contract": "\"closes multi-leg only after every leg closes and supports settlement\"",
+    "layer": "unit",
+    "replacements": [
+      "\"closes multi-leg only after every leg closes and supports settlement\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 184,
+    "contract": "\"rejects correction causing later excess exit, allows reopening valid correction\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects correction causing later excess exit, allows reopening valid correction\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 196,
+    "contract": "\"accepts signed linear prices, preserves decimal exactness and resets closed basis\"",
+    "layer": "unit",
+    "replacements": [
+      "\"accepts signed linear prices, preserves decimal exactness and resets closed basis\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 211,
+    "contract": "\"rejects invalid record types, increments, rates and timestamps\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects invalid record types, increments, rates and timestamps\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 229,
+    "contract": "\"retains caller leg IDs and detaches planning from input\"",
+    "layer": "unit",
+    "replacements": [
+      "\"retains caller leg IDs and detaches planning from input\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 244,
+    "contract": "\"keeps deterministic fallback IDs when caller IDs are absent\"",
+    "layer": "unit",
+    "replacements": [
+      "\"keeps deterministic fallback IDs when caller IDs are absent\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 259,
+    "contract": "\"rejects exits beyond earlier entry quantity\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects exits beyond earlier entry quantity\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 265,
+    "contract": "\"rejects malformed adjustment records\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects malformed adjustment records\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 271,
+    "contract": "\"keeps valid source records unchanged\"",
+    "layer": "unit",
+    "replacements": [
+      "\"keeps valid source records unchanged\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 281,
+    "contract": "\"rejects an off-increment plan without changing source records\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects an off-increment plan without changing source records\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 288,
+    "contract": "\"accepts fractional quantities matching the configured increment\"",
+    "layer": "unit",
+    "replacements": [
+      "\"accepts fractional quantities matching the configured increment\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 303,
+    "contract": "\"sizes five contracts and floors fractional increments\"",
+    "layer": "unit",
+    "replacements": [
+      "\"sizes five contracts and floors fractional increments\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 324,
+    "contract": "\"uses conversion direction and adverse stop\"",
+    "layer": "unit",
+    "replacements": [
+      "\"uses conversion direction and adverse stop\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 335,
+    "contract": "\"disables manual sizing, separates current stop risk\"",
+    "layer": "unit",
+    "replacements": [
+      "\"disables manual sizing, separates current stop risk\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 349,
+    "contract": "\"validates instrument readiness and snapshots remain independent\"",
+    "layer": "unit",
+    "replacements": [
+      "\"validates instrument readiness and snapshots remain independent\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 381,
+    "contract": "\"validates ownership-independent trade references and settings\"",
+    "layer": "unit",
+    "replacements": [
+      "\"validates ownership-independent trade references and settings\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 410,
+    "contract": "\"requires positive explicitly supplied same-currency rates\"",
+    "layer": "unit",
+    "replacements": [
+      "\"requires positive explicitly supplied same-currency rates\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 416,
+    "contract": "\"rejects impossible dates and snapshot identity mismatch\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects impossible dates and snapshot identity mismatch\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 426,
+    "contract": "\"limits order references and requires safe integer sequence\"",
+    "layer": "unit",
+    "replacements": [
+      "\"limits order references and requires safe integer sequence\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/editor-lifecycle.test.js",
+    "line": 31,
+    "contract": "\"allows confirmed recovery sign-out to check dirty state without bypassing operation locks\"",
+    "layer": "unit",
+    "replacements": [
+      "\"allows confirmed recovery sign-out to check dirty state without bypassing operation locks\""
+    ],
+    "targets": [
+      "tests/unit/editor-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/editor-lifecycle.test.js",
+    "line": 42,
+    "contract": "\"discards session aliases and descendants while preserving independent sessions\"",
+    "layer": "unit",
+    "replacements": [
+      "\"discards session aliases and descendants while preserving independent sessions\""
+    ],
+    "targets": [
+      "tests/unit/editor-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/editor-lifecycle.test.js",
+    "line": 58,
+    "contract": "\"discards clean new sessions on ordinary departure but not rejected departures\"",
+    "layer": "unit",
+    "replacements": [
+      "\"discards clean new sessions on ordinary departure but not rejected departures\""
+    ],
+    "targets": [
+      "tests/unit/editor-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/editor-lifecycle.test.js",
+    "line": 74,
+    "contract": "\"top-level Cancel and accepted browser departure reconstruct discarded editors\"",
+    "layer": "unit",
+    "replacements": [
+      "\"top-level Cancel and accepted browser departure reconstruct discarded editors\""
+    ],
+    "targets": [
+      "tests/unit/editor-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/editor-lifecycle.test.js",
+    "line": 91,
+    "contract": "\"child Back preserves its parent's draft and callbacks\"",
+    "layer": "unit",
+    "replacements": [
+      "\"child Back preserves its parent's draft and callbacks\""
+    ],
+    "targets": [
+      "tests/unit/editor-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/editor-lifecycle.test.js",
+    "line": 106,
+    "contract": "\"reconstructs existing trade editors from current data and handles deleted records\"",
+    "layer": "unit",
+    "replacements": [
+      "\"reconstructs existing trade editors from current data and handles deleted records\""
+    ],
+    "targets": [
+      "tests/unit/editor-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/editor-lifecycle.test.js",
+    "line": 115,
+    "contract": "\"uses actual route renderers and resolves current catalogue records\"",
+    "layer": "unit",
+    "replacements": [
+      "\"uses actual route renderers and resolves current catalogue records\""
+    ],
+    "targets": [
+      "tests/unit/editor-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/editor-lifecycle.test.js",
+    "line": 124,
+    "contract": "\"completes and retires matching trade sessions without retiring unrelated drafts\"",
+    "layer": "unit",
+    "replacements": [
+      "\"completes and retires matching trade sessions without retiring unrelated drafts\""
+    ],
+    "targets": [
+      "tests/unit/editor-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/editor-lifecycle.test.js",
+    "line": 140,
+    "contract": "\"retires only the completed unsaved catalogue editor when identities are absent\"",
+    "layer": "unit",
+    "replacements": [
+      "\"retires only the completed unsaved catalogue editor when identities are absent\""
+    ],
+    "targets": [
+      "tests/unit/editor-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/editor-lifecycle.test.js",
+    "line": 150,
+    "contract": "\"returns from nested editors through the retained session and retires descendants on save\"",
+    "layer": "unit",
+    "replacements": [
+      "\"returns from nested editors through the retained session and retires descendants on save\""
+    ],
+    "targets": [
+      "tests/unit/editor-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/editor-lifecycle.test.js",
+    "line": 169,
+    "contract": "\"cancels dirty editors through policy with one confirmation and reopens snapshot context\"",
+    "layer": "unit",
+    "replacements": [
+      "\"cancels dirty editors through policy with one confirmation and reopens snapshot context\""
+    ],
+    "targets": [
+      "tests/unit/editor-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/editor-lifecycle.test.js",
+    "line": 177,
+    "contract": "\"retains composite arguments through the lifecycle contract and selects refresh destinations\"",
+    "layer": "unit",
+    "replacements": [
+      "\"retains composite arguments through the lifecycle contract and selects refresh destinations\""
+    ],
+    "targets": [
+      "tests/unit/editor-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/firebase-config.test.js",
+    "line": 6,
+    "contract": "\"uses hosted credentials without emulator endpoints for production\"",
+    "layer": "unit",
+    "replacements": [
+      "\"uses hosted credentials without emulator endpoints for production\""
+    ],
+    "targets": [
+      "tests/unit/firebase-config.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/firebase-config.test.js",
+    "line": 9,
+    "contract": "\"keeps each local profile on an isolated demo project\"",
+    "layer": "unit",
+    "replacements": [
+      "\"keeps each local profile on an isolated demo project\""
+    ],
+    "targets": [
+      "tests/unit/firebase-config.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/firebase-config.test.js",
+    "line": 19,
+    "contract": "\"rejects unknown profiles and incomplete or wrong production targets\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects unknown profiles and incomplete or wrong production targets\""
+    ],
+    "targets": [
+      "tests/unit/firebase-config.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/history-reconciliation.test.js",
+    "line": 32,
+    "contract": "\"returns to the native origin without rewriting a foreign entry or rendering\"",
+    "layer": "unit",
+    "replacements": [
+      "\"returns to the native origin without rewriting a foreign entry or rendering\""
+    ],
+    "targets": [
+      "tests/unit/history-reconciliation.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/history-reconciliation.test.js",
+    "line": 57,
+    "contract": "\"rebases an unindexed classic entry with a fresh ledger and keeps the live parent draft\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rebases an unindexed classic entry with a fresh ledger and keeps the live parent draft\""
+    ],
+    "targets": [
+      "tests/unit/history-reconciliation.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/history-reconciliation.test.js",
+    "line": 79,
+    "contract": "\"handles native recovery rejection once and unlocks the retained editor\"",
+    "layer": "unit",
+    "replacements": [
+      "\"handles native recovery rejection once and unlocks the retained editor\""
+    ],
+    "targets": [
+      "tests/unit/history-reconciliation.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/history-reconciliation.test.js",
+    "line": 95,
+    "contract": "\"ignores late recovery rejection after an authentication reset\"",
+    "layer": "unit",
+    "replacements": [
+      "\"ignores late recovery rejection after an authentication reset\""
+    ],
+    "targets": [
+      "tests/unit/history-reconciliation.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/history-reconciliation.test.js",
+    "line": 112,
+    "contract": "\"does not trust history indexes from another authentication session\"",
+    "layer": "unit",
+    "replacements": [
+      "\"does not trust history indexes from another authentication session\""
+    ],
+    "targets": [
+      "tests/unit/history-reconciliation.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/history-reconciliation.test.js",
+    "line": 126,
+    "contract": "\"uses a nonzero classic delta only for entries in the current ledger\"",
+    "layer": "unit",
+    "replacements": [
+      "\"uses a nonzero classic delta only for entries in the current ledger\""
+    ],
+    "targets": [
+      "tests/unit/history-reconciliation.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/history-reconciliation.test.js",
+    "line": 146,
+    "contract": "\"rebases on a synchronous native recovery failure\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rebases on a synchronous native recovery failure\""
+    ],
+    "targets": [
+      "tests/unit/history-reconciliation.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/history-reconciliation.test.js",
+    "line": 157,
+    "contract": "\"repairs an unknown URL on the same physical slot without traversing\"",
+    "layer": "unit",
+    "replacements": [
+      "\"repairs an unknown URL on the same physical slot without traversing\""
+    ],
+    "targets": [
+      "tests/unit/history-reconciliation.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/history-reconciliation.test.js",
+    "line": 169,
+    "contract": "\"corrects the landing slot after two queued classic Back traversals\"",
+    "layer": "unit",
+    "replacements": [
+      "\"corrects the landing slot after two queued classic Back traversals\""
+    ],
+    "targets": [
+      "tests/unit/history-reconciliation.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/history-reconciliation.test.js",
+    "line": 195,
+    "contract": "\"bounds stalled classic recovery without releasing a pending save or rendering\"",
+    "layer": "unit",
+    "replacements": [
+      "\"bounds stalled classic recovery without releasing a pending save or rendering\""
+    ],
+    "targets": [
+      "tests/unit/history-reconciliation.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/instrument-ordering.test.js",
+    "line": 5,
+    "contract": "\"orders by newest linked trade activity with name as deterministic tie breaker\"",
+    "layer": "unit",
+    "replacements": [
+      "\"orders by newest linked trade activity with name as deterministic tie breaker\""
+    ],
+    "targets": [
+      "tests/unit/instrument-ordering.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-cli-reporting.test.js",
+    "line": 19,
+    "contract": "'keeps default activity ordering and parent-only payload without history reads'",
+    "layer": "unit",
+    "replacements": [
+      "'keeps default activity ordering and parent-only payload without history reads'"
+    ],
+    "targets": [
+      "tests/unit/journal-cli-reporting.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-cli-reporting.test.js",
+    "line": 26,
+    "contract": "'hydrates before closing sort and pagination while retaining exact summary shape'",
+    "layer": "unit",
+    "replacements": [
+      "'hydrates before closing sort and pagination while retaining exact summary shape'"
+    ],
+    "targets": [
+      "tests/unit/journal-cli-reporting.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-cli-reporting.test.js",
+    "line": 34,
+    "contract": "'hydrates closing date filters and shares inclusive timezone matching'",
+    "layer": "unit",
+    "replacements": [
+      "'hydrates closing date filters and shares inclusive timezone matching'"
+    ],
+    "targets": [
+      "tests/unit/journal-cli-reporting.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-cli-reporting.test.js",
+    "line": 40,
+    "contract": "'propagates revision-read failures instead of assuming an absent close date'",
+    "layer": "unit",
+    "replacements": [
+      "'propagates revision-read failures instead of assuming an absent close date'"
+    ],
+    "targets": [
+      "tests/unit/journal-cli-reporting.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-filter-session.test.js",
+    "line": 12,
+    "contract": "'debounces text without changing applied results during typing'",
+    "layer": "unit",
+    "replacements": [
+      "'debounces text without changing applied results during typing'"
+    ],
+    "targets": [
+      "tests/unit/journal-filter-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-filter-session.test.js",
+    "line": 21,
+    "contract": "'flushes current search and tag on a selector change and cancels the delayed callback'",
+    "layer": "unit",
+    "replacements": [
+      "'flushes current search and tag on a selector change and cancels the delayed callback'"
+    ],
+    "targets": [
+      "tests/unit/journal-filter-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-filter-session.test.js",
+    "line": 28,
+    "contract": "'applies explicit submission and native search clearing immediately'",
+    "layer": "unit",
+    "replacements": [
+      "'applies explicit submission and native search clearing immediately'"
+    ],
+    "targets": [
+      "tests/unit/journal-filter-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-filter-session.test.js",
+    "line": 35,
+    "contract": "'preserves last valid date pair while unrelated filters update'",
+    "layer": "unit",
+    "replacements": [
+      "'preserves last valid date pair while unrelated filters update'"
+    ],
+    "targets": [
+      "tests/unit/journal-filter-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-filter-session.test.js",
+    "line": 45,
+    "contract": "'rejects incomplete native input and nonexistent calendar dates without treating them as cleared'",
+    "layer": "unit",
+    "replacements": [
+      "'rejects incomplete native input and nonexistent calendar dates without treating them as cleared'"
+    ],
+    "targets": [
+      "tests/unit/journal-filter-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-filter-session.test.js",
+    "line": 53,
+    "contract": "'clears date restrictions when both controls are cleared'",
+    "layer": "unit",
+    "replacements": [
+      "'clears date restrictions when both controls are cleared'"
+    ],
+    "targets": [
+      "tests/unit/journal-filter-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-filter-session.test.js",
+    "line": 59,
+    "contract": "'does not reset pagination for equivalent searches; tag matching remains exact'",
+    "layer": "unit",
+    "replacements": [
+      "'does not reset pagination for equivalent searches; tag matching remains exact'"
+    ],
+    "targets": [
+      "tests/unit/journal-filter-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-filter-session.test.js",
+    "line": 67,
+    "contract": "'Clear removes drafts, errors and pending work and explicitly resets pagination'",
+    "layer": "unit",
+    "replacements": [
+      "'Clear removes drafts, errors and pending work and explicitly resets pagination'"
+    ],
+    "targets": [
+      "tests/unit/journal-filter-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-filter-session.test.js",
+    "line": 75,
+    "contract": "'disposal prevents stale timer updates while preserving draft for a fresh mounted view'",
+    "layer": "unit",
+    "replacements": [
+      "'disposal prevents stale timer updates while preserving draft for a fresh mounted view'"
+    ],
+    "targets": [
+      "tests/unit/journal-filter-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-filter-session.test.js",
+    "line": 83,
+    "contract": "'does not apply unfinished IME composition'",
+    "layer": "unit",
+    "replacements": [
+      "'does not apply unfinished IME composition'"
+    ],
+    "targets": [
+      "tests/unit/journal-filter-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-filter-session.test.js",
+    "line": 89,
+    "contract": "'defaults to opening chronology and retains sort choices when filters clear'",
+    "layer": "unit",
+    "replacements": [
+      "'defaults to opening chronology and retains sort choices when filters clear'"
+    ],
+    "targets": [
+      "tests/unit/journal-filter-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-filter-session.test.js",
+    "line": 97,
+    "contract": "'flushes text on sort change and preserves page for an equivalent sort'",
+    "layer": "unit",
+    "replacements": [
+      "'flushes text on sort change and preserves page for an equivalent sort'"
+    ],
+    "targets": [
+      "tests/unit/journal-filter-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-filter-session.test.js",
+    "line": 104,
+    "contract": "'retains last valid basis and range while sorting and other filters continue applying'",
+    "layer": "unit",
+    "replacements": [
+      "'retains last valid basis and range while sorting and other filters continue applying'"
+    ],
+    "targets": [
+      "tests/unit/journal-filter-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-timeline.test.js",
+    "line": 17,
+    "contract": "'uses creation fallback for unfilled ideas without adding fields to source or calculation'",
+    "layer": "unit",
+    "replacements": [
+      "'uses creation fallback for unfilled ideas without adding fields to source or calculation'"
+    ],
+    "targets": [
+      "tests/unit/journal-timeline.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-timeline.test.js",
+    "line": 23,
+    "contract": "'reports first entry and final close; a partial close stays undated'",
+    "layer": "unit",
+    "replacements": [
+      "'reports first entry and final close; a partial close stays undated'"
+    ],
+    "targets": [
+      "tests/unit/journal-timeline.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-timeline.test.js",
+    "line": 28,
+    "contract": "'retains initial opening across reopening and exposes only the latest completed close'",
+    "layer": "unit",
+    "replacements": [
+      "'retains initial opening across reopening and exposes only the latest completed close'"
+    ],
+    "targets": [
+      "tests/unit/journal-timeline.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-timeline.test.js",
+    "line": 33,
+    "contract": "'takes final settlement across legs without replaying positions in the projection'",
+    "layer": "unit",
+    "replacements": [
+      "'takes final settlement across legs without replaying positions in the projection'"
+    ],
+    "targets": [
+      "tests/unit/journal-timeline.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-timeline.test.js",
+    "line": 39,
+    "contract": "'ignores later context edits and adjustments when determining closing time'",
+    "layer": "unit",
+    "replacements": [
+      "'ignores later context edits and adjustments when determining closing time'"
+    ],
+    "targets": [
+      "tests/unit/journal-timeline.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-timeline.test.js",
+    "line": 45,
+    "contract": "'matches inclusive closing days in the selected timezone and excludes open ideas'",
+    "layer": "unit",
+    "replacements": [
+      "'matches inclusive closing days in the selected timezone and excludes open ideas'"
+    ],
+    "targets": [
+      "tests/unit/journal-timeline.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-timeline.test.js",
+    "line": 56,
+    "contract": "'defaults to latest update while explicit opening sort compares chronology before pagination'",
+    "layer": "unit",
+    "replacements": [
+      "'defaults to latest update while explicit opening sort compares chronology before pagination'"
+    ],
+    "targets": [
+      "tests/unit/journal-timeline.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/operations.test.js",
+    "line": 10,
+    "contract": "\"enforces planned quantity increments on initial creation and leg edits\"",
+    "layer": "unit",
+    "replacements": [
+      "\"enforces planned quantity increments on initial creation and leg edits\""
+    ],
+    "targets": [
+      "tests/unit/operations.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/operations.test.js",
+    "line": 20,
+    "contract": "\"rejects a snapshot increment correction invalidating its existing plan atomically\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects a snapshot increment correction invalidating its existing plan atomically\""
+    ],
+    "targets": [
+      "tests/unit/operations.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/operations.test.js",
+    "line": 27,
+    "contract": "\"rejects invalid initial direction before returning a source trade\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects invalid initial direction before returning a source trade\""
+    ],
+    "targets": [
+      "tests/unit/operations.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/operations.test.js",
+    "line": 77,
+    "contract": "\"normalizes initial and added leg snapshots identically while preserving detached historical legs\"",
+    "layer": "unit",
+    "replacements": [
+      "\"normalizes initial and added leg snapshots identically while preserving detached historical legs\""
+    ],
+    "targets": [
+      "tests/unit/operations.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/operations.test.js",
+    "line": 112,
+    "contract": "\"keeps absent quotation metadata absent for both initial and added legs\"",
+    "layer": "unit",
+    "replacements": [
+      "\"keeps absent quotation metadata absent for both initial and added legs\""
+    ],
+    "targets": [
+      "tests/unit/operations.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/operations.test.js",
+    "line": 124,
+    "contract": "\"constructs immutable snapshots and preserves them when context changes\"",
+    "layer": "unit",
+    "replacements": [
+      "\"constructs immutable snapshots and preserves them when context changes\""
+    ],
+    "targets": [
+      "tests/unit/operations.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/operations.test.js",
+    "line": 134,
+    "contract": "\"shares execution defaults, UTC normalization and deterministic sequence\"",
+    "layer": "unit",
+    "replacements": [
+      "\"shares execution defaults, UTC normalization and deterministic sequence\""
+    ],
+    "targets": [
+      "tests/unit/operations.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/operations.test.js",
+    "line": 143,
+    "contract": "\"validates leg and record removal against subsequent history\"",
+    "layer": "unit",
+    "replacements": [
+      "\"validates leg and record removal against subsequent history\""
+    ],
+    "targets": [
+      "tests/unit/operations.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/operations.test.js",
+    "line": 151,
+    "contract": "\"corrects one snapshot without modifying the catalogue or the original trade\"",
+    "layer": "unit",
+    "replacements": [
+      "\"corrects one snapshot without modifying the catalogue or the original trade\""
+    ],
+    "targets": [
+      "tests/unit/operations.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/operations.test.js",
+    "line": 158,
+    "contract": "\"clears obsolete conversion rates when an editable currency pair changes\"",
+    "layer": "unit",
+    "replacements": [
+      "\"clears obsolete conversion rates when an editable currency pair changes\""
+    ],
+    "targets": [
+      "tests/unit/operations.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/operations.test.js",
+    "line": 168,
+    "contract": "\"invalidates only corrected leg result and sizing rates, preserving independent fees\"",
+    "layer": "unit",
+    "replacements": [
+      "\"invalidates only corrected leg result and sizing rates, preserving independent fees\""
+    ],
+    "targets": [
+      "tests/unit/operations.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/operations.test.js",
+    "line": 187,
+    "contract": "\"clears foreign-to-foreign rates and automatically converts only matching currencies\"",
+    "layer": "unit",
+    "replacements": [
+      "\"clears foreign-to-foreign rates and automatically converts only matching currencies\""
+    ],
+    "targets": [
+      "tests/unit/operations.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/overview.test.js",
+    "line": 8,
+    "contract": "'keeps selected-account results and identifies incomplete trades'",
+    "layer": "unit",
+    "replacements": [
+      "'keeps selected-account results and identifies incomplete trades'"
+    ],
+    "targets": [
+      "tests/unit/overview.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/overview.test.js",
+    "line": 14,
+    "contract": "'provides separate subtotals without adding different currencies'",
+    "layer": "unit",
+    "replacements": [
+      "'provides separate subtotals without adding different currencies'"
+    ],
+    "targets": [
+      "tests/unit/overview.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/overview.test.js",
+    "line": 20,
+    "contract": "'adds complete results across accounts sharing one reporting currency'",
+    "layer": "unit",
+    "replacements": [
+      "'adds complete results across accounts sharing one reporting currency'"
+    ],
+    "targets": [
+      "tests/unit/overview.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/overview.test.js",
+    "line": 26,
+    "contract": "'preserves single-account automatic scope'",
+    "layer": "unit",
+    "replacements": [
+      "'preserves single-account automatic scope'"
+    ],
+    "targets": [
+      "tests/unit/overview.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/overview.test.js",
+    "line": 29,
+    "contract": "'preserves signs without floating-point precision loss'",
+    "layer": "unit",
+    "replacements": [
+      "'preserves signs without floating-point precision loss'"
+    ],
+    "targets": [
+      "tests/unit/overview.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/overview.test.js",
+    "line": 35,
+    "contract": "'excludes archived profit, losses and incomplete records from every overview measure'",
+    "layer": "unit",
+    "replacements": [
+      "'excludes archived profit, losses and incomplete records from every overview measure'"
+    ],
+    "targets": [
+      "tests/unit/overview.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/overview.test.js",
+    "line": 44,
+    "contract": "'keeps USD and USDC distinct without implied conversion'",
+    "layer": "unit",
+    "replacements": [
+      "'keeps USD and USDC distinct without implied conversion'"
+    ],
+    "targets": [
+      "tests/unit/overview.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/overview.test.js",
+    "line": 51,
+    "contract": "'returns zero for empty currency groups and no monetary unit when no accounts exist'",
+    "layer": "unit",
+    "replacements": [
+      "'returns zero for empty currency groups and no monetary unit when no accounts exist'"
+    ],
+    "targets": [
+      "tests/unit/overview.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/overview.test.js",
+    "line": 56,
+    "contract": "'does not treat excluded incomplete results as known profit'",
+    "layer": "unit",
+    "replacements": [
+      "'does not treat excluded incomplete results as known profit'"
+    ],
+    "targets": [
+      "tests/unit/overview.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/overview.test.js",
+    "line": 59,
+    "contract": "'does not broaden unknown selected-account scope or silently drop orphan records'",
+    "layer": "unit",
+    "replacements": [
+      "'does not broaden unknown selected-account scope or silently drop orphan records'"
+    ],
+    "targets": [
+      "tests/unit/overview.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/planning-validation.test.js",
+    "line": 9,
+    "contract": "\"identifies offending supplied leg values with stable leg IDs\"",
+    "layer": "unit",
+    "replacements": [
+      "\"identifies offending supplied leg values with stable leg IDs\""
+    ],
+    "targets": [
+      "tests/unit/planning-validation.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/planning-validation.test.js",
+    "line": 16,
+    "contract": "\"identifies combined budget errors through standalone validation and complete replay\"",
+    "layer": "unit",
+    "replacements": [
+      "\"identifies combined budget errors through standalone validation and complete replay\""
+    ],
+    "targets": [
+      "tests/unit/planning-validation.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/planning.test.js",
+    "line": 6,
+    "contract": "\"opens only meaningful saved plans\"",
+    "layer": "unit",
+    "replacements": [
+      "\"opens only meaningful saved plans\""
+    ],
+    "targets": [
+      "tests/unit/planning.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/planning.test.js",
+    "line": 11,
+    "contract": "\"distinguishes incomplete inputs from supplied invalid values\"",
+    "layer": "unit",
+    "replacements": [
+      "\"distinguishes incomplete inputs from supplied invalid values\""
+    ],
+    "targets": [
+      "tests/unit/planning.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/planning.test.js",
+    "line": 18,
+    "contract": "\"keeps manual and multi-leg sizing manual\"",
+    "layer": "unit",
+    "replacements": [
+      "\"keeps manual and multi-leg sizing manual\""
+    ],
+    "targets": [
+      "tests/unit/planning.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/portable-import.test.js",
+    "line": 11,
+    "contract": "'seals exports and rejects corruption without altering source values'",
+    "layer": "unit",
+    "replacements": [
+      "'seals exports and rejects corruption without altering source values'"
+    ],
+    "targets": [
+      "tests/unit/portable-import.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/portable-import.test.js",
+    "line": 19,
+    "contract": "'explicitly accepts legacy export and rejects unknown versions and private snapshots'",
+    "layer": "unit",
+    "replacements": [
+      "'explicitly accepts legacy export and rejects unknown versions and private snapshots'"
+    ],
+    "targets": [
+      "tests/unit/portable-import.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/portable-import.test.js",
+    "line": 27,
+    "contract": "'rebinds ownership, skips identical records and rejects whole conflicting add'",
+    "layer": "unit",
+    "replacements": [
+      "'rebinds ownership, skips identical records and rejects whole conflicting add'"
+    ],
+    "targets": [
+      "tests/unit/portable-import.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/portable-import.test.js",
+    "line": 38,
+    "contract": "'replacement previews deletions and preserves preferences unless opted in'",
+    "layer": "unit",
+    "replacements": [
+      "'replacement previews deletions and preserves preferences unless opted in'"
+    ],
+    "targets": [
+      "tests/unit/portable-import.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/portable-import.test.js",
+    "line": 47,
+    "contract": "'rejects duplicate IDs, unknown fields and broken references'",
+    "layer": "unit",
+    "replacements": [
+      "'rejects duplicate IDs, unknown fields and broken references'"
+    ],
+    "targets": [
+      "tests/unit/portable-import.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/portable-import.test.js",
+    "line": 55,
+    "contract": "'rejects coercible boolean values before persistence and accepts reordered JSON'",
+    "layer": "unit",
+    "replacements": [
+      "'rejects coercible boolean values before persistence and accepts reordered JSON'"
+    ],
+    "targets": [
+      "tests/unit/portable-import.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/portable-import.test.js",
+    "line": 64,
+    "contract": "'converts schema-1 exports offline without losing source metadata or inventing history'",
+    "layer": "unit",
+    "replacements": [
+      "'converts schema-1 exports offline without losing source metadata or inventing history'"
+    ],
+    "targets": [
+      "tests/unit/portable-import.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/portable-import.test.js",
+    "line": 79,
+    "contract": "'verifies equivalent multi-leg projections after persistence changes child array order'",
+    "layer": "unit",
+    "replacements": [
+      "'verifies equivalent multi-leg projections after persistence changes child array order'"
+    ],
+    "targets": [
+      "tests/unit/portable-import.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/price-unit.test.js",
+    "line": 5,
+    "contract": "\"trims display metadata without changing calculation\"",
+    "layer": "unit",
+    "replacements": [
+      "\"trims display metadata without changing calculation\""
+    ],
+    "targets": [
+      "tests/unit/price-unit.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/price-unit.test.js",
+    "line": 14,
+    "contract": "\"preserves absent metadata and accepts empty units\"",
+    "layer": "unit",
+    "replacements": [
+      "\"preserves absent metadata and accepts empty units\""
+    ],
+    "targets": [
+      "tests/unit/price-unit.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/price-unit.test.js",
+    "line": 18,
+    "contract": "\"rejects oversized and non-text units\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects oversized and non-text units\""
+    ],
+    "targets": [
+      "tests/unit/price-unit.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/repository-read.test.js",
+    "line": 20,
+    "contract": "\"retries when children are read across a concurrent parent revision\"",
+    "layer": "unit",
+    "replacements": [
+      "\"retries when children are read across a concurrent parent revision\""
+    ],
+    "targets": [
+      "tests/unit/repository-read.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/repository-read.test.js",
+    "line": 40,
+    "contract": "\"returns absent when deletion commits during source read\"",
+    "layer": "unit",
+    "replacements": [
+      "\"returns absent when deletion commits during source read\""
+    ],
+    "targets": [
+      "tests/unit/repository-read.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/route-policy.test.js",
+    "line": 9,
+    "contract": "\"declares presentation and navigation for every registered route\"",
+    "layer": "unit",
+    "replacements": [
+      "\"declares presentation and navigation for every registered route\""
+    ],
+    "targets": [
+      "tests/unit/route-policy.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/route-policy.test.js",
+    "line": 25,
+    "contract": "\"refreshes ordinary views without changing their selected record\"",
+    "layer": "unit",
+    "replacements": [
+      "\"refreshes ordinary views without changing their selected record\""
+    ],
+    "targets": [
+      "tests/unit/route-policy.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/route-policy.test.js",
+    "line": 30,
+    "contract": "\"owns account and catalogue completion and cancellation destinations\"",
+    "layer": "unit",
+    "replacements": [
+      "\"owns account and catalogue completion and cancellation destinations\""
+    ],
+    "targets": [
+      "tests/unit/route-policy.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/route-policy.test.js",
+    "line": 40,
+    "contract": "\"discards new composite drafts on refresh and returns retained edits to their trade\"",
+    "layer": "unit",
+    "replacements": [
+      "\"discards new composite drafts on refresh and returns retained edits to their trade\""
+    ],
+    "targets": [
+      "tests/unit/route-policy.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/route-policy.test.js",
+    "line": 53,
+    "contract": "\"owns trade-child transitions and reopens cancelled snapshot context\"",
+    "layer": "unit",
+    "replacements": [
+      "\"owns trade-child transitions and reopens cancelled snapshot context\""
+    ],
+    "targets": [
+      "tests/unit/route-policy.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/route-policy.test.js",
+    "line": 64,
+    "contract": "\"owns settings destinations and identities used to retire completed editors\"",
+    "layer": "unit",
+    "replacements": [
+      "\"owns settings destinations and identities used to retire completed editors\""
+    ],
+    "targets": [
+      "tests/unit/route-policy.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/session-store.test.js",
+    "line": 9,
+    "contract": "\"keeps profile sessions isolated and writes only private atomic files\"",
+    "layer": "unit",
+    "replacements": [
+      "\"keeps profile sessions isolated and writes only private atomic files\""
+    ],
+    "targets": [
+      "tests/unit/session-store.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/session-store.test.js",
+    "line": 24,
+    "contract": "\"rejects unsafe root/file permissions and symlink destinations\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects unsafe root/file permissions and symlink destinations\""
+    ],
+    "targets": [
+      "tests/unit/session-store.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/session-store.test.js",
+    "line": 40,
+    "contract": "\"serializes overlapping refreshes and releases locks after failure\"",
+    "layer": "unit",
+    "replacements": [
+      "\"serializes overlapping refreshes and releases locks after failure\""
+    ],
+    "targets": [
+      "tests/unit/session-store.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/session-store.test.js",
+    "line": 56,
+    "contract": "\"rejects path traversal profiles and unexpected secret fields\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects path traversal profiles and unexpected secret fields\""
+    ],
+    "targets": [
+      "tests/unit/session-store.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/settings-defaults.test.js",
+    "line": 13,
+    "contract": "\"uses the same complete contract for direct reads and journal loads\"",
+    "layer": "unit",
+    "replacements": [
+      "\"uses the same complete contract for direct reads and journal loads\""
+    ],
+    "targets": [
+      "tests/unit/settings-defaults.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/skill-archive.test.js",
+    "line": 9,
+    "contract": "\"produces identical ZIP bytes for unchanged contents across build times\"",
+    "layer": "unit",
+    "replacements": [
+      "\"produces identical ZIP bytes for unchanged contents across build times\""
+    ],
+    "targets": [
+      "tests/unit/skill-archive.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/skill-archive.test.js",
+    "line": 28,
+    "contract": "\"contains the complete installable folder with original file contents\"",
+    "layer": "unit",
+    "replacements": [
+      "\"contains the complete installable folder with original file contents\""
+    ],
+    "targets": [
+      "tests/unit/skill-archive.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/skill-docs.test.js",
+    "line": 6,
+    "contract": "\"includes every command and its required options, including newly added commands\"",
+    "layer": "unit",
+    "replacements": [
+      "\"includes every command and its required options, including newly added commands\""
+    ],
+    "targets": [
+      "tests/unit/skill-docs.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/skill-docs.test.js",
+    "line": 17,
+    "contract": "\"replaces only the generated inventory and rejects missing boundaries\"",
+    "layer": "unit",
+    "replacements": [
+      "\"replaces only the generated inventory and rejects missing boundaries\""
+    ],
+    "targets": [
+      "tests/unit/skill-docs.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/skill-docs.test.js",
+    "line": 26,
+    "contract": "\"validates quoted discovery and multiline mutation examples with JSON input\"",
+    "layer": "unit",
+    "replacements": [
+      "\"validates quoted discovery and multiline mutation examples with JSON input\""
+    ],
+    "targets": [
+      "tests/unit/skill-docs.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/skill-docs.test.js",
+    "line": 40,
+    "contract": "\"rejects obsolete JSON fields in heredoc examples\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects obsolete JSON fields in heredoc examples\""
+    ],
+    "targets": [
+      "tests/unit/skill-docs.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/support-reminder-policy.test.js",
+    "line": 54,
+    "contract": "'requires all three first-reminder gates'",
+    "layer": "unit",
+    "replacements": [
+      "'requires all three first-reminder gates'"
+    ],
+    "targets": [
+      "tests/unit/support-reminder-policy.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/support-reminder-policy.test.js",
+    "line": 67,
+    "contract": "'counts activity during cooldown and honors the exact 28-day boundary'",
+    "layer": "unit",
+    "replacements": [
+      "'counts activity during cooldown and honors the exact 28-day boundary'"
+    ],
+    "targets": [
+      "tests/unit/support-reminder-policy.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/support-reminder-policy.test.js",
+    "line": 78,
+    "contract": "'resets usage for manual support and retains permanent opt-out'",
+    "layer": "unit",
+    "replacements": [
+      "'resets usage for manual support and retains permanent opt-out'"
+    ],
+    "targets": [
+      "tests/unit/support-reminder-policy.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/support-reminder-policy.test.js",
+    "line": 91,
+    "contract": "'serializes simultaneous tab claims and persists cooldown across reload'",
+    "layer": "unit",
+    "replacements": [
+      "'serializes simultaneous tab claims and persists cooldown across reload'"
+    ],
+    "targets": [
+      "tests/unit/support-reminder-policy.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/support-reminder-policy.test.js",
+    "line": 102,
+    "contract": "'does not invent usage after clock rollback'",
+    "layer": "unit",
+    "replacements": [
+      "'does not invent usage after clock rollback'"
+    ],
+    "targets": [
+      "tests/unit/support-reminder-policy.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/support-reminder-policy.test.js",
+    "line": 119,
+    "contract": "'fails closed on unavailable storage or coordination'",
+    "layer": "unit",
+    "replacements": [
+      "'fails closed on unavailable storage or coordination'"
+    ],
+    "targets": [
+      "tests/unit/support-reminder-policy.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/tag-autocomplete.test.js",
+    "line": 5,
+    "contract": "'collects all records, deduplicates exact values and preserves distinct case'",
+    "layer": "unit",
+    "replacements": [
+      "'collects all records, deduplicates exact values and preserves distinct case'"
+    ],
+    "targets": [
+      "tests/unit/tag-autocomplete.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/tag-autocomplete.test.js",
+    "line": 8,
+    "contract": "'matches substring case-insensitively without rewriting selected values'",
+    "layer": "unit",
+    "replacements": [
+      "'matches substring case-insensitively without rewriting selected values'"
+    ],
+    "targets": [
+      "tests/unit/tag-autocomplete.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/tag-autocomplete.test.js",
+    "line": 14,
+    "contract": "'distinguishes empty catalogue and unmatched text, showing all tags for blank query'",
+    "layer": "unit",
+    "replacements": [
+      "'distinguishes empty catalogue and unmatched text, showing all tags for blank query'"
+    ],
+    "targets": [
+      "tests/unit/tag-autocomplete.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/test-runner.test.js",
+    "line": 86,
+    "contract": "\"allows CLI name filters and executes only the CLI integration file\"",
+    "layer": "unit",
+    "replacements": [
+      "\"allows CLI name filters and executes only the CLI integration file\""
+    ],
+    "targets": [
+      "tests/unit/test-runner.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/test-runner.test.js",
+    "line": 92,
+    "contract": "\"runs focused unit verification without services\"",
+    "layer": "unit",
+    "replacements": [
+      "\"runs focused unit verification without services\""
+    ],
+    "targets": [
+      "tests/unit/test-runner.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/test-runner.test.js",
+    "line": 112,
+    "contract": "\"runs unit tests before starting services in the complete run\"",
+    "layer": "unit",
+    "replacements": [
+      "\"runs unit tests before starting services in the complete run\""
+    ],
+    "targets": [
+      "tests/unit/test-runner.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/test-runner.test.js",
+    "line": 118,
+    "contract": "\"preserves unit failures without starting services\"",
+    "layer": "unit",
+    "replacements": [
+      "\"preserves unit failures without starting services\""
+    ],
+    "targets": [
+      "tests/unit/test-runner.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/test-runner.test.js",
+    "line": 141,
+    "contract": "\"stops services when a test executable cannot start\"",
+    "layer": "unit",
+    "replacements": [
+      "\"stops services when a test executable cannot start\""
+    ],
+    "targets": [
+      "tests/unit/test-runner.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/test-runner.test.js",
+    "line": 150,
+    "contract": "\"stops the active test and emulator on interruption\"",
+    "layer": "unit",
+    "replacements": [
+      "\"stops the active test and emulator on interruption\""
+    ],
+    "targets": [
+      "tests/unit/test-runner.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/trade-capacity.test.js",
+    "line": 11,
+    "contract": "\"accepts six new legs and rejects expansion before persistence\"",
+    "layer": "unit",
+    "replacements": [
+      "\"accepts six new legs and rejects expansion before persistence\""
+    ],
+    "targets": [
+      "tests/unit/trade-capacity.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/trade-capacity.test.js",
+    "line": 20,
+    "contract": "\"retains calculation and context edits for earlier larger records without allowing expansion\"",
+    "layer": "unit",
+    "replacements": [
+      "\"retains calculation and context edits for earlier larger records without allowing expansion\""
+    ],
+    "targets": [
+      "tests/unit/trade-capacity.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/trade-editor-session.test.js",
+    "line": 25,
+    "contract": "\"enforces removable-leg prerequisites for persisted and oversized records\"",
+    "layer": "unit",
+    "replacements": [
+      "\"enforces removable-leg prerequisites for persisted and oversized records\""
+    ],
+    "targets": [
+      "tests/unit/trade-editor-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/trade-editor-session.test.js",
+    "line": 42,
+    "contract": "\"refreshes only unsaved leg snapshots and keeps preview and save consistent\"",
+    "layer": "unit",
+    "replacements": [
+      "\"refreshes only unsaved leg snapshots and keeps preview and save consistent\""
+    ],
+    "targets": [
+      "tests/unit/trade-editor-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/trade-editor-session.test.js",
+    "line": 61,
+    "contract": "\"reconciles refreshed draft currencies without losing raw planning or historical snapshots\"",
+    "layer": "unit",
+    "replacements": [
+      "\"reconciles refreshed draft currencies without losing raw planning or historical snapshots\""
+    ],
+    "targets": [
+      "tests/unit/trade-editor-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/trade-editor-session.test.js",
+    "line": 80,
+    "contract": "\"retains raw invalid values, trade identity and save identity through editable transitions\"",
+    "layer": "unit",
+    "replacements": [
+      "\"retains raw invalid values, trade identity and save identity through editable transitions\""
+    ],
+    "targets": [
+      "tests/unit/trade-editor-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/trade-editor-session.test.js",
+    "line": 98,
+    "contract": "\"detaches historical data and keeps its base and snapshots immutable\"",
+    "layer": "unit",
+    "replacements": [
+      "\"detaches historical data and keeps its base and snapshots immutable\""
+    ],
+    "targets": [
+      "tests/unit/trade-editor-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/trade-editor-session.test.js",
+    "line": 116,
+    "contract": "\"owns account and instrument currency-pair transitions\"",
+    "layer": "unit",
+    "replacements": [
+      "\"owns account and instrument currency-pair transitions\""
+    ],
+    "targets": [
+      "tests/unit/trade-editor-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/trade-editor-session.test.js",
+    "line": 133,
+    "contract": "\"preserves leg identities and disclosure state while adding and removing legs\"",
+    "layer": "unit",
+    "replacements": [
+      "\"preserves leg identities and disclosure state while adding and removing legs\""
+    ],
+    "targets": [
+      "tests/unit/trade-editor-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/trade-editor-session.test.js",
+    "line": 147,
+    "contract": "\"preserves absent retained planning keys and emits null when a present value is cleared\"",
+    "layer": "unit",
+    "replacements": [
+      "\"preserves absent retained planning keys and emits null when a present value is cleared\""
+    ],
+    "targets": [
+      "tests/unit/trade-editor-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/trade-editor-session.test.js",
+    "line": 158,
+    "contract": "\"retains larger historical trades without permitting new leg expansion\"",
+    "layer": "unit",
+    "replacements": [
+      "\"retains larger historical trades without permitting new leg expansion\""
+    ],
+    "targets": [
+      "tests/unit/trade-editor-session.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/transfer-lifecycle.test.js",
+    "line": 4,
+    "contract": "'retries rejected operations as errors without reopening their journal'",
+    "layer": "unit",
+    "replacements": [
+      "'retries rejected operations as errors without reopening their journal'"
+    ],
+    "targets": [
+      "tests/unit/transfer-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/transfer-lifecycle.test.js",
+    "line": 12,
+    "contract": "'classifies transfer failures from durable checkpoints and keeps uncertainty explicit'",
+    "layer": "unit",
+    "replacements": [
+      "'classifies transfer failures from durable checkpoints and keeps uncertainty explicit'"
+    ],
+    "targets": [
+      "tests/unit/transfer-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/transfer-lifecycle.test.js",
+    "line": 22,
+    "contract": "'preserves original transfer failure and reports failed status inspection separately'",
+    "layer": "unit",
+    "replacements": [
+      "'preserves original transfer failure and reports failed status inspection separately'"
+    ],
+    "targets": [
+      "tests/unit/transfer-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/transfer-lifecycle.test.js",
+    "line": 31,
+    "contract": "'adds inspection without masking cleanup failure or changing request error code'",
+    "layer": "unit",
+    "replacements": [
+      "'adds inspection without masking cleanup failure or changing request error code'"
+    ],
+    "targets": [
+      "tests/unit/transfer-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/transfer-lifecycle.test.js",
+    "line": 40,
+    "contract": "'export preserves collection failure while reporting failed fenced cleanup'",
+    "layer": "unit",
+    "replacements": [
+      "'export preserves collection failure while reporting failed fenced cleanup'"
+    ],
+    "targets": [
+      "tests/unit/transfer-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/transfer-lifecycle.test.js",
+    "line": 54,
+    "contract": "'a rejected export claim never attempts to release another transfer ownership'",
+    "layer": "unit",
+    "replacements": [
+      "'a rejected export claim never attempts to release another transfer ownership'"
+    ],
+    "targets": [
+      "tests/unit/transfer-lifecycle.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/transfer-status.test.js",
+    "line": 8,
+    "contract": "'identifies deletion recovery and completed cleanup without exposing ownership'",
+    "layer": "unit",
+    "replacements": [
+      "'identifies deletion recovery and completed cleanup without exposing ownership'"
+    ],
+    "targets": [
+      "tests/unit/transfer-status.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/transfer-status.test.js",
+    "line": 17,
+    "contract": "'recognizes pristine and explicitly ready journals without recovery actions'",
+    "layer": "unit",
+    "replacements": [
+      "'recognizes pristine and explicitly ready journals without recovery actions'"
+    ],
+    "targets": [
+      "tests/unit/transfer-status.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/transfer-status.test.js",
+    "line": 20,
+    "contract": "'distinguishes live export from expired snapshot, including the exact expiry boundary'",
+    "layer": "unit",
+    "replacements": [
+      "'distinguishes live export from expired snapshot, including the exact expiry boundary'"
+    ],
+    "targets": [
+      "tests/unit/transfer-status.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/transfer-status.test.js",
+    "line": 24,
+    "contract": "'keeps expired imports in recovery rather than treating lease expiry as completion'",
+    "layer": "unit",
+    "replacements": [
+      "'keeps expired imports in recovery rather than treating lease expiry as completion'"
+    ],
+    "targets": [
+      "tests/unit/transfer-status.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/transfer-status.test.js",
+    "line": 28,
+    "contract": "'preserves existing same-owner recovery while leaving competing owners blocked'",
+    "layer": "unit",
+    "replacements": [
+      "'preserves existing same-owner recovery while leaving competing owners blocked'"
+    ],
+    "targets": [
+      "tests/unit/transfer-status.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/transfer-status.test.js",
+    "line": 31,
+    "contract": "'does not offer recovery when import control contradicts a completed or missing operation'",
+    "layer": "unit",
+    "replacements": [
+      "'does not offer recovery when import control contradicts a completed or missing operation'"
+    ],
+    "targets": [
+      "tests/unit/transfer-status.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/transfer-status.test.js",
+    "line": 34,
+    "contract": "'offers cancellation but never resume for an interrupted incomplete upload'",
+    "layer": "unit",
+    "replacements": [
+      "'offers cancellation but never resume for an interrupted incomplete upload'"
+    ],
+    "targets": [
+      "tests/unit/transfer-status.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/transfer-status.test.js",
+    "line": 37,
+    "contract": "'does not offer recovery for terminal operations'",
+    "layer": "unit",
+    "replacements": [
+      "'does not offer recovery for terminal operations'"
+    ],
+    "targets": [
+      "tests/unit/transfer-status.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/transfer-status.test.js",
+    "line": 40,
+    "contract": "'keeps incompatible recovery and missing requested metadata unavailable for mutation'",
+    "layer": "unit",
+    "replacements": [
+      "'keeps incompatible recovery and missing requested metadata unavailable for mutation'"
+    ],
+    "targets": [
+      "tests/unit/transfer-status.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/transfer-status.test.js",
+    "line": 44,
+    "contract": "'rejects malformed state, expiry and checkpoint without inferring readiness'",
+    "layer": "unit",
+    "replacements": [
+      "'rejects malformed state, expiry and checkpoint without inferring readiness'"
+    ],
+    "targets": [
+      "tests/unit/transfer-status.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/transfer-status.test.js",
+    "line": 47,
+    "contract": "'exposes observation time and expiry while excluding internal ownership tokens'",
+    "layer": "unit",
+    "replacements": [
+      "'exposes observation time and expiry while excluding internal ownership tokens'"
+    ],
+    "targets": [
+      "tests/unit/transfer-status.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/write-outcome.test.js",
+    "line": 4,
+    "contract": "'distinguishes deterministic rejection, uncertain service errors and confirmed commits'",
+    "layer": "unit",
+    "replacements": [
+      "'distinguishes deterministic rejection, uncertain service errors and confirmed commits'"
+    ],
+    "targets": [
+      "tests/unit/write-outcome.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 63,
+    "contract": "'reports opening and closing chronology without changing default ordering or summary/export contracts'",
+    "layer": "cli",
+    "replacements": [
+      "'reports opening and closing chronology without changing default ordering or summary/export contracts'"
+    ],
+    "targets": [
+      "tests/helpers/cli/reporting.js"
+    ],
+    "targetLayer": "cli"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 90,
+    "contract": "'supports import preview, conflict errors, replacement and recovery backup commands'",
+    "layer": "cli",
+    "replacements": [
+      "'supports import preview, conflict errors, replacement and recovery backup commands'"
+    ],
+    "targets": [
+      "tests/helpers/cli/transfer.js"
+    ],
+    "targetLayer": "cli"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 111,
+    "contract": "\"uses renewable sessions across processes and protects credentials\"",
+    "layer": "cli",
+    "replacements": [
+      "\"uses renewable sessions across processes and protects credentials\""
+    ],
+    "targets": [
+      "tests/helpers/cli/auth.js"
+    ],
+    "targetLayer": "cli"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 123,
+    "contract": "\"records trades, calculations and corrections with revision and retry guarantees\"",
+    "layer": "cli",
+    "replacements": [
+      "\"creates trades with dry-run, canonical dates and idempotent receipts\"",
+      "\"records fills and rejects invalid earlier edits and stale revisions\"",
+      "\"previews historical corrections, preserves catalogue and exports exact source\""
+    ],
+    "targets": [
+      "tests/helpers/cli/records.js",
+      "tests/helpers/cli/records.js",
+      "tests/helpers/cli/records.js"
+    ],
+    "targetLayer": "cli"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 175,
+    "contract": "\"invalidates snapshot FX in correction previews and saved records, then accepts explicit historical rates\"",
+    "layer": "cli",
+    "replacements": [
+      "\"invalidates snapshot FX in correction previews and saved records, then accepts explicit historical rates\""
+    ],
+    "targets": [
+      "tests/helpers/cli/records.js"
+    ],
+    "targetLayer": "cli"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 204,
+    "contract": "\"rejects impossible instrument expiry dates through the CLI\"",
+    "layer": "cli",
+    "replacements": [
+      "\"rejects impossible instrument expiry dates through the CLI\""
+    ],
+    "targets": [
+      "tests/helpers/cli/records.js"
+    ],
+    "targetLayer": "cli"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 215,
+    "contract": "\"rejects off-increment plans before saving and preserves records after rejected edits\"",
+    "layer": "cli",
+    "replacements": [
+      "\"rejects off-increment plans before saving and preserves records after rejected edits\""
+    ],
+    "targets": [
+      "tests/helpers/cli/records.js"
+    ],
+    "targetLayer": "cli"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 243,
+    "contract": "\"does not expose another user's records and rejects unsafe saved sessions\"",
+    "layer": "cli",
+    "replacements": [
+      "\"does not expose another user's records and rejects unsafe saved sessions\""
+    ],
+    "targets": [
+      "tests/helpers/cli/auth.js"
+    ],
+    "targetLayer": "cli"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 258,
+    "contract": "\"removes eligible persisted legs and preserves executed legs and the final leg\"",
+    "layer": "cli",
+    "replacements": [
+      "\"removes eligible persisted legs and preserves executed legs and the final leg\""
+    ],
+    "targets": [
+      "tests/helpers/cli/records.js"
+    ],
+    "targetLayer": "cli"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 274,
+    "contract": "\"rejects invalid supplied Entry result rates and accepts corrected retained rates\"",
+    "layer": "cli",
+    "replacements": [
+      "\"rejects invalid supplied Entry result rates and accepts corrected retained rates\""
+    ],
+    "targets": [
+      "tests/helpers/cli/records.js"
+    ],
+    "targetLayer": "cli"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 295,
+    "contract": "\"rejects sessions copied into another Firebase profile before token refresh\"",
+    "layer": "cli",
+    "replacements": [
+      "\"rejects sessions copied into another Firebase profile before token refresh\""
+    ],
+    "targets": [
+      "tests/helpers/cli/auth.js"
+    ],
+    "targetLayer": "cli"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 309,
+    "contract": "\"reproduces PRD sizing and scaled-fill fixtures through the CLI\"",
+    "layer": "cli",
+    "replacements": [
+      "\"reproduces PRD sizing and scaled-fill fixtures through the CLI\""
+    ],
+    "targets": [
+      "tests/helpers/cli/reporting.js"
+    ],
+    "targetLayer": "cli"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 337,
+    "contract": "\"blocks draft catalogue definitions from starting trades through the CLI\"",
+    "layer": "cli",
+    "replacements": [
+      "\"blocks draft catalogue definitions from starting trades through the CLI\""
+    ],
+    "targets": [
+      "tests/helpers/cli/records.js"
+    ],
+    "targetLayer": "cli"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 347,
+    "contract": "\"covers archives, settings, multi-leg manual results and retained incomplete FX\"",
+    "layer": "cli",
+    "replacements": [
+      "\"covers archives, settings, multi-leg manual results and retained incomplete FX\""
+    ],
+    "targets": [
+      "tests/helpers/cli/records.js"
+    ],
+    "targetLayer": "cli"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 392,
+    "contract": "\"blocks incompatible schemas before reads, writes and export output while doctor remains available\"",
+    "layer": "cli",
+    "replacements": [
+      "\"blocks incompatible schemas before reads, writes and export output while doctor remains available\""
+    ],
+    "targets": [
+      "tests/helpers/cli/transfer.js"
+    ],
+    "targetLayer": "cli"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 416,
+    "contract": "'exposes correction requirements, structured rejection and offline backup verification'",
+    "layer": "cli",
+    "replacements": [
+      "'exposes correction requirements, structured rejection and offline backup verification'"
+    ],
+    "targets": [
+      "tests/helpers/cli/transfer.js"
+    ],
+    "targetLayer": "cli"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 443,
+    "contract": "'reports export contention through unchanged error codes and read-only doctor diagnostics'",
+    "layer": "cli",
+    "replacements": [
+      "'reports export contention through unchanged error codes and read-only doctor diagnostics'"
+    ],
+    "targets": [
+      "tests/helpers/cli/transfer.js"
+    ],
+    "targetLayer": "cli"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 460,
+    "contract": "'reports independently expected active-account currency totals and incomplete records'",
+    "layer": "cli",
+    "replacements": [
+      "'reports independently expected active-account currency totals and incomplete records'"
+    ],
+    "targets": [
+      "tests/helpers/cli/reporting.js"
+    ],
+    "targetLayer": "cli"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 495,
+    "contract": "'manages archives explicitly and deletes linked history through accepted CLI preview'",
+    "layer": "cli",
+    "replacements": [
+      "'manages archives explicitly and deletes linked history through accepted CLI preview'"
+    ],
+    "targets": [
+      "tests/helpers/cli/transfer.js"
+    ],
+    "targetLayer": "cli"
+  },
+  {
+    "path": "tests/integration/corrections.test.js",
+    "line": 24,
+    "contract": "'accepts owner correction entry structure without independently verifying source values'",
+    "layer": "persistence",
+    "replacements": [
+      "'accepts owner correction entry structure without independently verifying source values'"
+    ],
+    "targets": [
+      "tests/integration/corrections.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/corrections.test.js",
+    "line": 31,
+    "contract": "'atomically corrects six distinct snapshots in one compact history entry with retry evidence'",
+    "layer": "persistence",
+    "replacements": [
+      "'atomically corrects six distinct snapshots in one compact history entry with retry evidence'"
+    ],
+    "targets": [
+      "tests/integration/corrections.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/corrections.test.js",
+    "line": 46,
+    "contract": "'rejects reasons, stale writes and invalid earlier edits without altering sources or evidence'",
+    "layer": "persistence",
+    "replacements": [
+      "'rejects reasons, stale writes and invalid earlier edits without altering sources or evidence'"
+    ],
+    "targets": [
+      "tests/integration/corrections.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/corrections.test.js",
+    "line": 58,
+    "contract": "'rejects malformed entries, cross-owner access and independent history updates/deletes'",
+    "layer": "persistence",
+    "replacements": [
+      "'rejects malformed entries, cross-owner access and independent history updates/deletes'"
+    ],
+    "targets": [
+      "tests/integration/corrections.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/corrections.test.js",
+    "line": 73,
+    "contract": "'round trips correction events and restores displaced evidence from replacement backup'",
+    "layer": "persistence",
+    "replacements": [
+      "'round trips correction events and restores displaced evidence from replacement backup'"
+    ],
+    "targets": [
+      "tests/integration/corrections.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/corrections.test.js",
+    "line": 96,
+    "contract": "'keeps untouched execution metadata during snapshot correction'",
+    "layer": "persistence",
+    "replacements": [
+      "'keeps untouched execution metadata during snapshot correction'"
+    ],
+    "targets": [
+      "tests/integration/corrections.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/corrections.test.js",
+    "line": 103,
+    "contract": "'corrects six currencies and atomically records all resulting execution-rate invalidations'",
+    "layer": "persistence",
+    "replacements": [
+      "'corrects six currencies and atomically records all resulting execution-rate invalidations'"
+    ],
+    "targets": [
+      "tests/integration/corrections.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/corrections.test.js",
+    "line": 119,
+    "contract": "'rejects invalid currency/rate shortcuts without changing records'",
+    "layer": "persistence",
+    "replacements": [
+      "'rejects invalid currency/rate shortcuts without changing records'"
+    ],
+    "targets": [
+      "tests/integration/corrections.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/database.test.js",
+    "line": 23,
+    "contract": "\"checks availability at commit even when client preflight already succeeded\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"checks availability at commit even when client preflight already succeeded\""
+    ],
+    "targets": [
+      "tests/integration/database.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/database.test.js",
+    "line": 34,
+    "contract": "\"serializes competing real leases and fences expired owners\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"serializes competing real leases and fences expired owners\""
+    ],
+    "targets": [
+      "tests/integration/database.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/database.test.js",
+    "line": 43,
+    "contract": "\"recovers partial real migrations and restores missing-parent journal records\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"recovers partial real migrations and restores missing-parent journal records\""
+    ],
+    "targets": [
+      "tests/integration/database.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/database.test.js",
+    "line": 72,
+    "contract": "\"automatically registers retained emulator data after backup under enforced maintenance\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"automatically registers retained emulator data after backup under enforced maintenance\""
+    ],
+    "targets": [
+      "tests/integration/database.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/database.test.js",
+    "line": 116,
+    "contract": "\"automatically resumes a real failed adjacent upgrade with the same backup and completion ledger\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"automatically resumes a real failed adjacent upgrade with the same backup and completion ledger\""
+    ],
+    "targets": [
+      "tests/integration/database.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 41,
+    "contract": "'deletes archived history concurrently in independent owner journals without cross-owner interference'",
+    "layer": "persistence",
+    "replacements": [
+      "'deletes archived history concurrently in independent owner journals without cross-owner interference'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 66,
+    "contract": "'deletes archived account source and all nested history without rewriting unrelated records'",
+    "layer": "persistence",
+    "replacements": [
+      "'deletes archived account source and all nested history without rewriting unrelated records'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 84,
+    "contract": "'resumes interrupted deletion with same operation and fences ordinary writes and competing owners'",
+    "layer": "persistence",
+    "replacements": [
+      "'resumes interrupted deletion with same operation and fences ordinary writes and competing owners'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 98,
+    "contract": "'rolls back partial deletion with historical values intact and unrelated revisions unchanged'",
+    "layer": "persistence",
+    "replacements": [
+      "'rolls back partial deletion with historical values intact and unrelated revisions unchanged'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 112,
+    "contract": "'rejects stale deletion previews before touching journal source'",
+    "layer": "persistence",
+    "replacements": [
+      "'rejects stale deletion previews before touching journal source'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 120,
+    "contract": "'retries completed deletion cleanup without recreating removed records'",
+    "layer": "persistence",
+    "replacements": [
+      "'retries completed deletion cleanup without recreating removed records'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 136,
+    "contract": "'cancels deletion interrupted immediately after claim before manifest preparation'",
+    "layer": "persistence",
+    "replacements": [
+      "'cancels deletion interrupted immediately after claim before manifest preparation'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 148,
+    "contract": "'requires archived ownership and confirmation, and blocks direct archived trade writes'",
+    "layer": "persistence",
+    "replacements": [
+      "'requires archived ownership and confirmation, and blocks direct archived trade writes'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 163,
+    "contract": "'clears archived defaults atomically and rejects archived preference selections'",
+    "layer": "persistence",
+    "replacements": [
+      "'clears archived defaults atomically and rejects archived preference selections'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 173,
+    "contract": "'round trips historical data to another owner and retries completed imports'",
+    "layer": "persistence",
+    "replacements": [
+      "'round trips historical data to another owner and retries completed imports'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 187,
+    "contract": "'preserves strategy history, foreign fees and decimal adjustments across ownership'",
+    "layer": "persistence",
+    "replacements": [
+      "'preserves strategy history, foreign fees and decimal adjustments across ownership'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 200,
+    "contract": "'resumes an interrupted private backup before changing journal records'",
+    "layer": "persistence",
+    "replacements": [
+      "'resumes an interrupted private backup before changing journal records'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 216,
+    "contract": "'rejects stale previews before journal mutation'",
+    "layer": "persistence",
+    "replacements": [
+      "'rejects stale previews before journal mutation'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 223,
+    "contract": "'keeps interrupted data unavailable, fences competing runs and rolls back'",
+    "layer": "persistence",
+    "replacements": [
+      "'keeps interrupted data unavailable, fences competing runs and rolls back'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 237,
+    "contract": "'resumes expired ownership without source file, rejects stale fences and retains downloadable backup'",
+    "layer": "persistence",
+    "replacements": [
+      "'resumes expired ownership without source file, rejects stale fences and retains downloadable backup'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 263,
+    "contract": "'failed source upload never freezes journal and an incomplete upload can be cancelled'",
+    "layer": "persistence",
+    "replacements": [
+      "'failed source upload never freezes journal and an incomplete upload can be cancelled'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 271,
+    "contract": "'resumes partial rollback and rejects altered restoration checkpoints'",
+    "layer": "persistence",
+    "replacements": [
+      "'resumes partial rollback and rejects altered restoration checkpoints'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 292,
+    "contract": "'retains rollback intent when restoration staging is interrupted'",
+    "layer": "persistence",
+    "replacements": [
+      "'retains rollback intent when restoration staging is interrupted'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 305,
+    "contract": "'keeps ordinary instrument validation within the rules budget after transfers'",
+    "layer": "persistence",
+    "replacements": [
+      "'keeps ordinary instrument validation within the rules budget after transfers'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 317,
+    "contract": "'restores exact correction evidence on interrupted replacement rollback and preserves it in retained backup'",
+    "layer": "persistence",
+    "replacements": [
+      "'restores exact correction evidence on interrupted replacement rollback and preserves it in retained backup'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 336,
+    "contract": "'downloads retained schema-1 backups unchanged and converts them only when restored'",
+    "layer": "persistence",
+    "replacements": [
+      "'downloads retained schema-1 backups unchanged and converts them only when restored'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 372,
+    "contract": "'reports competing export metadata without changing its fence or exposing owner tokens'",
+    "layer": "persistence",
+    "replacements": [
+      "'reports competing export metadata without changing its fence or exposing owner tokens'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 384,
+    "contract": "'takes over an expired export snapshot with a new fence while preserving journal source'",
+    "layer": "persistence",
+    "replacements": [
+      "'takes over an expired export snapshot with a new fence while preserving journal source'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/import.test.js",
+    "line": 400,
+    "contract": "'classifies missing import operation metadata without offering recovery writes'",
+    "layer": "persistence",
+    "replacements": [
+      "'classifies missing import operation metadata without offering recovery writes'"
+    ],
+    "targets": [
+      "tests/integration/import.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/repository.test.js",
+    "line": 32,
+    "contract": "'admits concurrent independent owner writes and still denies foreign journal reads'",
+    "layer": "persistence",
+    "replacements": [
+      "'admits concurrent independent owner writes and still denies foreign journal reads'"
+    ],
+    "targets": [
+      "tests/integration/repository.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/repository.test.js",
+    "line": 73,
+    "contract": "\"derives unfilled opening dates from canonical creation metadata\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"derives unfilled opening dates from canonical creation metadata\""
+    ],
+    "targets": [
+      "tests/integration/repository.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/repository.test.js",
+    "line": 93,
+    "contract": "\"saves six distinct legs atomically with first-account lock, strategy and complete history\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"saves six distinct legs atomically with first-account lock, strategy and complete history\""
+    ],
+    "targets": [
+      "tests/integration/repository.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/repository.test.js",
+    "line": 112,
+    "contract": "\"rejects rebinding persisted leg while retaining explicit snapshot corrections\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"rejects rebinding persisted leg while retaining explicit snapshot corrections\""
+    ],
+    "targets": [
+      "tests/integration/repository.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/repository.test.js",
+    "line": 128,
+    "contract": "\"persists source records, snapshots, historical edits and export-ready reload\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"persists source records, snapshots, historical edits and export-ready reload\""
+    ],
+    "targets": [
+      "tests/integration/repository.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/repository.test.js",
+    "line": 159,
+    "contract": "\"retains quotation units and absent metadata in historical snapshots\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"retains quotation units and absent metadata in historical snapshots\""
+    ],
+    "targets": [
+      "tests/integration/repository.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/repository.test.js",
+    "line": 175,
+    "contract": "\"retries create/edit idempotently and rejects stale revisions\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"retries create/edit idempotently and rejects stale revisions\""
+    ],
+    "targets": [
+      "tests/integration/repository.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/repository.test.js",
+    "line": 193,
+    "contract": "\"rejects currency changes for used accounts and invalid earlier corrections\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"rejects currency changes for used accounts and invalid earlier corrections\""
+    ],
+    "targets": [
+      "tests/integration/repository.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/repository.test.js",
+    "line": 231,
+    "contract": "\"blocks archived trade writes until restore, then cascades trade deletion\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"blocks archived trade writes until restore, then cascades trade deletion\""
+    ],
+    "targets": [
+      "tests/integration/repository.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/security.test.js",
+    "line": 46,
+    "contract": "\"denies anonymous and cross-user access including children\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"denies anonymous and cross-user access including children\""
+    ],
+    "targets": [
+      "tests/integration/security.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/security.test.js",
+    "line": 56,
+    "contract": "\"denies unverified writes, malformed metadata and currencies\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"denies unverified writes, malformed metadata and currencies\""
+    ],
+    "targets": [
+      "tests/integration/security.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/security.test.js",
+    "line": 73,
+    "contract": "\"prevents revision bypass and used account currency change\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"prevents revision bypass and used account currency change\""
+    ],
+    "targets": [
+      "tests/integration/security.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/security.test.js",
+    "line": 103,
+    "contract": "\"rejects cross-owner account reference and orphan legs/executions\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"rejects cross-owner account reference and orphan legs/executions\""
+    ],
+    "targets": [
+      "tests/integration/security.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/security.test.js",
+    "line": 151,
+    "contract": "\"denies unknown paths and auth-secret export storage\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"denies unknown paths and auth-secret export storage\""
+    ],
+    "targets": [
+      "tests/integration/security.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/security.test.js",
+    "line": 155,
+    "contract": "\"requires atomic parent revision for child changes and cascade deletion\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"requires atomic parent revision for child changes and cascade deletion\""
+    ],
+    "targets": [
+      "tests/integration/security.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/security.test.js",
+    "line": 222,
+    "contract": "\"denies atomic leg instrument replacement and permits same-instrument snapshot correction\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"denies atomic leg instrument replacement and permits same-instrument snapshot correction\""
+    ],
+    "targets": [
+      "tests/integration/security.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/security.test.js",
+    "line": 259,
+    "contract": "\"rejects forged strategy snapshots on new links and subsequent edits\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"rejects forged strategy snapshots on new links and subsequent edits\""
+    ],
+    "targets": [
+      "tests/integration/security.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/security.test.js",
+    "line": 309,
+    "contract": "\"requires trade creation to lock account reporting currency atomically\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"requires trade creation to lock account reporting currency atomically\""
+    ],
+    "targets": [
+      "tests/integration/security.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/security.test.js",
+    "line": 328,
+    "contract": "\"rejects negative point values even on manual definitions\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"rejects negative point values even on manual definitions\""
+    ],
+    "targets": [
+      "tests/integration/security.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/security.test.js",
+    "line": 362,
+    "contract": "\"accepts optional units and rejects malformed metadata\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"accepts optional units and rejects malformed metadata\""
+    ],
+    "targets": [
+      "tests/integration/security.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/security.test.js",
+    "line": 373,
+    "contract": "\"blocks journal access during maintenance and protects control metadata\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"blocks journal access during maintenance and protects control metadata\""
+    ],
+    "targets": [
+      "tests/integration/security.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/security.test.js",
+    "line": 384,
+    "contract": "\"blocks absent and mismatched database schemas\"",
+    "layer": "persistence",
+    "replacements": [
+      "\"blocks absent and mismatched database schemas\""
+    ],
+    "targets": [
+      "tests/integration/security.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/integration/security.test.js",
+    "line": 395,
+    "contract": "'permits direct owner source edits with parent revision; application history is not a rules audit guarantee'",
+    "layer": "persistence",
+    "replacements": [
+      "'permits direct owner source edits with parent revision; application history is not a rules audit guarantee'"
+    ],
+    "targets": [
+      "tests/integration/security.test.js"
+    ],
+    "targetLayer": "persistence"
+  },
+  {
+    "path": "tests/e2e/accounts.spec.js",
+    "line": 5,
+    "contract": "'completed deletion with failed cleanup remains recoverable after reload'",
+    "layer": "browser",
+    "replacements": [
+      "'completed deletion with failed cleanup remains recoverable after reload'"
+    ],
+    "targets": [
+      "tests/e2e/accounts.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/accounts.spec.js",
+    "line": 39,
+    "contract": "`archive excludes history; management restores and permanently deletes at ${width}px`",
+    "layer": "browser",
+    "replacements": [
+      "`archive excludes history; management restores and permanently deletes at ${width}px`"
+    ],
+    "targets": [
+      "tests/e2e/accounts.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/adjustment-focus.spec.js",
+    "line": 5,
+    "contract": "\"cancel restores the second adjustment action despite identical labels\"",
+    "layer": "browser",
+    "replacements": [
+      "\"cancel restores the second adjustment action despite identical labels\""
+    ],
+    "targets": [
+      "tests/e2e/adjustment-focus.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/audit-financial.spec.js",
+    "line": 5,
+    "contract": "\"short partial covers reproduce the PRD gross result and reload\"",
+    "layer": "browser",
+    "replacements": [
+      "\"short partial covers reproduce the PRD gross result and reload\""
+    ],
+    "targets": [
+      "tests/e2e/audit-financial.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/audit-financial.spec.js",
+    "line": 26,
+    "contract": "\"snapshot currency correction clears obsolete result and planning conversion\"",
+    "layer": "browser",
+    "replacements": [
+      "\"snapshot currency correction clears obsolete result and planning conversion\""
+    ],
+    "targets": [
+      "tests/e2e/audit-financial.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/audit-financial.spec.js",
+    "line": 83,
+    "contract": "\"instrument editor rejects nonexistent expiry without discarding entered fields\"",
+    "layer": "browser",
+    "replacements": [
+      "\"instrument editor rejects nonexistent expiry without discarding entered fields\""
+    ],
+    "targets": [
+      "tests/e2e/audit-financial.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/audit-lifecycle.spec.js",
+    "line": 41,
+    "contract": "\"pending save locks captured draft and navigation, then recovers after failure\"",
+    "layer": "browser",
+    "replacements": [
+      "\"pending save locks captured draft and navigation, then recovers after failure\""
+    ],
+    "targets": [
+      "tests/e2e/audit-lifecycle.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/audit-lifecycle.spec.js",
+    "line": 77,
+    "contract": "\"inline instrument editor protects parent draft through sidebar, reload, cancel and child save\"",
+    "layer": "browser",
+    "replacements": [
+      "\"inline instrument editor protects parent draft through sidebar, reload, cancel and child save\""
+    ],
+    "targets": [
+      "tests/e2e/audit-lifecycle.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/audit-lifecycle.spec.js",
+    "line": 97,
+    "contract": "\"browser history owns direct editors, rejects dirty departure and restores cancel focus\"",
+    "layer": "browser",
+    "replacements": [
+      "\"browser history owns direct editors, rejects dirty departure and restores cancel focus\""
+    ],
+    "targets": [
+      "tests/e2e/audit-lifecycle.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/audit-lifecycle.spec.js",
+    "line": 120,
+    "contract": "\"saving trade retires suspended draft from browser history\"",
+    "layer": "browser",
+    "replacements": [
+      "\"saving trade retires suspended draft from browser history\""
+    ],
+    "targets": [
+      "tests/e2e/audit-lifecycle.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/audit-lifecycle.spec.js",
+    "line": 140,
+    "contract": "\"execution prices describe historical quote units and missing unit guidance\"",
+    "layer": "browser",
+    "replacements": [
+      "\"execution prices describe historical quote units and missing unit guidance\""
+    ],
+    "targets": [
+      "tests/e2e/audit-lifecycle.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/audit-lifecycle.spec.js",
+    "line": 167,
+    "contract": "`journal preserves strategy and actions at ${width}px`",
+    "layer": "browser",
+    "replacements": [
+      "`journal preserves strategy and actions at ${width}px`"
+    ],
+    "targets": [
+      "tests/e2e/audit-lifecycle.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/branding.spec.js",
+    "line": 44,
+    "contract": "'publisher and project links work before sign-in'",
+    "layer": "browser",
+    "replacements": [
+      "'publisher and project links work before sign-in'"
+    ],
+    "targets": [
+      "tests/e2e/branding.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/branding.spec.js",
+    "line": 52,
+    "contract": "'workspace attribution stays available in light and dark themes'",
+    "layer": "browser",
+    "replacements": [
+      "'workspace attribution stays available in light and dark themes'"
+    ],
+    "targets": [
+      "tests/e2e/branding.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/compact-navigation.spec.js",
+    "line": 5,
+    "contract": "`compact More navigation at ${width}px`",
+    "layer": "browser",
+    "replacements": [
+      "`compact More navigation at ${width}px`"
+    ],
+    "targets": [
+      "tests/e2e/compact-navigation.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/compact-navigation.spec.js",
+    "line": 79,
+    "contract": "'More dialogs preserve drafts and restore focus to More'",
+    "layer": "browser",
+    "replacements": [
+      "'More dialogs preserve drafts and restore focus to More'"
+    ],
+    "targets": [
+      "tests/e2e/compact-navigation.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/compact-navigation.spec.js",
+    "line": 110,
+    "contract": "'responsive navigation retains desktop actions and closes More on resize'",
+    "layer": "browser",
+    "replacements": [
+      "'responsive navigation retains desktop actions and closes More on resize'"
+    ],
+    "targets": [
+      "tests/e2e/compact-navigation.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/compact-navigation.spec.js",
+    "line": 147,
+    "contract": "'compact More includes Session controls and preserves their draft guards'",
+    "layer": "browser",
+    "replacements": [
+      "'compact More includes Session controls and preserves their draft guards'"
+    ],
+    "targets": [
+      "tests/e2e/compact-navigation.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/compact-navigation.spec.js",
+    "line": 181,
+    "contract": "'merged More remains scrollable on a short compact viewport'",
+    "layer": "browser",
+    "replacements": [
+      "'merged More remains scrollable on a short compact viewport'"
+    ],
+    "targets": [
+      "tests/e2e/compact-navigation.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/compact-navigation.spec.js",
+    "line": 205,
+    "contract": "'project dialogs restore a visible action after crossing the compact breakpoint'",
+    "layer": "browser",
+    "replacements": [
+      "'project dialogs restore a visible action after crossing the compact breakpoint'"
+    ],
+    "targets": [
+      "tests/e2e/compact-navigation.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/component-contracts.spec.js",
+    "line": 38,
+    "contract": "`field and disclosure contracts at ${width}px`",
+    "layer": "browser",
+    "replacements": [
+      "`field and disclosure contracts at ${width}px`"
+    ],
+    "targets": [
+      "tests/browser/component-contracts.spec.js"
+    ],
+    "targetLayer": "isolated-browser"
+  },
+  {
+    "path": "tests/e2e/corrections.spec.js",
+    "line": 5,
+    "contract": "`financial correction reason and deletion history at ${width}px`",
+    "layer": "browser",
+    "replacements": [
+      "`financial correction reason and deletion history at ${width}px`"
+    ],
+    "targets": [
+      "tests/e2e/corrections.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/corrections.spec.js",
+    "line": 53,
+    "contract": "'history pagination and context edits do not require correction reasons'",
+    "layer": "browser",
+    "replacements": [
+      "'history pagination and context edits do not require correction reasons'"
+    ],
+    "targets": [
+      "tests/e2e/corrections.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/corrections.spec.js",
+    "line": 77,
+    "contract": "'uncertain correction retains reason and receipt-based retry creates one history event'",
+    "layer": "browser",
+    "replacements": [
+      "'uncertain correction retains reason and receipt-based retry creates one history event'"
+    ],
+    "targets": [
+      "tests/e2e/corrections.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/database-availability.spec.js",
+    "line": 6,
+    "contract": "`maintenance preserves editor draft and reload recovery at ${width}px`",
+    "layer": "browser",
+    "replacements": [
+      "`maintenance preserves editor draft and reload recovery at ${width}px`"
+    ],
+    "targets": [
+      "tests/e2e/database-availability.spec.js"
+    ],
+    "targetLayer": "maintenance-browser"
+  },
+  {
+    "path": "tests/e2e/editor-session.spec.js",
+    "line": 4,
+    "contract": "\"a retained trade draft completes one write after inline reconstruction and refresh recovery\"",
+    "layer": "browser",
+    "replacements": [
+      "\"a retained trade draft completes one write after inline reconstruction and refresh recovery\""
+    ],
+    "targets": [
+      "tests/e2e/editor-session.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/final-dates.spec.js",
+    "line": 5,
+    "contract": "\"unfilled trade appears in its creation-day journal filter\"",
+    "layer": "browser",
+    "replacements": [
+      "\"unfilled trade appears in its creation-day journal filter\""
+    ],
+    "targets": [
+      "tests/e2e/final-dates.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/final-discard.spec.js",
+    "line": 5,
+    "contract": "`accepted Cancel reconstructs ${existing ? \"existing\" : \"new\"} trade on Back`",
+    "layer": "browser",
+    "replacements": [
+      "`accepted Cancel reconstructs ${existing ? \"existing\" : \"new\"} trade on Back`"
+    ],
+    "targets": [
+      "tests/e2e/final-discard.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/final-discard.spec.js",
+    "line": 18,
+    "contract": "\"accepted child sidebar departure retires its parent draft and history aliases\"",
+    "layer": "browser",
+    "replacements": [
+      "\"accepted child sidebar departure retires its parent draft and history aliases\""
+    ],
+    "targets": [
+      "tests/e2e/final-discard.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/final-discard.spec.js",
+    "line": 31,
+    "contract": "\"reload discards aliases only after a successful read\"",
+    "layer": "browser",
+    "replacements": [
+      "\"reload discards aliases only after a successful read\""
+    ],
+    "targets": [
+      "tests/e2e/final-discard.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/final-recovery.spec.js",
+    "line": 37,
+    "contract": "`confirmed catalogue save retries only refresh at ${width}px`",
+    "layer": "browser",
+    "replacements": [
+      "`confirmed catalogue save retries only refresh at ${width}px`"
+    ],
+    "targets": [
+      "tests/e2e/final-recovery.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/final-recovery.spec.js",
+    "line": 55,
+    "contract": "\"confirmed trade save survives failed refresh without another write\"",
+    "layer": "browser",
+    "replacements": [
+      "\"confirmed trade save survives failed refresh without another write\""
+    ],
+    "targets": [
+      "tests/e2e/final-recovery.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/final-recovery.spec.js",
+    "line": 67,
+    "contract": "\"confirmed nested save refresh returns to its retained parent once\"",
+    "layer": "browser",
+    "replacements": [
+      "\"confirmed nested save refresh returns to its retained parent once\""
+    ],
+    "targets": [
+      "tests/e2e/final-recovery.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/final-recovery.spec.js",
+    "line": 83,
+    "contract": "\"sign-out invalidates an in-flight confirmed-save refresh completion\"",
+    "layer": "browser",
+    "replacements": [
+      "\"sign-out invalidates an in-flight confirmed-save refresh completion\""
+    ],
+    "targets": [
+      "tests/e2e/final-recovery.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/final-recovery.spec.js",
+    "line": 110,
+    "contract": "`recovery Sign out ${accept ? \"accepts\" : \"rejects\"} discard of a suspended parent`",
+    "layer": "browser",
+    "replacements": [
+      "`recovery Sign out ${accept ? \"accepts\" : \"rejects\"} discard of a suspended parent`"
+    ],
+    "targets": [
+      "tests/e2e/final-recovery.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/final-removal.spec.js",
+    "line": 5,
+    "contract": "`persisted leg removal prerequisites remain usable at ${width}px`",
+    "layer": "browser",
+    "replacements": [
+      "`persisted leg removal prerequisites remain usable at ${width}px`"
+    ],
+    "targets": [
+      "tests/e2e/final-removal.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/final-snapshots.spec.js",
+    "line": 5,
+    "contract": "\"inline context refresh reconciles unsaved sizing with persisted snapshot\"",
+    "layer": "browser",
+    "replacements": [
+      "\"inline context refresh reconciles unsaved sizing with persisted snapshot\""
+    ],
+    "targets": [
+      "tests/e2e/final-snapshots.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/final-validation.spec.js",
+    "line": 5,
+    "contract": "`invalid foreign result rate stays reachable on Entry at ${width}px`",
+    "layer": "browser",
+    "replacements": [
+      "`invalid foreign result rate stays reachable on Entry at ${width}px`"
+    ],
+    "targets": [
+      "tests/e2e/final-validation.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/fragment-history.spec.js",
+    "line": 6,
+    "contract": "`rejected forward fragment preserves draft and subsequent history (${fallback ? \"legacy fallback\" : \"native cursor\"})`",
+    "layer": "browser",
+    "replacements": [
+      "`rejected forward fragment preserves draft and subsequent history (${fallback ? \"legacy fallback\" : \"native cursor\"})`"
+    ],
+    "targets": [
+      "tests/e2e/fragment-history.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/fragment-history.spec.js",
+    "line": 66,
+    "contract": "\"foreign route fragment rejection retains raw parent plan and child cancel protection\"",
+    "layer": "browser",
+    "replacements": [
+      "\"foreign route fragment rejection retains raw parent plan and child cancel protection\""
+    ],
+    "targets": [
+      "tests/e2e/fragment-history.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/fragment-history.spec.js",
+    "line": 92,
+    "contract": "\"queued classic Back traversals preserve the editor and release its guard\"",
+    "layer": "browser",
+    "replacements": [
+      "\"queued classic Back traversals preserve the editor and release its guard\""
+    ],
+    "targets": [
+      "tests/e2e/fragment-history.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/import.spec.js",
+    "line": 11,
+    "contract": "`replacement preview, backup and interrupted recovery at ${width}px`",
+    "layer": "browser",
+    "replacements": [
+      "`replacement preview, backup and interrupted recovery at ${width}px`"
+    ],
+    "targets": [
+      "tests/e2e/import.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/journal-filters.spec.js",
+    "line": 29,
+    "contract": "`permanent search/filter bands fit ${width}px with both sidebar states`",
+    "layer": "browser",
+    "replacements": [
+      "`permanent search/filter bands fit ${width}px with both sidebar states`"
+    ],
+    "targets": [
+      "tests/browser/journal-filters.spec.js"
+    ],
+    "targetLayer": "isolated-browser"
+  },
+  {
+    "path": "tests/e2e/journal-filters.spec.js",
+    "line": 56,
+    "contract": "'live filtering keeps controls, typing focus, selection and available scroll position'",
+    "layer": "browser",
+    "replacements": [
+      "'live filtering keeps controls, typing focus, selection and available scroll position'"
+    ],
+    "targets": [
+      "tests/e2e/journal-filters.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/journal-filters.spec.js",
+    "line": 87,
+    "contract": "'invalid date draft keeps last valid range while status changes still apply'",
+    "layer": "browser",
+    "replacements": [
+      "'invalid date draft keeps last valid range while status changes still apply'"
+    ],
+    "targets": [
+      "tests/e2e/journal-filters.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/journal-filters.spec.js",
+    "line": 108,
+    "contract": "'pagination preserves equivalent filters and restores focus when Next becomes disabled'",
+    "layer": "browser",
+    "replacements": [
+      "'pagination preserves equivalent filters and restores focus when Next becomes disabled'"
+    ],
+    "targets": [
+      "tests/e2e/journal-filters.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/journal-filters.spec.js",
+    "line": 124,
+    "contract": "'departure cancels pending updates and returning restores latest filter draft'",
+    "layer": "browser",
+    "replacements": [
+      "'departure cancels pending updates and returning restores latest filter draft'"
+    ],
+    "targets": [
+      "tests/e2e/journal-filters.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/journal-filters.spec.js",
+    "line": 140,
+    "contract": "'tag suggestions use all journal tags and keyboard selection preserves exact values'",
+    "layer": "browser",
+    "replacements": [
+      "'tag suggestions use all journal tags and keyboard selection preserves exact values'"
+    ],
+    "targets": [
+      "tests/browser/tag-autocomplete.spec.js"
+    ],
+    "targetLayer": "isolated-browser"
+  },
+  {
+    "path": "tests/e2e/journal-filters.spec.js",
+    "line": 169,
+    "contract": "'empty/unmatched tag suggestions dismiss without committing and navigation disposes popup'",
+    "layer": "browser",
+    "replacements": [
+      "'empty/unmatched tag suggestions dismiss without committing and navigation disposes popup'"
+    ],
+    "targets": [
+      "tests/e2e/journal-filters.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/journal-filters.spec.js",
+    "line": 187,
+    "contract": "'long tag suggestion list stays inside viewport and scrolls to virtual focus'",
+    "layer": "browser",
+    "replacements": [
+      "'long tag suggestion list stays inside viewport and scrolls to virtual focus'"
+    ],
+    "targets": [
+      "tests/browser/tag-autocomplete.spec.js"
+    ],
+    "targetLayer": "isolated-browser"
+  },
+  {
+    "path": "tests/e2e/journal-filters.spec.js",
+    "line": 219,
+    "contract": "'tapping suggestion selects once and keeps input focus'",
+    "layer": "browser",
+    "replacements": [
+      "'tapping suggestion selects once and keeps input focus'"
+    ],
+    "targets": [
+      "tests/e2e/journal-filters.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/journal-filters.spec.js",
+    "line": 266,
+    "contract": "`realized net sums same currencies and labels mixed totals at ${width}px`",
+    "layer": "browser",
+    "replacements": [
+      "`realized net sums same currencies and labels mixed totals at ${width}px`"
+    ],
+    "targets": [
+      "tests/e2e/journal-filters.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/journal-history.spec.js",
+    "line": 37,
+    "contract": "`history comparison fits panel width at ${width}px in both sidebar states`",
+    "layer": "browser",
+    "replacements": [
+      "`history comparison fits panel width at ${width}px in both sidebar states`"
+    ],
+    "targets": [
+      "tests/browser/journal-history.spec.js"
+    ],
+    "targetLayer": "isolated-browser"
+  },
+  {
+    "path": "tests/e2e/journal-history.spec.js",
+    "line": 61,
+    "contract": "'sort changes preserve controls, focus and scroll; date basis and navigation retain state'",
+    "layer": "browser",
+    "replacements": [
+      "'sort changes preserve controls, focus and scroll; date basis and navigation retain state'"
+    ],
+    "targets": [
+      "tests/e2e/journal-history.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/journal-history.spec.js",
+    "line": 95,
+    "contract": "'native sort type-ahead and View details work through keyboard navigation'",
+    "layer": "browser",
+    "replacements": [
+      "'native sort type-ahead and View details work through keyboard navigation'"
+    ],
+    "targets": [
+      "tests/e2e/journal-history.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/layout.spec.js",
+    "line": 6,
+    "contract": "`settings journal data actions at ${width}px`",
+    "layer": "browser",
+    "replacements": [
+      "`settings journal data actions at ${width}px`"
+    ],
+    "targets": [
+      "tests/e2e/layout.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/layout.spec.js",
+    "line": 70,
+    "contract": "`catalogue spacing and section alignment at ${width}px`",
+    "layer": "browser",
+    "replacements": [
+      "`catalogue spacing and section alignment at ${width}px`"
+    ],
+    "targets": [
+      "tests/e2e/layout.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/planning-errors.spec.js",
+    "line": 5,
+    "contract": "\"invalid combined budget stays reachable after removing the second leg\"",
+    "layer": "browser",
+    "replacements": [
+      "\"invalid combined budget stays reachable after removing the second leg\""
+    ],
+    "targets": [
+      "tests/e2e/planning-errors.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/planning-errors.spec.js",
+    "line": 22,
+    "contract": "\"invalid per-leg budget stays reachable when automatic sizing becomes inapplicable\"",
+    "layer": "browser",
+    "replacements": [
+      "\"invalid per-leg budget stays reachable when automatic sizing becomes inapplicable\""
+    ],
+    "targets": [
+      "tests/e2e/planning-errors.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/route-policy.spec.js",
+    "line": 26,
+    "contract": "\"confirmed record reload creates a fresh new-trade session\"",
+    "layer": "browser",
+    "replacements": [
+      "\"confirmed record reload creates a fresh new-trade session\""
+    ],
+    "targets": [
+      "tests/e2e/route-policy.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/route-policy.spec.js",
+    "line": 38,
+    "contract": "\"confirmed retained-trade reload returns to the unchanged saved trade\"",
+    "layer": "browser",
+    "replacements": [
+      "\"confirmed retained-trade reload returns to the unchanged saved trade\""
+    ],
+    "targets": [
+      "tests/e2e/route-policy.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/route-policy.spec.js",
+    "line": 51,
+    "contract": "\"catalogue completion retires earlier editor entries for that record\"",
+    "layer": "browser",
+    "replacements": [
+      "\"catalogue completion retires earlier editor entries for that record\""
+    ],
+    "targets": [
+      "tests/e2e/route-policy.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/skill-download.spec.js",
+    "line": 7,
+    "contract": "`agent skill download before and after sign-in at ${width}px`",
+    "layer": "browser",
+    "replacements": [
+      "`agent skill download before and after sign-in at ${width}px`"
+    ],
+    "targets": [
+      "tests/e2e/skill-download.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/snapshot-cancel.spec.js",
+    "line": 5,
+    "contract": "\"snapshot cancellation returns to its trade disclosure and invoking action\"",
+    "layer": "browser",
+    "replacements": [
+      "\"snapshot cancellation returns to its trade disclosure and invoking action\""
+    ],
+    "targets": [
+      "tests/e2e/snapshot-cancel.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/support-reminders.spec.js",
+    "line": 12,
+    "contract": "`secondary support reminder at ${width}px`",
+    "layer": "browser",
+    "replacements": [
+      "`secondary support reminder at ${width}px`"
+    ],
+    "targets": [
+      "tests/e2e/support-reminders.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/support-reminders.spec.js",
+    "line": 38,
+    "contract": "'clean editor defers; cancel resumes; opt-out preserves manual Support'",
+    "layer": "browser",
+    "replacements": [
+      "'clean editor defers; cancel resumes; opt-out preserves manual Support'"
+    ],
+    "targets": [
+      "tests/e2e/support-reminders.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/support-reminders.spec.js",
+    "line": 55,
+    "contract": "'Not now refreshes cooldown; sign-in never presents automatically'",
+    "layer": "browser",
+    "replacements": [
+      "'Not now refreshes cooldown; sign-in never presents automatically'"
+    ],
+    "targets": [
+      "tests/e2e/support-reminders.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/support-reminders.spec.js",
+    "line": 65,
+    "contract": "'200% text scaling retains accessible actions'",
+    "layer": "browser",
+    "replacements": [
+      "'200% text scaling retains accessible actions'"
+    ],
+    "targets": [
+      "tests/e2e/support-reminders.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/support.spec.js",
+    "line": 120,
+    "contract": "'support preserves sign-in input'",
+    "layer": "browser",
+    "replacements": [
+      "'support preserves sign-in input'"
+    ],
+    "targets": [
+      "tests/e2e/support.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/support.spec.js",
+    "line": 132,
+    "contract": "'icon selector lists all networks and QR codes decode to supplied addresses'",
+    "layer": "browser",
+    "replacements": [
+      "'icon selector lists all networks and QR codes decode to supplied addresses'"
+    ],
+    "targets": [
+      "tests/browser/support.spec.js"
+    ],
+    "targetLayer": "isolated-browser"
+  },
+  {
+    "path": "tests/e2e/support.spec.js",
+    "line": 206,
+    "contract": "'copy confirms clipboard success for two seconds without resizing and offers manual recovery'",
+    "layer": "browser",
+    "replacements": [
+      "'copy confirms clipboard success for two seconds without resizing and offers manual recovery'"
+    ],
+    "targets": [
+      "tests/browser/support.spec.js"
+    ],
+    "targetLayer": "isolated-browser"
+  },
+  {
+    "path": "tests/e2e/support.spec.js",
+    "line": 249,
+    "contract": "'pending clipboard completion cannot report success for a different destination'",
+    "layer": "browser",
+    "replacements": [
+      "'pending clipboard completion cannot report success for a different destination'"
+    ],
+    "targets": [
+      "tests/browser/support.spec.js"
+    ],
+    "targetLayer": "isolated-browser"
+  },
+  {
+    "path": "tests/e2e/support.spec.js",
+    "line": 264,
+    "contract": "'a delayed Ko-fi load does not disable crypto copy feedback'",
+    "layer": "browser",
+    "replacements": [
+      "'a delayed Ko-fi load does not disable crypto copy feedback'"
+    ],
+    "targets": [
+      "tests/browser/support.spec.js"
+    ],
+    "targetLayer": "isolated-browser"
+  },
+  {
+    "path": "tests/e2e/support.spec.js",
+    "line": 283,
+    "contract": "'crypto keyboard selection preserves draft and restores opener focus'",
+    "layer": "browser",
+    "replacements": [
+      "'crypto keyboard selection preserves draft and restores opener focus'"
+    ],
+    "targets": [
+      "tests/e2e/support.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/support.spec.js",
+    "line": 332,
+    "contract": "`crypto layout at ${viewport.width}x${viewport.height} in ${theme} theme`",
+    "layer": "browser",
+    "replacements": [
+      "`crypto layout at ${viewport.width}x${viewport.height} in ${theme} theme`"
+    ],
+    "targets": [
+      "tests/browser/support.spec.js"
+    ],
+    "targetLayer": "isolated-browser"
+  },
+  {
+    "path": "tests/e2e/support.spec.js",
+    "line": 390,
+    "contract": "'support preserves an unsaved trade in light and dark themes'",
+    "layer": "browser",
+    "replacements": [
+      "'support preserves an unsaved trade in light and dark themes'"
+    ],
+    "targets": [
+      "tests/e2e/support.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/support.spec.js",
+    "line": 403,
+    "contract": "'About support action and delayed loading keep an external fallback'",
+    "layer": "browser",
+    "replacements": [
+      "'About support action and delayed loading keep an external fallback'"
+    ],
+    "targets": [
+      "tests/browser/support.spec.js"
+    ],
+    "targetLayer": "isolated-browser"
+  },
+  {
+    "path": "tests/e2e/tooltips.spec.js",
+    "line": 15,
+    "contract": "`label help supports hover, keyboard and touch at ${width}px`",
+    "layer": "browser",
+    "replacements": [
+      "`label help supports hover, keyboard and touch at ${width}px`"
+    ],
+    "targets": [
+      "tests/e2e/tooltips.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/tooltips.spec.js",
+    "line": 77,
+    "contract": "\"label tooltip matches dark theme at intermediate width\"",
+    "layer": "browser",
+    "replacements": [
+      "\"label tooltip matches dark theme at intermediate width\""
+    ],
+    "targets": [
+      "tests/e2e/tooltips.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/trade-capacity.spec.js",
+    "line": 3,
+    "contract": "\"new trade leg controls enforce the same atomic capacity as the CLI\"",
+    "layer": "browser",
+    "replacements": [
+      "\"new trade leg controls enforce the same atomic capacity as the CLI\""
+    ],
+    "targets": [
+      "tests/e2e/trade-capacity.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/trade-plan.spec.js",
+    "line": 19,
+    "contract": "`optional trade plan and clear units at ${width}px`",
+    "layer": "browser",
+    "replacements": [
+      "`optional trade plan and clear units at ${width}px`"
+    ],
+    "targets": [
+      "tests/e2e/trade-plan.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/trade-plan.spec.js",
+    "line": 71,
+    "contract": "\"units follow currency pairs, manual models and historical snapshots\"",
+    "layer": "browser",
+    "replacements": [
+      "\"units follow currency pairs, manual models and historical snapshots\""
+    ],
+    "targets": [
+      "tests/e2e/trade-plan.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/transfer-feedback.spec.js",
+    "line": 4,
+    "contract": "'resuming an ongoing rollback announces restoration rather than import completion'",
+    "layer": "browser",
+    "replacements": [
+      "'resuming an ongoing rollback announces restoration rather than import completion'"
+    ],
+    "targets": [
+      "tests/browser/transfer-feedback.spec.js"
+    ],
+    "targetLayer": "isolated-browser"
+  },
+  {
+    "path": "tests/e2e/transfer-feedback.spec.js",
+    "line": 27,
+    "contract": "`export progress, duplicate prevention and draft preservation at ${width}px`",
+    "layer": "browser",
+    "replacements": [
+      "`export progress, duplicate prevention and draft preservation at ${width}px`"
+    ],
+    "targets": [
+      "tests/e2e/transfer-feedback.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/transfer-feedback.spec.js",
+    "line": 64,
+    "contract": "'busy export shows read-only checking and enables explicit retry without automatic download'",
+    "layer": "browser",
+    "replacements": [
+      "'busy export shows read-only checking and enables explicit retry without automatic download'"
+    ],
+    "targets": [
+      "tests/e2e/transfer-feedback.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/transfer-feedback.spec.js",
+    "line": 87,
+    "contract": "'feedback retains primary error, separates inspection failure and ignores detached completion'",
+    "layer": "browser",
+    "replacements": [
+      "'feedback retains primary error, separates inspection failure and ignores detached completion'"
+    ],
+    "targets": [
+      "tests/browser/transfer-feedback.spec.js"
+    ],
+    "targetLayer": "isolated-browser"
+  },
+  {
+    "path": "tests/e2e/transfer-feedback.spec.js",
+    "line": 115,
+    "contract": "`recovery actions reflect inspected session and disappear after ${terminalStatus} status`",
+    "layer": "browser",
+    "replacements": [
+      "`recovery actions reflect inspected session and disappear after ${terminalStatus} status`"
+    ],
+    "targets": [
+      "tests/browser/transfer-feedback.spec.js"
+    ],
+    "targetLayer": "isolated-browser"
+  },
+  {
+    "path": "tests/e2e/transfer-feedback.spec.js",
+    "line": 134,
+    "contract": "'detached request cannot overwrite newer feedback; new requests clear prior failures'",
+    "layer": "browser",
+    "replacements": [
+      "'detached request cannot overwrite newer feedback; new requests clear prior failures'"
+    ],
+    "targets": [
+      "tests/browser/transfer-feedback.spec.js"
+    ],
+    "targetLayer": "isolated-browser"
+  },
+  {
+    "path": "tests/e2e/workflows.spec.js",
+    "line": 38,
+    "contract": "`complete journal workflow at ${viewport.width}px`",
+    "layer": "browser",
+    "replacements": [
+      "`complete journal workflow at ${viewport.width}px`"
+    ],
+    "targets": [
+      "tests/e2e/workflows.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/workflows.spec.js",
+    "line": 154,
+    "contract": "\"manual results, historical FX, retained validation and snapshot preview\"",
+    "layer": "browser",
+    "replacements": [
+      "\"manual results, historical FX, retained validation and snapshot preview\""
+    ],
+    "targets": [
+      "tests/e2e/workflows.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/workflows.spec.js",
+    "line": 285,
+    "contract": "\"concurrent edits retain draft, reload reconciliation and explicit deletion\"",
+    "layer": "browser",
+    "replacements": [
+      "\"concurrent edits retain draft, reload reconciliation and explicit deletion\""
+    ],
+    "targets": [
+      "tests/e2e/workflows.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/workflows.spec.js",
+    "line": 335,
+    "contract": "\"inline catalogue creation preserves draft and settings persist\"",
+    "layer": "browser",
+    "replacements": [
+      "\"inline catalogue creation preserves draft and settings persist\""
+    ],
+    "targets": [
+      "tests/e2e/workflows.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/workspace-shell-contracts.spec.js",
+    "line": 5,
+    "contract": "`expanded sidebar keeps its 224px contract and reachable footer at ${viewport.width}x${viewport.height}`",
+    "layer": "browser",
+    "replacements": [
+      "`expanded sidebar keeps its 224px contract and reachable footer at ${viewport.width}x${viewport.height}`"
+    ],
+    "targets": [
+      "tests/browser/workspace-shell-contracts.spec.js"
+    ],
+    "targetLayer": "isolated-browser"
+  },
+  {
+    "path": "tests/e2e/workspace-shell.spec.js",
+    "line": 9,
+    "contract": "`viewport shell and reachable footer at ${viewport.width}x${viewport.height}`",
+    "layer": "browser",
+    "replacements": [
+      "`viewport shell and reachable footer at ${viewport.width}x${viewport.height}`"
+    ],
+    "targets": [
+      "tests/browser/workspace-shell.spec.js"
+    ],
+    "targetLayer": "isolated-browser"
+  },
+  {
+    "path": "tests/e2e/workspace-shell.spec.js",
+    "line": 46,
+    "contract": "'collapse preserves live draft, remembers preference and exposes keyboard tooltips'",
+    "layer": "browser",
+    "replacements": [
+      "'collapse preserves live draft, remembers preference and exposes keyboard tooltips'"
+    ],
+    "targets": [
+      "tests/e2e/workspace-shell.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/workspace-shell.spec.js",
+    "line": 80,
+    "contract": "'breakpoint transfers content scroll and restores visible focus without losing preference'",
+    "layer": "browser",
+    "replacements": [
+      "'breakpoint transfers content scroll and restores visible focus without losing preference'"
+    ],
+    "targets": [
+      "tests/e2e/workspace-shell.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/e2e/workspace-shell.spec.js",
+    "line": 99,
+    "contract": "'unavailable local storage leaves collapse functional'",
+    "layer": "browser",
+    "replacements": [
+      "'unavailable local storage leaves collapse functional'"
+    ],
+    "targets": [
+      "tests/e2e/workspace-shell.spec.js"
+    ],
+    "targetLayer": "application-journey"
+  },
+  {
+    "path": "tests/unit/dev-startup.test.js",
+    "line": 107,
+    "contract": "\"awaits graceful export when %s receives repeated interrupts\"",
+    "layer": "unit",
+    "replacements": [
+      "\"awaits graceful export when %s receives repeated interrupts\""
+    ],
+    "targets": [
+      "tests/unit/dev-startup.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 294,
+    "contract": "\"keeps optional planned quantity %s absent\"",
+    "layer": "unit",
+    "replacements": [
+      "\"keeps optional planned quantity %s absent\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 298,
+    "contract": "\"rejects nonpositive planned quantity %s independently\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects nonpositive planned quantity %s independently\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 398,
+    "contract": "\"accepts empty or real instrument expiry %s\"",
+    "layer": "unit",
+    "replacements": [
+      "\"accepts empty or real instrument expiry %s\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/domain.test.js",
+    "line": 404,
+    "contract": "\"rejects nonexistent or malformed instrument expiry %s\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects nonexistent or malformed instrument expiry %s\""
+    ],
+    "targets": [
+      "tests/unit/domain.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/journal-timeline.test.js",
+    "line": 51,
+    "contract": "'keeps missing dates last and equal instants in ID order (%s)'",
+    "layer": "unit",
+    "replacements": [
+      "'keeps missing dates last and equal instants in ID order (%s)'"
+    ],
+    "targets": [
+      "tests/unit/journal-timeline.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/operations.test.js",
+    "line": 31,
+    "contract": "\"validates %s consistently when creating and editing context\"",
+    "layer": "unit",
+    "replacements": [
+      "\"validates %s consistently when creating and editing context\""
+    ],
+    "targets": [
+      "tests/unit/operations.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/operations.test.js",
+    "line": 54,
+    "contract": "\"%s rejects invalid resulting execution history\"",
+    "layer": "unit",
+    "replacements": [
+      "\"%s rejects invalid resulting execution history\""
+    ],
+    "targets": [
+      "tests/unit/operations.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/operations.test.js",
+    "line": 60,
+    "contract": "\"%s returns detached, valid source records without stale derived fields\"",
+    "layer": "unit",
+    "replacements": [
+      "\"%s returns detached, valid source records without stale derived fields\""
+    ],
+    "targets": [
+      "tests/unit/operations.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/skill-docs.test.js",
+    "line": 31,
+    "contract": "\"rejects stale example %s\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects stale example %s\""
+    ],
+    "targets": [
+      "tests/unit/skill-docs.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/support-reminder-policy.test.js",
+    "line": 108,
+    "contract": "'fails closed without replacing corrupt metadata: %s'",
+    "layer": "unit",
+    "replacements": [
+      "'fails closed without replacing corrupt metadata: %s'"
+    ],
+    "targets": [
+      "tests/unit/support-reminder-policy.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/test-runner.test.js",
+    "line": 75,
+    "contract": "\"forwards %s file and native name filters without losing isolation\"",
+    "layer": "unit",
+    "replacements": [
+      "\"forwards %s file and native name filters without losing isolation\""
+    ],
+    "targets": [
+      "tests/unit/test-runner.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/test-runner.test.js",
+    "line": 98,
+    "contract": "\"rejects scope-changing arguments before service startup: %j\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects scope-changing arguments before service startup: %j\""
+    ],
+    "targets": [
+      "tests/unit/test-runner.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/test-runner.test.js",
+    "line": 124,
+    "contract": "\"preserves %s failures and stops services\"",
+    "layer": "unit",
+    "replacements": [
+      "\"preserves %s failures and stops services\""
+    ],
+    "targets": [
+      "tests/unit/test-runner.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/test-runner.test.js",
+    "line": 130,
+    "contract": "\"rejects successful Vitest exits without executed-test evidence: %j\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects successful Vitest exits without executed-test evidence: %j\""
+    ],
+    "targets": [
+      "tests/unit/test-runner.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/unit/test-runner.test.js",
+    "line": 136,
+    "contract": "\"rejects zero executed %s tests even when the native runner exits successfully\"",
+    "layer": "unit",
+    "replacements": [
+      "\"rejects zero executed %s tests even when the native runner exits successfully\""
+    ],
+    "targets": [
+      "tests/unit/test-runner.test.js"
+    ],
+    "targetLayer": "unit"
+  },
+  {
+    "path": "tests/integration/cli.test.js",
+    "line": 286,
+    "contract": "\"rejects %s credential-file input before accessing a path\"",
+    "layer": "cli",
+    "replacements": [
+      "\"rejects %s credential-file input before accessing a path\""
+    ],
+    "targets": [
+      "tests/helpers/cli/auth.js"
+    ],
+    "targetLayer": "cli"
+  }
+]

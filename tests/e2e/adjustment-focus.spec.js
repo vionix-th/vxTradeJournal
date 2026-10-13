@@ -1,5 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { setup } from "./fixtures.js";
+import { test, expect, setup } from "./fixtures.js";
 import { savedTrade } from "./audit-editor-fixtures.js";
 
 test("cancel restores the second adjustment action despite identical labels", async ({ page, request }) => {

@@ -11,13 +11,14 @@ const args = process.argv.slice(2);
 const kind = process.argv[1].endsWith('emulators.js') ? 'emulator' : process.argv[1].endsWith('playwright') ? 'e2e' : args.includes('unit') ? 'unit' : 'integration';
 const record = (event) => appendFileSync(process.env.RUNNER_EVENTS, JSON.stringify({ event, kind, args, pid: process.pid, profile: process.env.VXJ_PROFILE }) + '\\n');
 record('start');
+const matches = args.includes('--project=' + process.env.RUNNER_EMPTY_PROJECT) ? 0 : Number(process.env.RUNNER_MATCHES ?? 1);
 if (kind === 'emulator') {
   setInterval(() => {}, 1000);
   process.on('SIGTERM', () => { record('stop'); process.exit(0); });
 } else {
   const output = args.find(arg => arg.startsWith('--outputFile.json='));
-  if (output && !process.env.RUNNER_NO_REPORT) writeFileSync(output.split('=').slice(1).join('='), JSON.stringify({ numPassedTests: Number(process.env.RUNNER_MATCHES ?? 1), numFailedTests: 0 }));
-  if (process.env.PLAYWRIGHT_JSON_OUTPUT_FILE && !process.env.RUNNER_NO_REPORT) writeFileSync(process.env.PLAYWRIGHT_JSON_OUTPUT_FILE, JSON.stringify({ stats: { expected: Number(process.env.RUNNER_MATCHES ?? 1), unexpected: 0, flaky: 0, skipped: 1 } }));
+  if (output && !process.env.RUNNER_NO_REPORT) writeFileSync(output.split('=').slice(1).join('='), JSON.stringify({ numPassedTests: matches, numFailedTests: 0 }));
+  if (process.env.PLAYWRIGHT_JSON_OUTPUT_FILE && !process.env.RUNNER_NO_REPORT) writeFileSync(process.env.PLAYWRIGHT_JSON_OUTPUT_FILE, JSON.stringify({ stats: { expected: matches, unexpected: 0, flaky: 0, skipped: 1 } }));
   if (process.env.RUNNER_HOLD) setInterval(() => {}, 1000);
   else process.exit(Number(process.env['RUNNER_' + kind.toUpperCase() + '_CODE'] ?? 0));
   process.on('SIGTERM', () => { record('stop'); process.exit(0); });
@@ -112,7 +113,7 @@ describe("test runner selection and lifecycle", () => {
   it("runs unit tests before starting services in the complete run", async () => {
     const f = await fixture();
     expect((await f.run(["all"]).done).code).toBe(0);
-    expect((await f.events()).filter(event => event.event === "start").map(event => event.kind)).toEqual(["unit", "emulator", "integration", "e2e"]);
+    expect((await f.events()).filter(event => event.event === "start").map(event => event.kind)).toEqual(["unit", "e2e", "emulator", "integration", "e2e", "e2e"]);
   });
 
   it("preserves unit failures without starting services", async () => {
@@ -161,4 +162,30 @@ describe("test runner selection and lifecycle", () => {
     const stopped = (await f.events()).filter(event => event.event === "stop").map(event => event.kind).sort();
     expect(stopped).toEqual(["emulator", "integration"]);
   });
+});
+
+it("runs isolated browser cases without starting emulators", async () => {
+  const f = await fixture();
+  expect((await f.run(["browser"]).done).code).toBe(0);
+  expect((await f.events()).some(event => event.kind === "emulator")).toBe(false);
+});
+it("executes maintenance despite ordinary browser failure and preserves failure status", async () => {
+  const f = await fixture({ RUNNER_E2E_CODE: "4" });
+  expect((await f.run(["e2e"]).done).code).toBe(4);
+  const phases = (await f.events()).filter(event => event.kind === "e2e" && event.event === "start");
+  expect(phases).toHaveLength(2);
+  expect(phases[0].args).toContain("--project=journal");
+  expect(phases[1].args).toContain("--project=database");
+});
+
+it("reports an unmatched maintenance selector as skipped while retaining journal evidence", async () => {
+  const f = await fixture({ RUNNER_EMPTY_PROJECT: "database" });
+  const result = await f.run(["e2e", "accounts.spec.js"]).done;
+  expect(result.code).toBe(0);
+  expect(result.output).toContain("phase skipped, not passing evidence");
+});
+it("rejects zero isolated browser cases without starting services", async () => {
+  const f = await fixture({ RUNNER_MATCHES: "0" });
+  expect((await f.run(["browser"]).done).code).not.toBe(0);
+  expect((await f.events()).some(event => event.kind === "emulator")).toBe(false);
 });

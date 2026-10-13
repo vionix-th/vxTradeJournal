@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { setup } from './fixtures.js';
+import { test, expect, setup } from './fixtures.js';
 
 for (const width of [320, 390, 633, 700]) {
   test(`compact More navigation at ${width}px`, async ({ page, request }) => {
@@ -26,7 +25,7 @@ for (const width of [320, 390, 633, 700]) {
     await expect(download).toBeHidden();
     await expect(sidebar.locator('.session-details > summary')).toHaveCount(0);
     await expect(nav.getByRole('button')).toHaveText(['Journal', 'Instruments', 'Strategies', 'Accounts', 'More']);
-    await page.screenshot({ path: `test-results/compact-navigation-${width}-closed.png`, fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(`test-results/compact-navigation-${width}-closed.png`.split("/").pop()), fullPage: true });
     await more.focus();
     await page.keyboard.press('Enter');
     await expect(more).toHaveAttribute('aria-expanded', 'true');
@@ -55,7 +54,7 @@ for (const width of [320, 390, 633, 700]) {
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
     expect(bounds.y + bounds.height).toBeLessThanOrEqual(954);
     for (const control of [settings, about, support, reload, signOut, download]) expect((await control.boundingBox()).height).toBeGreaterThanOrEqual(44);
-    await page.screenshot({ path: `test-results/compact-navigation-${width}-open.png`, fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(`test-results/compact-navigation-${width}-open.png`.split("/").pop()), fullPage: true });
     await page.keyboard.press('Escape');
     await expect(menu).toBeHidden();
     await expect(more).toBeFocused();
@@ -118,7 +117,7 @@ test('responsive navigation retains desktop actions and closes More on resize', 
     await expect(settings).toBeVisible();
     await expect(sidebar.getByRole('button', { name: 'About vxTradeJournal', exact: true })).toBeVisible();
     await expect(sidebar.getByRole('button', { name: 'Support this project', exact: true })).toBeVisible();
-    await page.screenshot({ path: `test-results/compact-navigation-${width}-desktop.png`, fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(`test-results/compact-navigation-${width}-desktop.png`.split("/").pop()), fullPage: true });
   }
   await page.setViewportSize({ width: 633, height: 954 });
   await more.click();
@@ -197,7 +196,7 @@ test('merged More remains scrollable on a short compact viewport', async ({ page
   const linkBounds = await download.boundingBox();
   expect(linkBounds.y).toBeGreaterThanOrEqual(bounds.y);
   expect(linkBounds.y + linkBounds.height).toBeLessThanOrEqual(bounds.y + bounds.height);
-  await page.screenshot({ path: 'test-results/compact-navigation-320-short.png', fullPage: true });
+  await page.screenshot({ path: test.info().outputPath('test-results/compact-navigation-320-short.png'.split("/").pop()), fullPage: true });
   await page.keyboard.press('Escape');
   await expect(more).toBeFocused();
 });

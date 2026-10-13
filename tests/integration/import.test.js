@@ -38,6 +38,31 @@ async function deletionOptions(operationId) {
   const preview = await transfer.previewAccountDeletion(account.id, account.revision);
   return { revision: account.revision, acceptPreview: preview.fingerprint, operationId, yes: true };
 }
+it('deletes archived history concurrently in independent owner journals without cross-owner interference', async () => {
+  const actors = Array.from({ length: 4 }, () => crypto.randomUUID());
+  const owned = await Promise.all(actors.map(async (uid) => {
+    const repository = new Repository(env.authenticatedContext(uid, { email_verified: true }).firestore(), uid);
+    const account = await repository.saveEntity('accounts', { id: 'a', name: 'Independent account', currency: 'USD' });
+    const instrument = await repository.saveEntity('instruments', { id: 'i', name: 'Independent share', symbol: 'OWN', market: 'Equities', preset: 'equity', model: 'linear',
+      quantityUnit: 'shares', quantityIncrement: '1', priceIncrement: '0.01', pointValue: '1', currency: 'USD' });
+    const trade = createTrade({ id: 't', account, instruments: [{ instrument, direction: 'long' }] });
+    trade.executions = ['entry', 'exit'].map((kind, index) => ({ id: kind, legId: trade.legs[0].id, kind, quantity: '1', price: index ? '12' : '10',
+      fees: '0', feeCurrency: 'USD', timestamp: `2026-01-0${index + 1}T00:00:00Z` }));
+    await repository.saveTrade(trade, 'create');
+    const archived = await repository.saveEntity('accounts', { ...await repository.getEntity('accounts', 'a'), archived: true });
+    const operation = new JournalTransfer(repository);
+    const preview = await operation.previewAccountDeletion('a', archived.revision);
+    return { repository, operation, options: { revision: archived.revision, acceptPreview: preview.fingerprint, operationId: 'delete', yes: true } };
+  }));
+  const outcomes = await Promise.all(owned.map(({ operation, options }) => operation.deleteAccount('a', options)));
+  expect(outcomes.map((outcome) => outcome.status)).toEqual(['complete', 'complete', 'complete', 'complete']);
+  for (const { repository, operation } of owned) {
+    expect(await repository.getEntity('accounts', 'a')).toBeNull(); expect(await repository.getTrade('t')).toBeNull();
+    for (const type of ['legs', 'executions', 'adjustments', 'corrections', 'operations']) expect(await repository.listChildren('t', type)).toEqual([]);
+    expect(await repository.getEntity('instruments', 'i')).toMatchObject({ symbol: 'OWN', uid: repository.uid });
+    expect(await operation.inspect('delete')).toMatchObject({ reason: 'ready', operationKind: 'accountDeletion' });
+  }
+});
 it('deletes archived account source and all nested history without rewriting unrelated records', async () => {
   const { file } = await source({ history: true });
   expect(file.accounts[0].archived).toBe(true);
@@ -291,6 +316,7 @@ it('keeps ordinary instrument validation within the rules budget after transfers
 
 it('restores exact correction evidence on interrupted replacement rollback and preserves it in retained backup', async () => {
   const { file, trade } = await source();
+  await repo.saveEntity('accounts', { ...await repo.getEntity('accounts', 'a'), archived: false });
   const changed = await repo.saveTrade({ ...trade, executions: trade.executions.map(e => e.kind === 'exit' ? { ...e, price: '13.01' } : e) }, 'correct-close', null, { correctionReason: 'Broker corrected close price' });
   const preview = await transfer.preview(file, { mode: 'replace' });
   transfer.onCheckpoint = () => { throw new Error('Correction transfer interruption'); };
@@ -353,6 +379,22 @@ it('reports competing export metadata without changing its fence or exposing own
   expect(JSON.stringify(error.details)).not.toContain(exporter.owner);
   const after = await getDoc(exporter.control());
   expect(after.data()).toMatchObject({ owner: exporter.owner, fence: 1, state: 'snapshot' });
+});
+
+it('takes over an expired export snapshot with a new fence while preserving journal source', async () => {
+  const { file } = await source({ history: true });
+  const exporter = new JournalTransfer(repo);
+  await exporter.claim('expired-export', false, true);
+  const previous = (await getDoc(exporter.control())).data();
+  await env.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'users/alice/_journal/control'), { ...previous, expiresAt: Timestamp.fromMillis(0) });
+  });
+  const competitor = new JournalTransfer(repo);
+  expect(await competitor.inspect()).toMatchObject({ reason: 'expired_export', actions: ['retry_export', 'check_status'] });
+  const exported = await competitor.export();
+  for (const key of ['accounts', 'instruments', 'strategies', 'trades', 'settings']) expect(exported[key]).toEqual(file[key]);
+  expect((await getDoc(competitor.control())).data()).toMatchObject({ state: 'ready', owner: competitor.owner, fence: previous.fence + 1 });
+  await expect(exporter.fenced(async () => {})).rejects.toMatchObject({ code: 'IMPORT_BUSY' });
 });
 
 it('classifies missing import operation metadata without offering recovery writes', async () => {

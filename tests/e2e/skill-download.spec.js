@@ -1,7 +1,6 @@
-import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { strFromU8, unzipSync } from "fflate";
-import { setup } from "./fixtures.js";
+import { test, expect, setup } from "./fixtures.js";
 
 for (const width of [375, 996, 1280]) {
   test(`agent skill download before and after sign-in at ${width}px`, async ({ page, request }) => {
@@ -18,7 +17,7 @@ for (const width of [375, 996, 1280]) {
     expect(entries["vx-trade-journal/SKILL.md"]).toBeTruthy();
     expect(entries["vx-trade-journal/scripts/vxjournal.mjs"]).toBeTruthy();
     expect(entries["vx-trade-journal/package-lock.json"]).toBeTruthy();
-    await page.screenshot({ path: `test-results/skill-download-auth-${width}.png`, fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(`test-results/skill-download-auth-${width}.png`.split("/").pop()), fullPage: true });
     await setup(page, request);
     if (width <= 700) await page.getByRole("button", { name: "More", exact: true }).click();
     await expect(link).toBeVisible();
@@ -38,6 +37,6 @@ for (const width of [375, 996, 1280]) {
     const bounds = await link.boundingBox();
     expect(bounds.height).toBeGreaterThanOrEqual(44);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-    await page.screenshot({ path: `test-results/skill-download-journal-${width}.png`, fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(`test-results/skill-download-journal-${width}.png`.split("/").pop()), fullPage: true });
   });
 }

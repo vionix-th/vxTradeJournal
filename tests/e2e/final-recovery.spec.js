@@ -1,5 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { setup } from "./fixtures.js";
+import { test, expect, setup } from "./fixtures.js";
 import { openTradeDraft } from "./audit-editor-fixtures.js";
 
 async function failRefresh(page, method) {
@@ -34,7 +33,7 @@ async function expectRecovery(page) {
   await expect(page.getByRole("heading", { name: "Saved; refresh failed", exact: true })).toBeVisible();
 }
 
-for (const width of [375, 800, 1280]) test(`confirmed catalogue save retries only refresh at ${width}px`, async ({ page, request }) => {
+for (const width of [800]) test(`confirmed catalogue save retries only refresh at ${width}px`, async ({ page, request }) => {
   await page.setViewportSize({ width, height: 900 });
   await setup(page, request);
   await page.getByRole("button", { name: "Instruments", exact: true }).click();
@@ -45,7 +44,7 @@ for (const width of [375, 800, 1280]) test(`confirmed catalogue save retries onl
   await page.getByRole("button", { name: "Save instrument", exact: true }).click();
   await expectRecovery(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-  await page.screenshot({ path: `test-results/final-recovery-${width}.png`, fullPage: true });
+  await page.screenshot({ path: test.info().outputPath(`test-results/final-recovery-${width}.png`.split("/").pop()), fullPage: true });
   await page.getByRole("button", { name: "Retry refresh", exact: true }).focus();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "Confirmed instrument with a long descriptive name", exact: true })).toBeVisible();

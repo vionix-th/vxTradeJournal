@@ -9,11 +9,13 @@ const profile = getProfile('auto');
 const selected = process.argv[2] ?? 'all';
 const forwarded = process.argv.slice(3);
 const commands = {
-  all: [['vitest', '--project', 'integration'], ['playwright']],
+  all: [['vitest', '--project', 'integration'], ['playwright', '--project=journal'], ['playwright', '--project=database']],
   unit: [['vitest', '--project', 'unit']],
   integration: [['vitest', '--project', 'integration']],
   cli: [['vitest', '--project', 'integration', 'tests/integration/cli.test.js']],
-  e2e: [['playwright']],
+  e2e: [['playwright', '--project=journal'], ['playwright', '--project=database']],
+  browser: [['playwright', '--project=browser']],
+  coverage: [['vitest', '--project', 'integration', '--coverage']],
 };
 const children = new Set();
 let stopping = false;
@@ -53,10 +55,10 @@ async function waitForService(emulator, url, timeoutMs = 90000) {
 }
 
 function validateSelection() {
-  if (!commands[selected]) throw new Error('Usage: node scripts/test.js all|unit|integration|cli|e2e');
+  if (!commands[selected]) throw new Error('Usage: node scripts/test.js all|unit|integration|cli|e2e|browser|coverage');
   if (selected === 'all' && forwarded.length) throw new Error('Complete tests do not accept selectors; use test:unit, test:integration, test:cli or test:e2e.');
-  if (selected === 'e2e') {
-    if (forwarded.some(arg => /^(--(?:config|list|help|version)(?:=|$)|-[chV])/.test(arg))) throw new Error('E2E verification must execute tests with the repository config.');
+  if (selected === 'e2e' || selected === 'browser') {
+    if (forwarded.some(arg => /^(--(?:config|project|list|help|version|pass-with-no-tests)(?:=|$)|-[chV])/.test(arg))) throw new Error('Browser verification must execute tests with the repository config and suite.');
     return null;
   }
   const parsed = parseCLI(['vitest', 'run', ...forwarded]);
@@ -78,6 +80,7 @@ async function main() {
   const temporary = await mkdtemp(join(tmpdir(), 'vxj-test-reports-'));
   let emulator;
   let runIndex = 0;
+  let browserExecuted = 0;
   async function run([program, ...args], filters = []) {
     if (stopping) return process.exitCode || 1;
     const reportPath = join(temporary, `${++runIndex}-${program}.json`);
@@ -85,6 +88,7 @@ async function main() {
     if (program === 'vitest') {
       const reporters = filters.length && parsed?.options.reporters?.length ? [] : ['--reporter=default'];
       runnerArgs = ['run', '--config', 'vitest.config.js', ...args, ...filters, ...reporters, '--reporter=json', `--outputFile.json=${reportPath}`];
+      env = { VXJ_COVERAGE_DIR: args.includes('integration') ? 'coverage/integration' : 'coverage/unit' };
     } else {
       const remaining = [...filters];
       let reporter = 'list';
@@ -94,21 +98,33 @@ async function main() {
       }
       if (!reporter) throw new Error('--reporter requires a value.');
       runnerArgs = ['test', '--config', 'playwright.config.js', ...args, ...remaining, `--reporter=${[...new Set([...reporter.split(','), 'json'])].join(',')}`];
-      env = { PLAYWRIGHT_JSON_OUTPUT_FILE: reportPath };
+      runnerArgs.push('--pass-with-no-tests');
+      const phase = args.find(arg => arg.startsWith('--project='))?.split('=')[1] || 'browser';
+      env = { PLAYWRIGHT_JSON_OUTPUT_FILE: reportPath, VXJ_BROWSER_PHASE: phase };
     }
     const result = await launch(`node_modules/.bin/${program}`, runnerArgs, env).done;
     if (result.error) throw result.error;
-    if (result.code !== 0) return result.code;
+    if (result.code !== 0 && program === 'vitest') return result.code;
     const report = JSON.parse(await readFile(reportPath, 'utf8'));
     const executed = program === 'vitest' ? report.numPassedTests + report.numFailedTests : report.stats?.expected + report.stats?.unexpected + report.stats?.flaky;
-    if (!Number.isInteger(executed) || executed <= 0) throw new Error(`${program}: no executed tests; selection is unsuccessful verification.`);
-    return 0;
+    if (!Number.isInteger(executed) || (program === 'vitest' && executed <= 0)) throw new Error(`${program}: no executed tests; selection is unsuccessful verification.`);
+    if (program === 'playwright') {
+      browserExecuted += executed;
+      if (executed === 0) console.log(`${args.join(' ')}: no matching cases; phase skipped, not passing evidence.`);
+    }
+    return result.code;
   }
   try {
-    if (selected === 'all' || selected === 'unit') {
-      const code = await run(['vitest', '--project', 'unit'], selected === 'unit' ? forwarded : []);
+    if (selected === 'all' || selected === 'unit' || selected === 'coverage') {
+      const code = await run(['vitest', '--project', 'unit', ...(selected === 'coverage' ? ['--coverage'] : [])], selected === 'unit' ? forwarded : []);
       if (code !== 0) { process.exitCode ||= code; return; }
       if (selected === 'unit') return;
+    }
+    if (selected === 'all' || selected === 'browser') {
+      const code = await run(['playwright', '--project=browser'], selected === 'browser' ? forwarded : []);
+      if (code !== 0) { process.exitCode ||= code; return; }
+      if (browserExecuted === 0) throw new Error('playwright: no executed tests; selection is unsuccessful verification.');
+      if (selected === 'browser') return;
     }
     if (stopping) return;
     emulator = launch(process.execPath, ['scripts/emulators.js', '--profile', 'auto']);
@@ -119,8 +135,9 @@ async function main() {
     for (const command of commands[selected]) {
       if (command[0] === "playwright") await readySyntheticDatabase("auto");
       const code = await run(command, forwarded);
-      if (code !== 0) { process.exitCode ||= code; break; }
+      if (code !== 0) { process.exitCode ||= code; if (command[0] !== 'playwright') break; }
     }
+    if (selected === 'e2e' && browserExecuted === 0) throw new Error('playwright: no executed tests; selection is unsuccessful verification.');
   } finally {
     stop();
     if (emulator) await emulator.done;

@@ -1,5 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { setup } from "./fixtures.js";
+import { test, expect, setup } from "./fixtures.js";
 test("new trade leg controls enforce the same atomic capacity as the CLI", async ({ page, request }) => {
   await setup(page, request);
   await page.getByRole("button", { name: "Instruments", exact: true }).click();

@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { setup } from './fixtures.js';
+import { test, expect, setup } from './fixtures.js';
 import { connectAdmin } from '../../scripts/database/admin.js';
 
 test('completed deletion with failed cleanup remains recoverable after reload', async ({ page, request }) => {
@@ -35,7 +34,7 @@ test('completed deletion with failed cleanup remains recoverable after reload', 
   await expect(page.getByRole('heading', { name: 'Journal', exact: true })).toBeVisible();
 });
 
-for (const width of [320, 838, 1440]) {
+for (const width of [838]) {
   test(`archive excludes history; management restores and permanently deletes at ${width}px`, async ({ page, request }) => {
     await page.setViewportSize({ width, height: 924 });
     await setup(page, request);
@@ -87,7 +86,7 @@ for (const width of [320, 838, 1440]) {
     await card.getByRole('button', { name: 'Archive account', exact: true }).click();
     await page.getByRole('tab', { name: 'Archived (1)', exact: true }).click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-    await page.screenshot({ path: `test-results/accounts-archived-${width}.png`, fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(`test-results/accounts-archived-${width}.png`.split("/").pop()), fullPage: true });
     await page.getByRole('button', { name: 'Delete account', exact: true }).click();
     await page.getByRole('button', { name: 'Permanently delete account', exact: true }).click();
     await expect(page.getByRole('tab', { name: 'Archived (0)', exact: true })).toHaveAttribute('aria-selected', 'true');

@@ -10,6 +10,14 @@ export function workspaceShell(sidebar, main, navigation, media) {
   const events = new AbortController();
   const options = { signal: events.signal };
   const shell = el('div', { class: 'shell' }, sidebar, main);
+  let desktop = media.matches;
+  let focusedControl = document.activeElement;
+  // Breakpoint CSS can blur a hidden control before the media change callback.
+  shell.addEventListener('focusin', (event) => { focusedControl = event.target; }, options);
+  shell.addEventListener('focusout', (event) => {
+    if (event.relatedTarget) focusedControl = event.relatedTarget;
+    else if (media.matches === desktop) focusedControl = null;
+  }, options);
   const toggle = button([], () => {
     const mainScroll = main.scrollTop;
     const sidebarScroll = sidebar.scrollTop;
@@ -63,19 +71,20 @@ export function workspaceShell(sidebar, main, navigation, media) {
   window.addEventListener('scroll', dismiss, { ...options, capture: true });
   window.addEventListener('resize', dismiss, options);
 
-  let desktop = media.matches;
   let contentOffset = 0;
   function rememberScroll() {
+    if (media.matches !== desktop) return;
     contentOffset = desktop ? main.scrollTop : Math.max(0, -main.getBoundingClientRect().top);
   }
   main.addEventListener('scroll', rememberScroll, options);
   window.addEventListener('scroll', rememberScroll, options);
   media.addEventListener('change', (event) => {
     const offset = contentOffset;
-    const toggleFocused = document.activeElement === toggle;
+    const focusBeforeLayout = document.activeElement === document.body ? focusedControl : document.activeElement;
+    const toggleFocused = focusBeforeLayout === toggle;
     desktop = event.matches;
     dismiss();
-    navigation.setDesktop(desktop);
+    navigation.setDesktop(desktop, focusBeforeLayout);
     if (!desktop && toggleFocused) navigation.more.focus({ preventScroll: true });
     if (desktop) {
       window.scrollTo(0, 0);

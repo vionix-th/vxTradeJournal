@@ -1,5 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { setup } from "./fixtures.js";
+import { test, expect, setup } from "./fixtures.js";
 async function addInstrument(page) {
   await page.getByRole("button", { name: "Instruments", exact: true }).click();
   await page
@@ -33,7 +32,6 @@ async function record(page, kind, q, p) {
 for (const viewport of [
   { width: 1280, height: 900 },
   { width: 375, height: 812 },
-  { width: 320, height: 740 },
 ]) {
   test(`complete journal workflow at ${viewport.width}px`, async ({
     page,
@@ -120,7 +118,7 @@ for (const viewport of [
       .getByRole("button", { name: "Clear filters", exact: true })
       .click();
     await page.screenshot({
-      path: `test-results/journal-${viewport.width}.png`,
+      path: test.info().outputPath(`test-results/journal-${viewport.width}.png`.split("/").pop()),
       fullPage: true,
     });
     if (viewport.width <= 700) await page.getByRole("button", { name: "More", exact: true }).click();
@@ -380,7 +378,7 @@ test("inline catalogue creation preserves draft and settings persist", async ({
     page.getByRole("heading", { name: "Journal", exact: true }),
   ).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  await page.screenshot({ path: "test-results/journal-dark.png", fullPage: true });
+  await page.screenshot({ path: test.info().outputPath("test-results/journal-dark.png".split("/").pop()), fullPage: true });
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await expect(
     page.getByLabel("Display timezone", { exact: true }),

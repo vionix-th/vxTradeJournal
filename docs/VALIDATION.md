@@ -216,3 +216,55 @@ The earlier verification interruption completed 235 unit tests but produced no i
 The coordinating agent reviewed rendered correction history at 375, 800 and 1280 pixels (`test-results/corrections-375.png`, `corrections-800.png`, `corrections-1280.png`): changed-value tables and long identities wrap within their containers, reasons remain readable and controls remain visible. Functional/keyboard/history/retry coverage passed separately in the browser suite. The current full browser gate includes import/recovery at all three widths and passed; the earlier concurrent denial remains a historical observation with unproven cause. Emulator logs still contain denied negative requests, including an expression-limit message during the malformed-entry/ownership test; no specific asserted request uniquely identifies that log message, and it is not claimed as dedicated oversized-payload coverage. All positive source/history workflows pass.
 
 The hosted main JavaScript chunk remains above Vite's 500 kB advisory at 743.66 kB; compilation succeeds. Production services, production migration/deployment and Firefox/WebKit were not exercised. Application version remains 0.3.0; release preparation, including 0.4.0 and deployment, remains separate. Existing workspace edits were preserved. The prior six-currency rules-budget blocker is resolved by the proportional design, without a service, save splitting or capacity reduction.
+
+## Test-suite responsibilities and bounded verification — 14 October 2026
+
+The redesign separates production component/layout contracts from authenticated application journeys. Isolated Chromium cases run without emulators with four workers; real application and maintenance cases use one worker and zero retries. Verified synthetic fixtures own their user/journal, validate the automated profile before administration and remove only their own graph and identity. Development services and records remained running and untouched. No persistence rules, financial implementation, schema transition, Firebase configuration or production state changed in this batch.
+
+The [original declaration map](../tests/contracts/baseline.json) records 427 declarations, grouping parameterized variants rather than counting executions: 250 unit, 60 persistence/security, 20 CLI, 79 application journey, 17 isolated browser and one maintenance destination. Original case names remain mapped before duplicate width variants are removed. Field/help, donation, autocomplete, transfer-feedback observations and shell/filter/history geometry moved to the test-only harness. Account lifecycle, monetary overview, corrections, export, confirmed-save recovery, removal and execution validation now perform width-independent backend work once. Complete financial journals retain desktop/compact journeys; actual import/deletion/recovery, concurrent owners, revision conflicts and reload persistence remain against real services. CLI creation/retry, fill validation and correction/export were split into independent contracts without changing the CLI entry point or selectors.
+
+The accumulated `VXJ_COVERAGE=1 npm run check` passed once, exit 0, in **500.46 seconds (8m20.46s)**. `worker-m` ran browser, emulator, CLI and packaging acceptance; focused unit/documentation checks ran directly. Phase results:
+
+| Phase | Executed cases | Outcome / recorded duration |
+|---|---:|---|
+| Unit | 298 in 41 files | Passed; 31.44s |
+| Isolated browser | 46, four workers | Passed; 41.5s |
+| Integration, including repository CLI | 83 in six files, including 23 CLI cases | Passed; 82.43s |
+| Application browser | 101, one worker | Passed; about 2.9 minutes |
+| Maintenance browser | 3, one worker | Passed; 31.5s |
+| Fresh packaged CLI | 23 | Passed; CLI stage 63.16s |
+| Lint, generated inventory / 17 examples, local build, ZIP extraction and fresh locked dependency installation | No test-count credit | Passed; local Vite build 683ms |
+
+The gate executed **554 test bodies**; the packaged stage intentionally repeats the 23 CLI contracts against the installed executable. No failures or skipped cases were counted as passing. The existing Vite chunk-size advisory remains; compilation succeeded. This was not a release or deployment checkpoint, so no hosted build, release tag or production service verification was requested.
+
+Coverage review added two fake-clock heartbeat cases after the gate's unit stage: renewal retains fence/checkpoint/owner and expiry semantics; pending renewals cannot overlap, shutdown waits and renewal failure remains observable. They passed 2/2 in 507ms. Four further schema-2 graph checks passed 4/4 in 266ms: valid correction-bearing history remains unchanged; orphan paths, identity mismatches, revisions ahead of their parent and stale snapshot metadata are rejected. These six focused cases bring accepted unit outcomes to **304**, without repeating unaffected suites. Coverage percentages below belong to the 298-case unit report, before these six additions; they do not claim the additions were instrumented. The updated declaration-map check passed separately, 1/1 in 246ms.
+
+A rendered review found the isolated harness lacked the application's Inter font imports. After correcting the harness, one affected layout selection passed **32/32** in 38.5s (about 42s wall). Reviewed captures include 320px journal cards, 838px account management, 1440px history comparison, long transfer errors, dark donation controls and real dense forms/recovery. Long content wraps, controls remain reachable and no horizontal clipping was observed in those captures. Geometry, accessible associations, keyboard focus and status announcements have automated assertions; screenshots remain manual-review evidence.
+
+Earlier focused redesign runs exposed fixture errors rather than application regressions: 14 isolated cases needed the shared prepared-trade projection; two CLI cases retained import paths from their previous directory. One focused rerun per signature confirmed the corrections. An inventory audit also restored two parameterized credential-file rejections omitted during extraction. Those failures are not expected-failure proof for domain invariants. The preserved sidebar fixes had prior focused failures for the 212px intermediate-width override, hidden-toggle focus loss and lost scroll-owner offset; final application and geometry checks pass. Earlier user instructions deferred pre-change financial/archive ownership testing; passing present-state checks do not retroactively establish that proof.
+
+Runner unit contracts simulate an ordinary-browser failure and verify maintenance still executes while the combined status remains failing. They also verify selector forwarding, an explicitly skipped unmatched phase, zero-execution rejection and interruption cleanup. Browser fixtures verify independent users with the same local account ID, deletion of one graph without affecting the other, and rejection of emulator requests from isolated cases. Automated target tests reject development endpoints and the production project. Screenshots use test-specific paths; browser phases have separate artifact directories. Real-time feedback/reminder waits use controlled clocks.
+
+The coverage-enabled gate exposed a reporting collision: packaged CLI acceptance inherited `VXJ_COVERAGE=1` and replaced the integration report with coverage of repository-side fixture setup (8.77% lines). `scripts/test-skill.js` now disables instrumentation only for installed CLI acceptance. One `VXJ_COVERAGE=1 npm run test:integration` regeneration passed 83/83 (87.90s Vitest; 97.87s wall), followed by one `VXJ_COVERAGE=1 npm run test:skill` boundary check: 23/23 CLI cases passed (63.61s CLI; 99.83s wall), plus fresh installation/contracts/references. Integration report SHA-256 remained `0c77bcf34b14a8ff87f6fe2a9da3d7ff6ebcac297fee33b0d66388cd7f4636df` before/after packaging. The corrected 83-case report supplies the integration measurements below. These targeted runs verified changed reporting inputs; the accumulated gate was not repeated.
+
+### Measured coverage boundaries
+
+V8 reports include uncovered first-party source and database administration modules. Reports are separate measurements, not merged application coverage. CLI child-process execution and browser behavior are covered through contracts, not credited as Vitest in-process instrumentation. No percentage threshold substitutes for acceptance.
+
+| Owner / module | Unit lines / branches | Integration lines / branches |
+|---|---:|---:|
+| All included source | 41.26% / 40.42% | 32.55% / 31.28% |
+| Domain journal arithmetic/normalization | 98.11% / 93.25% | 79.24% / 73.03% |
+| Domain input validation | 100% / 89.47% | 100% / 84.21% |
+| Timeline projection | 100% / 100% | Not its owning report |
+| Repository revisions/reads/writes | 21.38% / 11.59% | 93.71% / 82.60% |
+| Journal transfer/recovery | 19.74% / 9.66% | 95.29% / 76.08% |
+| Schema registry/graph validation | 85.71% / 67.56% | 85.71% / 67.56% |
+| Immutable schema-1-to-2 transition | 100% / 66.66% | 100% / 94.44% |
+| Database snapshot/restoration | 95.40% / 83.45% | 80.45% / 65.41% |
+| Database migration orchestration | 100% / 82.14% | 100% / 75% |
+| Database fenced lease | 89.47% / 93.10% | 100% / 86.20% |
+
+Initial measurement produced focused additions for favorable/adverse short-target sizing, original error/context preservation, lease scheduling and current schema graph validation. Existing tests cover independently specified precision/results, stale revisions, expired-owner fencing, interrupted restoration/checkpoints and preserving adjacent transitions. Frozen historical replay has lower integration coverage (67.82% lines / 55.75% branches), because current calculation permutations target the current domain and migration acceptance targets preservation of retained histories. It is not presented as full historical permutation coverage. Browser-only source at zero, installed CLI subprocess code and administrative artifact wiring are explicit exclusions from lower-layer coverage claims. Remaining defensive/error branches are measurable limitations; no source was deleted or marked ignored to improve the percentages.
+
+Historical multiworker browser permission denials remain unresolved evidence. Sequential application journeys establish the supported test policy and passing contracts; they do not establish a cause or a production repair. No emulator-version experiment, ownership-rule weakening or production lock repair was performed. Native iPad/Safari browser chrome and date controls, Firefox/WebKit, real email delivery and actual screen-reader output remain unverified.

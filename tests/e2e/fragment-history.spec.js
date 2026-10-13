@@ -1,5 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { setup } from "./fixtures.js";
+import { test, expect, setup } from "./fixtures.js";
 import { openTradeDraft } from "./audit-editor-fixtures.js";
 
 for (const fallback of [false, true]) {

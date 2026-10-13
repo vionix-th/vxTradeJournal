@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { setup } from './fixtures.js';
+import { test, expect, setup } from './fixtures.js';
 import { savedTrade } from './audit-editor-fixtures.js';
 
 async function seed(page, request) {
@@ -10,6 +9,7 @@ async function seed(page, request) {
     const { createTrade } = await import('/src/domain/journal.js');
     const repo = new Repository(db, auth.currentUser.uid, () => auth.currentUser.emailVerified);
     const data = await repo.load();
+    await repo.saveEntity('settings', { ...await repo.getSettings(), timezone: 'UTC' });
     const account = await repo.saveEntity('accounts', { ...data.accounts[0], name: 'Long account identity for history comparison across narrow screens' });
     const strategy = await repo.saveEntity('strategies', { id: 'history-strategy', name: 'Long strategy identity for lifecycle and realized outcome review' });
     const instrument = data.instruments[0];
@@ -33,29 +33,7 @@ async function seed(page, request) {
 const history = (page) => page.getByRole('region', { name: 'Trades', exact: true });
 const visibleRecords = (page) => history(page).locator('[data-trade-id]').filter({ visible: true });
 
-for (const width of [320, 838, 1024, 1440]) test(`history comparison fits panel width at ${width}px in both sidebar states`, async ({ page, request }) => {
-  await page.setViewportSize({ width, height: 924 }); await seed(page, request);
-  for (const collapsed of width > 700 ? [false, true] : [false]) {
-    if (collapsed) await page.getByRole('button', { name: 'Collapse sidebar', exact: true }).click();
-    const wide = await history(page).evaluate((panel) => panel.clientWidth - parseFloat(getComputedStyle(panel).paddingLeft) - parseFloat(getComputedStyle(panel).paddingRight) >= 900);
-    if (wide) { await expect(history(page).locator('.history-table-wrap')).toBeVisible(); await expect(history(page).locator('.history-cards')).toBeHidden(); }
-    else { await expect(history(page).locator('.history-table-wrap')).toBeHidden(); await expect(history(page).locator('.history-cards')).toBeVisible(); }
-    await expect(visibleRecords(page).first()).toHaveAttribute('data-trade-id', 'later');
-    await expect(history(page).getByText('Not entered', { exact: true }).filter({ visible: true }).first()).toBeVisible();
-    await expect(history(page).getByText('Realized so far', { exact: true }).filter({ visible: true }).first()).toBeVisible();
-    await expect(history(page).getByText('Combination · 2 legs', { exact: true }).filter({ visible: true })).toBeVisible();
-    await expect(history(page).getByText('Incomplete · USD', { exact: true }).filter({ visible: true })).toBeVisible();
-    await expect(history(page).getByText('Dates and times: UTC', { exact: true })).toBeVisible();
-    for (const control of [history(page).getByLabel('Sort by', { exact: true }), history(page).getByLabel('Order', { exact: true }), ...await history(page).getByRole('button', { name: /^View details for / }).filter({ visible: true }).all()]) {
-      expect((await control.boundingBox()).height).toBeGreaterThanOrEqual(44);
-    }
-    const metrics = await history(page).evaluate((panel) => ({ width: panel.clientWidth, scroll: panel.scrollWidth }));
-    expect(metrics.scroll).toBeLessThanOrEqual(metrics.width);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-    if (width === 320) expect(await visibleRecords(page).first().locator('.history-card-dates').evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(' ').length)).toBe(1);
-    await page.screenshot({ path: `test-results/journal-history-${width}-${collapsed ? 'collapsed' : 'expanded'}.png`, fullPage: true });
-  }
-});
+
 
 test('sort changes preserve controls, focus and scroll; date basis and navigation retain state', async ({ page, request }) => {
   await page.setViewportSize({ width: 838, height: 500 }); await seed(page, request);
@@ -91,13 +69,13 @@ test('sort changes preserve controls, focus and scroll; date basis and navigatio
   await expect(page.getByRole('button', { name: 'Edit trade', exact: true })).toBeVisible();
 });
 
-test('native sort controls and View details work through keyboard navigation', async ({ page, request }) => {
+test('native sort type-ahead and View details work through keyboard navigation', async ({ page, request }) => {
   await page.setViewportSize({ width: 838, height: 924 }); await seed(page, request);
   const sort = history(page).getByLabel('Sort by', { exact: true });
-  await sort.focus(); await sort.press('ArrowDown'); await sort.press('Enter');
+  await sort.focus(); await sort.press('c');
   await expect(sort).toHaveValue('closed'); await expect(sort).toBeFocused();
   const order = history(page).getByLabel('Order', { exact: true });
-  await order.focus(); await order.press('ArrowDown'); await order.press('Enter');
+  await order.focus(); await order.press('o');
   await expect(order).toHaveValue('asc');
   await expect(visibleRecords(page).first()).toHaveAttribute('data-trade-id', 'later');
   await order.press('Tab');

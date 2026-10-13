@@ -1,5 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { setup } from "./fixtures.js";
+import { test, expect, setup } from "./fixtures.js";
 test.use({ hasTouch: true });
 
 async function checkLabels(form) {
@@ -41,7 +40,7 @@ for (const width of [1280, 375]) {
     const bounds = await page.getByRole("tooltip").boundingBox();
     expect(bounds.x).toBeGreaterThanOrEqual(0);
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
-    await page.screenshot({ path: `test-results/instrument-tooltip-${width}.png`, fullPage: false });
+    await page.screenshot({ path: test.info().outputPath(`test-results/instrument-tooltip-${width}.png`.split("/").pop()), fullPage: false });
     await priceHelp.press("Escape");
     await page.getByLabel("Preset", { exact: true }).selectOption("futures");
     await page.getByText("Contract details", { exact: true }).click();
@@ -69,7 +68,7 @@ for (const width of [1280, 375]) {
     await page.keyboard.press("Escape");
     await leg.locator("label").filter({ hasText: /^Quantity$/ }).hover();
     await expect(page.getByRole("tooltip")).toContainText("Actual filled quantity");
-    await page.screenshot({ path: `test-results/trade-tooltip-${width}.png`, fullPage: false });
+    await page.screenshot({ path: test.info().outputPath(`test-results/trade-tooltip-${width}.png`.split("/").pop()), fullPage: false });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   });
 }
@@ -86,7 +85,7 @@ test("label tooltip matches dark theme at intermediate width", async ({ page, re
   await page.getByRole("button", { name: "New instrument", exact: true }).click();
   await page.locator("label").filter({ hasText: /^Preset$/ }).hover();
   await expect(page.getByRole("tooltip")).toContainText("Starting defaults");
-  await page.screenshot({ path: "test-results/instrument-tooltip-dark-996.png" });
+  await page.screenshot({ path: test.info().outputPath("test-results/instrument-tooltip-dark-996.png".split("/").pop()) });
   await page.keyboard.press("Escape");
   await expect(page.getByRole("tooltip")).not.toBeVisible();
 });

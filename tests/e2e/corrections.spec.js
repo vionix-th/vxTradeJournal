@@ -1,8 +1,7 @@
-import { test, expect } from '@playwright/test';
-import { setup } from './fixtures.js';
+import { test, expect, setup } from './fixtures.js';
 import { savedTrade } from './audit-editor-fixtures.js';
 
-for (const width of [375, 800, 1280]) test(`financial correction reason and deletion history at ${width}px`, async ({ page, request }) => {
+for (const width of [800]) test(`financial correction reason and deletion history at ${width}px`, async ({ page, request }) => {
   await page.setViewportSize({ width, height: 900 });
   await setup(page, request); await savedTrade(page);
   await page.getByRole('button', { name: 'Add execution', exact: true }).click();
@@ -32,7 +31,7 @@ for (const width of [375, 800, 1280]) test(`financial correction reason and dele
   await expect(history.getByText('feeRate', { exact: true })).toBeVisible();
   await expect(history.getByText('Missing', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-  await page.screenshot({ path: `test-results/corrections-${width}.png`, fullPage: true });
+  await page.screenshot({ path: test.info().outputPath(`test-results/corrections-${width}.png`.split("/").pop()), fullPage: true });
   await page.reload();
   await page.getByRole('button', { name: /^View details for / }).filter({ visible: true }).click();
   await expect(page.getByText('Broker supplied historical fee conversion', { exact: true })).toBeVisible();

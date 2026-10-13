@@ -1,5 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { setup } from "./fixtures.js";
+import { test, expect, setup } from "./fixtures.js";
 
 async function instrument(page, name = "Acme", unit = "USD/share") {
   await page.getByRole("button", { name: "Instruments", exact: true }).click();
@@ -163,7 +162,7 @@ test("execution prices describe historical quote units and missing unit guidance
   await expect(page.getByLabel("Price", { exact: true })).toHaveAccessibleDescription(/^Quote unit not configured\. Price increment/);
 });
 
-for (const width of [375, 800, 1280]) {
+for (const width of [800]) {
   test(`journal preserves strategy and actions at ${width}px`, async ({ page, request }) => {
     await page.setViewportSize({ width, height: 900 });
     await setup(page, request);
@@ -179,9 +178,10 @@ for (const width of [375, 800, 1280]) {
     await page.getByRole("button", { name: "Save trade", exact: true }).click();
     await expect(page.getByRole("button", { name: "Add execution", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Journal", exact: true }).click();
-    await expect(page.getByText("Long descriptive breakout strategy", { exact: true }).filter({ visible: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: /^View details for / }).filter({ visible: true })).toBeVisible();
+    const row = page.getByRole("region", { name: "Trades", exact: true }).locator('[data-trade-id]').filter({ visible: true });
+    await expect(row).toContainText("Main · Long descriptive breakout strategy");
+    await expect(row.getByRole("button", { name: /^View details for / })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-    await page.screenshot({ path: `test-results/audit-journal-${width}.png`, fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(`test-results/audit-journal-${width}.png`.split("/").pop()), fullPage: true });
   });
 }
