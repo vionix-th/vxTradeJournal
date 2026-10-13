@@ -34,7 +34,7 @@ for (const width of [375, 800, 1280]) test(`financial correction reason and dele
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   await page.screenshot({ path: `test-results/corrections-${width}.png`, fullPage: true });
   await page.reload();
-  await page.getByRole('button', { name: 'Open trade', exact: true }).filter({ visible: true }).click();
+  await page.getByRole('button', { name: /^View details for / }).filter({ visible: true }).click();
   await expect(page.getByText('Broker supplied historical fee conversion', { exact: true })).toBeVisible();
   page.once('dialog', (dialog) => dialog.accept());
   const remove = page.getByRole('button', { name: 'Delete execution 1', exact: true });

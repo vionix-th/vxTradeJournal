@@ -149,7 +149,7 @@ test("execution prices describe historical quote units and missing unit guidance
   await page.getByRole("button", { name: "Save instrument", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Instruments", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Journal", exact: true }).click();
-  await page.getByRole("button", { name: "Open trade", exact: true }).filter({ visible: true }).click();
+  await page.getByRole("button", { name: /^View details for / }).filter({ visible: true }).click();
   await page.getByRole("button", { name: "Add execution", exact: true }).click();
   await expect(page.getByLabel("Price", { exact: true })).toHaveAccessibleDescription(/^USD\/share Price increment/);
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
@@ -180,7 +180,7 @@ for (const width of [375, 800, 1280]) {
     await expect(page.getByRole("button", { name: "Add execution", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Journal", exact: true }).click();
     await expect(page.getByText("Long descriptive breakout strategy", { exact: true }).filter({ visible: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Open trade", exact: true }).filter({ visible: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^View details for / }).filter({ visible: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     await page.screenshot({ path: `test-results/audit-journal-${width}.png`, fullPage: true });
   });

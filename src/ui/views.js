@@ -1,7 +1,9 @@
 export { accountsView } from './accounts-view.js';
 import { activeJournal } from '../application/accounts.js';
+import { journalHistoryContent } from './journal-history.js';
+import { journalTimeline } from '../application/journal-timeline.js';
 import { tagAutocomplete } from "./tag-autocomplete.js";
-import { journalFilterState, journalFilterSession, journalDateErrors } from "./journal-filter-session.js";
+import { journalFilterState, journalFilterSession, journalDateErrors, journalFiltersActive } from "./journal-filter-session.js";
 import { icon } from "./icons.js";
 import { calculateTrade, money } from "../domain/journal.js";
 import { filterJournal, journalOverview } from "../application/journal.js";
@@ -22,41 +24,6 @@ import {
 } from "./components.js";
 const label = (ui, type, id) =>
   ui.data[type].find((i) => i.id === id)?.name || "—";
-function journalHistory(ui, list, changePage) {
-  const history = el("section", { class: "history-panel", "aria-label": "Trade history" },
-    el("div", { class: "history-heading" }, el("h2", { tabindex: "-1" }, "Trade history", el("span", { class: "count-badge" }, String(list.total))),
-      el("span", { class: "muted" }, "Latest activity first")));
-  const identity = (t) => {
-    const symbol = t.instruments.map((i) => i.symbol || i.name).join(" / ");
-    return el("div", { class: "instrument-identity" }, el("span", { class: "instrument-avatar", "aria-hidden": "true" }, symbol.slice(0, 2).toUpperCase()),
-      el("div", {}, el("strong", {}, symbol), el("span", { class: "instrument-context" }, label(ui, "accounts", t.accountId), t.tags.length ? ` · ${t.tags.join(" · ")}` : "")));
-  };
-  const status = (t) => el("span", { class: `badge status-${t.status}` }, t.status === "open" ? "Open" : "Closed");
-  const activity = (t) => el("time", { datetime: t.updatedAt, title: ui.date(t.updatedAt), class: "activity-time" },
-    new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric", timeZone: ui.data.settings.timezone }).format(new Date(t.updatedAt)),
-    el("span", {}, new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit", timeZone: ui.data.settings.timezone }).format(new Date(t.updatedAt))));
-  if (!list.items.length) history.append(activeJournal(ui.data).trades.length ? empty("No matching trades", "Adjust filters to show records.") : empty("No trades yet", "Configure instruments, then record first trading idea."));
-  else {
-    const table = el("table", { class: "journal-table" }, el("thead", {}, el("tr", {},
-      ["Instrument / idea", "Status", "Strategy", "Realized net", "Last activity", ""].map((title, i) => el("th", { scope: "col", class: i === 3 ? "numeric" : "" }, title)))));
-    table.append(el("tbody", {}, list.items.map((t) => el("tr", {},
-      el("td", {}, identity(t)), el("td", {}, status(t)), el("td", { class: "strategy-cell" }, t.strategySnapshot?.name || "—"),
-      el("td", { class: "numeric net-cell" }, result(t.summary.accountNet, t.accountCurrency)), el("td", {}, activity(t)),
-      el("td", { class: "row-action" }, button(icon("arrow", 18), () => ui.go("trade", t.id), "button quiet icon-button", { "aria-label": "Open trade" }))))));
-    history.append(el("div", { class: "table-wrap desktop-table" }, table));
-    history.append(el("div", { class: "mobile-cards" }, list.items.map((t) => el("article", { class: "trade-card" },
-      el("div", { class: "split" }, identity(t), status(t)),
-      el("div", { class: "trade-card-result" }, el("span", { class: "muted" }, "Realized net"), result(t.summary.accountNet, t.accountCurrency)),
-      el("div", { class: "split trade-card-footer" }, el("div", {}, el("span", { class: "muted" }, t.strategySnapshot?.name || "No strategy"), activity(t)),
-        button(["Open trade", icon("arrow", 16)], () => ui.go("trade", t.id), "button quiet"))))));
-  }
-  history.append(el("div", { class: "pagination" },
-    el("span", { class: "muted" }, `${list.total} ${list.total === 1 ? "trade" : "trades"} · page ${list.page} of ${list.pages}`),
-    el("div", { class: "actions" },
-      button("Previous", () => changePage(list.page - 1), "button secondary", { disabled: list.page <= 1 ? true : null, "data-page-action": "previous" }),
-      button("Next", () => changePage(list.page + 1), "button secondary", { disabled: list.page >= list.pages ? true : null, "data-page-action": "next" }))));
-  return history;
-}
 function journalOverviewCards(ui, account) {
   const overview = journalOverview(ui.data.trades, ui.data.accounts, account);
   const summaryCard = (name, title, value, caption) => el("div", { class: "overview-card" },
@@ -89,13 +56,23 @@ export function journalView(ui) {
     market: field("Market", "market", draft.market, { controlAttrs: { "aria-label": "Filter market" }, choices: [{ value: "", label: "All markets" }, ...[...new Set(ui.data.instruments.map((i) => i.market))].map((m) => ({ value: m, label: m }))] }),
     strategy: field("Strategy", "strategy", draft.strategy, { controlAttrs: { "aria-label": "Filter strategy" }, choices: [{ value: "", label: "All strategies" }, ...ui.data.strategies.map((s) => ({ value: s.id, label: s.name }))] }),
     tag: field("Tag", "tag", draft.tag, { controlAttrs: { "aria-label": "Filter tag" } }),
-    from: field("Opening date from", "from", draft.from, { type: "date" }),
-    to: field("Opening date to", "to", draft.to, { type: "date" }),
+    dateBasis: field("Date basis", "dateBasis", draft.dateBasis, { choices: [{ value: "opened", label: "Opened" }, { value: "closed", label: "Closed" }] }),
+    from: field("From", "from", draft.from, { type: "date" }),
+    to: field("To", "to", draft.to, { type: "date" }),
+    sort: field("Sort by", "sort", draft.sort, { choices: [{ value: "opened", label: "Opened" }, { value: "closed", label: "Closed" }, { value: "updated", label: "Last updated" }] }),
+    order: field("Order", "order", draft.order, { choices: [{ value: "desc", label: "Newest first" }, { value: "asc", label: "Oldest first" }] }),
   };
   controls.search.node.classList.add("search-field");
   controls.search.node.append(icon("search", 18));
   const overview = el("div", { class: "overview-grid" }, journalOverviewCards(ui, state.applied.account));
+  const timelines = new Map(visible.trades.map((trade) => [trade.id, journalTimeline(trade)]));
   const history = el("div", { class: "journal-history" });
+  const count = el("span", { class: "count-badge" });
+  const historyHeading = el("h2", { tabindex: "-1" }, "Trades ", count);
+  const historyPanel = el("section", { class: "history-panel", "aria-label": "Trades" },
+    el("div", { class: "history-heading" }, el("div", { class: "history-heading-title" }, historyHeading,
+      el("p", { class: "muted history-timezone" }, `Dates and times: ${ui.data.settings.timezone}`)),
+      el("div", { class: "history-sort" }, controls.sort, controls.order)), history);
   const announcement = el("p", { class: "visually-hidden", role: "status", "aria-live": "polite", "aria-atomic": "true" });
   let overviewAccount = state.applied.account;
   let session, tagSuggestions;
@@ -108,10 +85,10 @@ export function journalView(ui) {
   const toolbar = el("form", { class: "journal-filters", novalidate: true, "aria-label": "Journal search and filters" },
     controls.search,
     el("div", { class: "journal-filter-band" }, controls.account, controls.status, controls.market, controls.strategy, controls.tag,
-      el("fieldset", { class: "journal-date-range" }, el("legend", { class: "visually-hidden" }, "Opening date range"), controls.from, controls.to), clear));
+      el("fieldset", { class: "journal-date-range" }, el("legend", { class: "visually-hidden" }, "Date range"), controls.dateBasis, controls.from, controls.to), clear));
   const box = el("div", { class: "journal-page" },
     header("Journal", "Your trading decisions, executions and realized outcomes.", button([icon("plus", 18), "New trade"], () => ui.go("tradeEditor"))),
-    overview, toolbar, announcement, history);
+    overview, toolbar, announcement, historyPanel);
   const captureScroll = () => ({ main: ui.main?.scrollTop || 0, window: window.scrollY });
   function restoreScroll(position) {
     if (ui.main) ui.main.scrollTop = position.main;
@@ -119,17 +96,18 @@ export function journalView(ui) {
   }
   function renderResults(announce = true, position = captureScroll()) {
     const pageAction = history.contains(document.activeElement) ? document.activeElement.dataset.pageAction : null;
-    const list = filterJournal(visible.trades, state.applied, ui.page, 12, ui.data.settings.timezone);
+    const list = filterJournal(visible.trades, state.applied, ui.page, 12, ui.data.settings.timezone, timelines);
     ui.page = list.page;
     if (overviewAccount !== state.applied.account) {
       overview.replaceChildren(...journalOverviewCards(ui, state.applied.account));
       overviewAccount = state.applied.account;
     }
-    history.replaceChildren(journalHistory(ui, list, (page) => { ui.page = page; renderResults(); }));
+    count.textContent = String(list.total);
+    history.replaceChildren(journalHistoryContent(ui, list, (page) => { if (box.isConnected) { ui.page = page; renderResults(); } }, timelines));
     if (announce) announcement.textContent = `${list.total} matching ${list.total === 1 ? "trade" : "trades"}. Page ${list.page} of ${list.pages}.`;
     if (pageAction) {
       const replacement = history.querySelector(`[data-page-action="${pageAction}"]:not(:disabled)`);
-      (replacement || history.querySelector('h2')).focus({ preventScroll: true });
+      (replacement || historyHeading).focus({ preventScroll: true });
     }
     restoreScroll(position);
   }
@@ -163,7 +141,7 @@ export function journalView(ui) {
   toolbar.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && !event.isComposing && (event.target === controls.search.control || event.target === controls.tag.control)) { event.preventDefault(); session.flush(); }
   });
-  feedback({ changed: false, resetPage: false, errors: journalDateErrors(state), active: Object.values(state.draft).some(Boolean) || Object.values(state.badDates).some(Boolean) });
+  feedback({ changed: false, resetPage: false, errors: journalDateErrors(state), active: journalFiltersActive(state) });
   renderResults(false);
   ui.show(box);
   session.flush();
@@ -296,9 +274,10 @@ export function strategiesView(ui) {
               `${t.instruments.map((i) => i.symbol).join(" / ")} · ${t.status}`,
             ),
             button(
-              "Open trade",
+              "View details",
               () => ui.go("trade", t.id),
               "button secondary small",
+              { "aria-label": `View details for ${t.instruments.map((i) => i.symbol || i.name).join(" / ")} in ${label(ui, "accounts", t.accountId)}` },
             ),
           ),
         ) : el("p", { class: "muted" }, "No linked trades yet.")),

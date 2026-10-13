@@ -8,7 +8,7 @@ import { beforeAll, beforeEach, afterAll, it, expect } from "vitest";
 import { initializeTestEnvironment } from "@firebase/rules-unit-testing";
 import { Repository } from "../../src/persistence/repository.js";
 import { SessionStore } from "../../src/cli/session-store.js";
-import { PRESETS } from "../../src/domain/journal.js";
+import { PRESETS, createTrade } from "../../src/domain/journal.js";
 
 let env, root, email, uid, verifiedSession;
 const project = "demo-vxjournal-auto";
@@ -60,6 +60,33 @@ async function prerequisites({ instrument = false } = {}) {
   }
   return repo;
 }
+it('reports opening and closing chronology without changing default ordering or summary/export contracts', async () => {
+  const repo = await prerequisites({ instrument: true });
+  const account = await repo.getEntity('accounts', 'a'), instrument = await repo.getEntity('instruments', 'i');
+  for (const [id, opened, closed] of [['older', '2026-01-01T10:00:00Z', '2026-02-10T00:30:00Z'], ['newer', '2026-02-01T10:00:00Z', '2026-02-09T00:30:00Z']]) {
+    const trade = createTrade({ id, account, instruments: [{ instrument, direction: 'long' }] });
+    trade.executions = [['entry', opened], ['exit', closed]].map(([kind, timestamp], index) => ({ id: `${id}-${kind}`, kind, timestamp,
+      legId: trade.legs[0].id, quantity: '1', price: index ? '12' : '10', fees: '0', feeCurrency: 'USD' }));
+    await repo.saveTrade(trade, `${id}-create`);
+  }
+  const older = await repo.getTrade('older');
+  await repo.saveTrade({ ...older, review: 'Later review' }, 'older-review');
+  const before = (await cli('export')).body.data.trades;
+  const ordinary = await cli('journal list'); expect(ordinary.code).toBe(0);
+  expect(ordinary.body.data.items.map((trade) => trade.id)).toEqual(['older', 'newer']);
+  const opened = await cli('journal list', undefined, { sort: 'opened', order: 'desc' });
+  expect(opened.code).toBe(0); expect(opened.body.data.items.map((trade) => trade.id)).toEqual(['newer', 'older']);
+  const closed = await cli('journal list', undefined, { sort: 'closed', order: 'asc', 'page-size': 1 });
+  expect(closed.code).toBe(0); expect(closed.body.data).toMatchObject({ total: 2, pages: 2, page: 1 });
+  expect(closed.body.data.items).toEqual([ordinary.body.data.items[1]]);
+  expect(closed.body.data.items[0]).not.toHaveProperty('executions');
+  expect(closed.body.data.items[0].summary).not.toHaveProperty('closedAt');
+  const range = await cli('journal list', undefined, { 'date-basis': 'closed', from: '2026-02-09', to: '2026-02-09', timezone: 'America/New_York' });
+  expect(range.code).toBe(0); expect(range.body.data.items.map((trade) => trade.id)).toEqual(['older']);
+  const invalid = await cli('journal list', undefined, { sort: 'created' });
+  expect(invalid.code).toBe(2); expect(invalid.body.error.code).toBe('VALIDATION');
+  expect((await cli('export')).body.data.trades).toEqual(before);
+}, 30000);
 it('supports import preview, conflict errors, replacement and recovery backup commands', async () => {
   const repo = await prerequisites();
   const exported = await cli('export'); expect(exported.code, JSON.stringify(exported.body)).toBe(0);

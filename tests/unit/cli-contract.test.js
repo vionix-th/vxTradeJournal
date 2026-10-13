@@ -1,6 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { parseArguments, validateInput, catalogue } from "../../src/cli/catalogue.js";
 describe("agent command contract", () => {
+  it('accepts explicit journal chronology and rejects unsupported values', () => {
+    expect(parseArguments(['journal', 'list', '--profile', 'dev', '--sort', 'closed', '--order', 'asc', '--date-basis', 'closed']).options)
+      .toMatchObject({ sort: 'closed', order: 'asc', 'date-basis': 'closed' });
+    for (const [key, value] of [['sort', 'created'], ['order', 'newest'], ['date-basis', 'updated']]) {
+      expect(() => parseArguments(['journal', 'list', '--profile', 'dev', `--${key}`, value])).toThrow(`--${key}`);
+    }
+  });
   it("rejects new trade payloads above atomic six-leg capacity", () => {
     const input = { id: "t", accountId: "a", legs: Array.from({ length: 7 }, () => ({ instrumentId: "i", direction: "long" })) };
     expect(() => validateInput("trades create", input)).toThrow(/item count/i);

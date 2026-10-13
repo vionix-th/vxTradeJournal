@@ -110,7 +110,7 @@ test("units follow currency pairs, manual models and historical snapshots", asyn
   await page.getByRole("button", { name: "Save instrument", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Instruments", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Journal", exact: true }).click();
-  await page.getByRole("button", { name: "Open trade", exact: true }).first().click();
+  await page.getByRole("button", { name: /^View details for / }).filter({ visible: true }).first().click();
   await page.getByRole("button", { name: "Edit trade", exact: true }).click();
   await expect(leg(page).getByLabel("Entry price", { exact: true })).toHaveAccessibleDescription("EUR/share");
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
@@ -120,7 +120,7 @@ test("units follow currency pairs, manual models and historical snapshots", asyn
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await expect(page.getByRole("button", { name: "Save settings", exact: true })).toBeEnabled();
   await page.getByRole("button", { name: "Journal", exact: true }).click();
-  await page.getByRole("button", { name: "Open trade", exact: true }).first().click();
+  await page.getByRole("button", { name: /^View details for / }).filter({ visible: true }).first().click();
   await page.getByRole("button", { name: "Edit trade", exact: true }).click();
   await openSizing(leg(page));
   await expect(leg(page).getByLabel("Conversion rate", { exact: true })).toHaveAccessibleDescription("1 EUR = rate USD");

@@ -52,7 +52,7 @@ add('accounts delete', 'accountDelete', 'Preview or permanently delete an archiv
 add("instruments presets", "presets", "Inspect editable preset examples", { offline: true });
 add("instruments preview", "instrumentPreview", "Validate instrument configuration and calculation capabilities", { options: ["input"], input: object(instrument, ["name", "preset"]), requiresInput: true });
 add("strategies trades", "linkedTrades", "List trade summaries linked to a strategy", { options: ["id"], requiredOptions: ["id"] });
-add("journal list", "journal", "Filter active-account journal summaries, ordered by newest activity", { options: ["search", "account", "market", "status", "strategy", "tag", "from", "to", "page", "page-size", "timezone"] });
+add("journal list", "journal", "Filter active-account journal summaries; sort by opened, closed or updated (default newest activity)", { options: ["search", "account", "market", "status", "strategy", "tag", "from", "to", "date-basis", "sort", "order", "page", "page-size", "timezone"] });
 add("journal overview", "overview", "Active-account counts and complete realized results grouped by reporting currency", { options: ["account"] });
 add("trades corrections", "corrections", "Read correction history grouped by operation", { options: ["id", "page", "page-size"], requiredOptions: ["id"] });
 add("trades get", "tradeRead", "Read complete source records and current calculations", { options: ["id"], requiredOptions: ["id"] });
@@ -121,6 +121,9 @@ export function parseArguments(args) {
   }
   for (const key of ["id", "trade", "leg", "operation-id", "account", "strategy"]) if (options[key] !== undefined && !new RegExp(identifier.pattern).test(options[key])) throw new Error(`Invalid --${key}`);
   if (options.archived !== undefined && !["true", "false", "all"].includes(options.archived)) throw new Error("--archived must be true, false, or all");
+  for (const [key, values] of Object.entries({ sort: ['opened', 'closed', 'updated'], order: ['asc', 'desc'], 'date-basis': ['opened', 'closed'] })) {
+    if (options[key] !== undefined && !values.includes(options[key])) throw new Error(`--${key} must be ${values.join(', ')}.`);
+  }
   if (command === "legs correct-snapshot" && !options.preview && !options["dry-run"] && (!options["accept-preview"] || !options["operation-id"])) throw new Error("Snapshot correction requires --preview or --accept-preview and --operation-id");
   if (spec.requiresInput && !options.input) throw new Error("Required option --input");
   if (options["accept-preview"] && !/^[a-f0-9]{64}$/.test(options["accept-preview"])) throw new Error("Invalid preview fingerprint");

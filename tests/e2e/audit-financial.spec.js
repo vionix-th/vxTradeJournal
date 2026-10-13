@@ -19,7 +19,7 @@ test("short partial covers reproduce the PRD gross result and reload", async ({ 
   await expect(page.getByTestId("trade-result")).toContainText("40.00 USD");
   await expect(page.getByTestId("trade-status")).toHaveText("Closed");
   await page.reload();
-  await page.getByRole("button", { name: "Open trade", exact: true }).filter({ visible: true }).click();
+  await page.getByRole("button", { name: /^View details for / }).filter({ visible: true }).click();
   await expect(page.getByTestId("trade-result")).toContainText("40.00 USD");
 });
 

@@ -67,7 +67,7 @@ describe('journal filter draft and application lifecycle', () => {
   it('Clear removes drafts, errors and pending work and explicitly resets pagination', () => {
     session.update('search', 'pending'); session.update('to', '', { badInput: true });
     session.clear();
-    expect(Object.values(state.draft).every((value) => value === '')).toBe(true);
+    expect(state.draft).toEqual(journalFilterState().draft);
     expect(events.at(-1)).toMatchObject({ active: false, errors: {}, resetPage: true });
     const count = events.length;
     vi.runAllTimers(); expect(events).toHaveLength(count);
@@ -85,5 +85,29 @@ describe('journal filter draft and application lifecycle', () => {
     vi.runAllTimers(); expect(state.applied.search).toBe('');
     session.update('search', 'complete'); vi.advanceTimersByTime(250);
     expect(state.applied.search).toBe('complete');
+  });
+  it('defaults to opening chronology and retains sort choices when filters clear', () => {
+    expect(state.applied).toMatchObject({ sort: 'opened', order: 'desc', dateBasis: 'opened' });
+    session.update('sort', 'closed'); session.update('order', 'asc'); session.update('dateBasis', 'closed');
+    expect(events.at(-1).active).toBe(true);
+    session.clear();
+    expect(state.applied).toMatchObject({ sort: 'closed', order: 'asc', dateBasis: 'opened', from: '', to: '' });
+    expect(events.at(-1).active).toBe(false);
+  });
+  it('flushes text on sort change and preserves page for an equivalent sort', () => {
+    session.update('search', 'AUDIT'); session.update('sort', 'closed');
+    expect(state.applied).toMatchObject({ search: 'AUDIT', sort: 'closed' });
+    expect(events.at(-1).changed).toBe(true);
+    session.update('sort', 'closed'); expect(events.at(-1).changed).toBe(false);
+    const count = events.length; vi.runAllTimers(); expect(events).toHaveLength(count);
+  });
+  it('retains last valid basis and range while sorting and other filters continue applying', () => {
+    session.update('from', '2026-01-01'); session.update('to', '2026-01-31');
+    session.update('to', '2025-12-31'); session.update('dateBasis', 'closed'); session.update('sort', 'closed');
+    expect(state.draft.dateBasis).toBe('closed');
+    expect(state.applied).toMatchObject({ dateBasis: 'opened', from: '2026-01-01', to: '2026-01-31', sort: 'closed' });
+    expect(journalDateErrors(state).to).toContain('(Opened: 2026-01-01 to 2026-01-31)');
+    session.update('to', '2026-02-01');
+    expect(state.applied).toMatchObject({ dateBasis: 'closed', from: '2026-01-01', to: '2026-02-01' });
   });
 });

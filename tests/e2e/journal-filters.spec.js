@@ -21,7 +21,7 @@ async function journal(page, request, count = 1) {
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Journal', exact: true })).toBeVisible();
 }
-const history = (page) => page.getByRole('region', { name: 'Trade history', exact: true });
+const history = (page) => page.getByRole('region', { name: 'Trades', exact: true });
 const countBadge = (page) => history(page).locator('.count-badge');
 
 for (const width of [320, 838, 1024, 1440]) {
@@ -34,7 +34,7 @@ for (const width of [320, 838, 1024, 1440]) {
       await expect(page.getByText('More filters', { exact: true })).toHaveCount(0);
       await expect(page.getByRole('button', { name: 'Apply filters', exact: true })).toHaveCount(0);
       await expect(page.getByRole('button', { name: 'Clear filters', exact: true })).toBeHidden();
-      for (const name of ['Search instruments', 'Filter account', 'Filter status', 'Filter market', 'Filter strategy', 'Filter tag', 'Opening date from', 'Opening date to']) {
+      for (const name of ['Search instruments', 'Filter account', 'Filter status', 'Filter market', 'Filter strategy', 'Filter tag', 'Date basis', 'From', 'To']) {
         const control = toolbar.getByLabel(name, { exact: true });
         await expect(control).toBeVisible();
         const bounds = await control.boundingBox();
@@ -85,13 +85,13 @@ test('live filtering keeps controls, typing focus, selection and available scrol
 
 test('invalid date draft keeps last valid range while status changes still apply', async ({ page, request }) => {
   await journal(page, request);
-  const from = page.getByLabel('Opening date from', { exact: true });
-  const to = page.getByLabel('Opening date to', { exact: true });
+  const from = page.getByLabel('From', { exact: true });
+  const to = page.getByLabel('To', { exact: true });
   await from.fill('2000-01-01'); await to.fill('2099-12-31');
   await expect(countBadge(page)).toHaveText('1');
   await to.fill('1999-12-31');
   await expect(to).toHaveAttribute('aria-invalid', 'true');
-  await expect(page.getByText('End date must be on or after start date. Results still use the previous valid date range.', { exact: true })).toBeVisible();
+  await expect(page.getByText('End date must be on or after start date. Results still use the previous valid date range (Opened: 2000-01-01 to 2099-12-31).', { exact: true })).toBeVisible();
   await expect(countBadge(page)).toHaveText('1');
   const description = await to.getAttribute('aria-describedby');
   expect(description).toMatch(/-error/);
@@ -115,7 +115,7 @@ test('pagination preserves equivalent filters and restores focus when Next becom
   await expect(history(page)).toContainText('page 2 of 3');
   await history(page).getByRole('button', { name: 'Next', exact: true }).click();
   await expect(history(page)).toContainText('page 3 of 3');
-  await expect(history(page).getByRole('heading', { name: 'Trade history', exact: false })).toBeFocused();
+  await expect(history(page).getByRole('heading', { name: 'Trades', exact: false })).toBeFocused();
   await page.getByLabel('Filter tag', { exact: true }).fill('blue');
   await expect(history(page)).toContainText('page 1 of 1');
 });

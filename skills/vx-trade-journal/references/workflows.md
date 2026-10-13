@@ -14,10 +14,14 @@ After authentication, confirm profile/project with `doctor --profile dev`. These
 node /path/to/vx-trade-journal/scripts/vxjournal.mjs accounts list --profile dev
 node /path/to/vx-trade-journal/scripts/vxjournal.mjs accounts get --profile dev --id account-example
 node /path/to/vx-trade-journal/scripts/vxjournal.mjs journal list --profile dev --account account-example
+node /path/to/vx-trade-journal/scripts/vxjournal.mjs journal list --profile dev --sort opened --order desc
+node /path/to/vx-trade-journal/scripts/vxjournal.mjs journal list --profile dev --sort closed --order desc --date-basis closed --from 2026-10-01 --to 2026-10-31
 node /path/to/vx-trade-journal/scripts/vxjournal.mjs trades get --profile dev --id trade-example
 node /path/to/vx-trade-journal/scripts/vxjournal.mjs calculate trade --profile dev --id trade-example
 node /path/to/vx-trade-journal/scripts/vxjournal.mjs trades corrections --profile dev --id trade-example --page 1 --page-size 12
 ```
+
+Journal list defaults to latest activity; the website defaults to newest opening. Explicit --sort opened|closed|updated and --order asc|desc share ordering across interfaces. Missing dates sort last; equal timestamps sort by trade ID. Opening uses earliest entry or creation time for unfilled ideas. Closing uses final exit/settlement only while the trade is currently closed, so reopened/open trades have no closing date. --date-basis opened|closed selects inclusive calendar-day matching in settings timezone (or --timezone); default is opened. Closing-date requests perform additional revision-checked source reads; output remains the existing summary/pagination format. No chronology fields are added to calculations or exported records.
 
 Read account currency, historical instrument snapshots, source fills/adjustments, revisions and incomplete flags. Current catalogue definitions do not replace historical snapshots. Derived results are reproducible from source records, snapshots, supplied FX, event ordering and calculation version. Missing results/rates remain unknown. Correction history has one entry per correcting save with reason and changed values, including automatic FX invalidations; schema-1 edits cannot be reconstructed. History does not independently verify authorship.
 

@@ -1,5 +1,11 @@
 # Development decisions
 
+## 2026-10-13 — Compare trades by opening and closing chronology
+
+Supersede activity-first website history with Opened/newest by default and permanent sorting controls, while retaining CLI's existing activity default. Share a read-only timeline and date-basis matching; preserve unfilled creation fallback and label it Created/Not entered. Current position status determines whether final exit/settlement supplies closing time; descriptive edits and adjustments cannot substitute for execution chronology. Keep these dates out of persisted financial projections, export and calculation contracts, avoiding a migration or duplicate replay.
+
+Use a permanently mounted Trades heading/sort controls, six-column comparison table at 900px panel width and compact cards below. Show both lifecycle times, exact result completeness and visible View details actions; keep account/strategy/tags readable without decorative avatars. Sort and date basis join the existing session owner for pending text, invalid drafts, navigation persistence and in-place updates. CLI adds explicit chronology flags and hydrates closing-date queries through existing revision checks, trading additional reads for correct reporting without a new index or persisted field. This extends [always-visible journal filters](#2026-10-13--keep-journal-filters-visible-and-update-results-in-place); automated tests and rendered/accessibility verification remain deferred by user instruction.
+
 ## 2026-10-13 — Isolate archived accounts and delete linked history explicitly
 
 Supersede archived-account inclusion in [currency aggregation](#2026-10-13--aggregate-journal-overview-by-reporting-currency) and the previous allowance for editing archived open trades. Archive now removes linked history from ordinary website/CLI visibility, reporting, suggestions and defaults; account management opens Active and provides an explicit Archived tab for restoration/deletion. Preserve archives in portable backups, an intentional management/recovery exception.

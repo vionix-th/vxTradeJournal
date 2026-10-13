@@ -42,7 +42,7 @@ This inventory is generated from the executable catalogue. Required options are 
 | `instruments presets` | Inspect editable preset examples | None |
 | `instruments preview` | Validate instrument configuration and calculation capabilities | `--profile`, `--input` |
 | `strategies trades` | List trade summaries linked to a strategy | `--profile`, `--id` |
-| `journal list` | Filter active-account journal summaries, ordered by newest activity | `--profile` |
+| `journal list` | Filter active-account journal summaries; sort by opened, closed or updated (default newest activity) | `--profile` |
 | `journal overview` | Active-account counts and complete realized results grouped by reporting currency | `--profile` |
 | `trades corrections` | Read correction history grouped by operation | `--profile`, `--id` |
 | `trades get` | Read complete source records and current calculations | `--profile`, `--id` |

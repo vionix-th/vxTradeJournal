@@ -78,7 +78,7 @@ for (const viewport of [
       page.getByRole("heading", { name: "Journal", exact: true }),
     ).toBeVisible();
     await page
-      .getByRole("button", { name: "Open trade", exact: true })
+      .getByRole("button", { name: /^View details for / }).filter({ visible: true })
       .first()
       .click();
     await expect(page.getByTestId("trade-result")).toContainText("350.00 USD");
@@ -299,7 +299,7 @@ test("concurrent edits retain draft, reload reconciliation and explicit deletion
     other.getByRole("heading", { name: "Journal", exact: true }),
   ).toBeVisible();
   await other
-    .getByRole("button", { name: "Open trade", exact: true })
+    .getByRole("button", { name: /^View details for / }).filter({ visible: true })
     .first()
     .click();
   await other.getByRole("button", { name: "Edit trade", exact: true }).click();

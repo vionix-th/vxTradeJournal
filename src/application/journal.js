@@ -1,5 +1,6 @@
 import { assertLegCapacity } from "../domain/leg-capacity.js";
 import { activeJournal } from './accounts.js';
+import { journalTimeline } from './journal-timeline.js';
 import {
   normalizeStrategy,
   D,
@@ -93,12 +94,14 @@ export function prepareTradeResult(input, data, previous = null) {
 export function prepareTrade(trade, data, previous = null) {
   return prepareTradeResult(trade, data, previous).trade;
 }
+/** Shared matching/order/pagination; optional read-only timelines avoid repeated source projection. */
 export function filterJournal(
   trades,
   filters = {},
   page = 1,
   pageSize = 12,
   timezone = "UTC",
+  timelines = new Map(),
 ) {
   const formatter = new Intl.DateTimeFormat("en", {
     timeZone: timezone,
@@ -106,11 +109,16 @@ export function filterJournal(
     month: "2-digit",
     day: "2-digit",
   });
-  const openingDate = (t) => {
-    if (!t.openedAt) return "";
+  const dates = new Map(trades.map((trade) => [trade.id, timelines.get(trade.id) || journalTimeline(trade)]));
+  const basis = filters.dateBasis || filters['date-basis'] || 'opened';
+  const sort = filters.sort || 'updated';
+  const direction = filters.order === 'asc' ? 1 : -1;
+  const calendarDate = (t) => {
+    const value = dates.get(t.id)[`${basis}At`];
+    if (!value) return "";
     const parts = Object.fromEntries(
       formatter
-        .formatToParts(new Date(t.openedAt))
+        .formatToParts(new Date(value))
         .map((p) => [p.type, p.value]),
     );
     return `${parts.year}-${parts.month}-${parts.day}`;
@@ -129,11 +137,16 @@ export function filterJournal(
         (!filters.status || t.status === filters.status) &&
         (!filters.strategy || t.strategyId === filters.strategy) &&
         (!filters.tag || (t.tags || []).includes(filters.tag)) &&
-        ((!filters.from && !filters.to) || !!t.openedAt) &&
-        (!filters.from || openingDate(t) >= filters.from) &&
-        (!filters.to || openingDate(t) <= filters.to),
+        ((!filters.from && !filters.to) || !!dates.get(t.id)[`${basis}At`]) &&
+        (!filters.from || calendarDate(t) >= filters.from) &&
+        (!filters.to || calendarDate(t) <= filters.to),
     )
-    .sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
+    .sort((a, b) => {
+      const left = dates.get(a.id)[`${sort}At`], right = dates.get(b.id)[`${sort}At`];
+      if (!left && right) return 1;
+      if (left && !right) return -1;
+      return (left && right ? direction * (Date.parse(left) - Date.parse(right)) : 0) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+    });
   const pages = Math.max(1, Math.ceil(items.length / pageSize));
   page = Math.max(1, Math.min(page, pages));
   return {

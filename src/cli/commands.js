@@ -8,6 +8,7 @@ import { fingerprint } from "../application/fingerprint.js";
 import { CliError } from "./errors.js";
 import { recentInstruments } from "../application/instruments.js";
 import { activeJournal } from '../application/accounts.js';
+import { journalTimeline } from '../application/journal-timeline.js';
 
 const normalizers = { accounts: normalizeAccount, instruments: normalizeInstrument, strategies: normalizeStrategy };
 const required = (record, label = "Record") => {
@@ -151,13 +152,27 @@ export const handlers = {
   },
   journal: async ({ repo, options }) => {
     for (const key of ["from", "to"]) if (options[key] && !isCalendarDate(options[key])) throw new CliError("VALIDATION", `Invalid --${key} date.`);
-    if (options.from && options.to && options.from > options.to) throw new CliError("VALIDATION", "Opening-date range is reversed.");
+    if (options.from && options.to && options.from > options.to) throw new CliError("VALIDATION", "Date range is reversed.");
     if (options.status && !["open", "closed"].includes(options.status)) throw new CliError("VALIDATION", "Status must be open or closed.");
     const settings = await repo.getSettings();
     const accounts = await repo.list('accounts');
     if (options.account) activeAccount(accounts.find((account) => account.id === options.account));
     const visible = activeJournal({ accounts, trades: await repo.list('trades') });
-    return filterJournal(visible.trades, options, options.page || 1, options["page-size"] || 12, options.timezone || settings.timezone);
+    const timelines = new Map();
+    if (options.sort === 'closed' || options['date-basis'] === 'closed' && (options.from || options.to)) {
+      const hydrated = [];
+      for (let offset = 0; offset < visible.trades.length; offset += 8) {
+        const batch = await Promise.all(visible.trades.slice(offset, offset + 8).map((trade) => getTrade(repo, trade.id)));
+        for (const trade of batch) {
+          timelines.set(trade.id, journalTimeline(trade));
+          const parent = { ...trade };
+          for (const key of ['legs', 'executions', 'adjustments', 'corrections']) delete parent[key];
+          hydrated.push(parent);
+        }
+      }
+      visible.trades = hydrated;
+    }
+    return filterJournal(visible.trades, options, options.page || 1, options["page-size"] || 12, options.timezone || settings.timezone, timelines);
   },
   overview: async ({ repo, options }) => {
     const accounts = await repo.list("accounts");
